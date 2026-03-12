@@ -1,9 +1,15 @@
 const { Pool } = require("pg");
 
-const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.NEON_DATABASE_URL ||
+  process.env.NETLIFY_DATABASE_URL ||
+  process.env.NETLIFY_DATABASE_URL_UNPOOLED;
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL belum diset di environment Netlify");
+  throw new Error(
+    "Database URL belum diset. Gunakan DATABASE_URL / NEON_DATABASE_URL / NETLIFY_DATABASE_URL",
+  );
 }
 
 const useSsl =
