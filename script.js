@@ -5,11 +5,14 @@ const API_BASE =
     : window.location.origin);
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
+const MAX_FILE_SIZE_MB = 2;
 
 let reports = [];
 let latitude = null;
 let longitude = null;
 let isSubmitting = false;
+let toastInstance = null;
+let reportModal = null;
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, function (char) {
@@ -23,6 +26,111 @@ function escapeHtml(text) {
       }[char] || char
     );
   });
+}
+
+function showToast(message, type) {
+  const toastEl = document.getElementById("appToast");
+  const toastBody = document.getElementById("appToastBody");
+  toastBody.textContent = message;
+  toastEl.className = "toast align-items-center border-0";
+  toastEl.classList.add(type === "error" ? "text-bg-danger" : "text-bg-success");
+  toastInstance.show();
+}
+
+function validatePhoto(file) {
+  if (!file) {
+    return "Foto wajib dipilih dulu.";
+  }
+  if (!file.type.startsWith("image/")) {
+    return "File harus berupa gambar.";
+  }
+  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+    return `Ukuran foto maksimal ${MAX_FILE_SIZE_MB}MB.`;
+  }
+  return "";
+}
+
+function showPhotoError(message) {
+  const errorEl = document.getElementById("photoError");
+  if (!message) {
+    errorEl.classList.add("d-none");
+    errorEl.textContent = "";
+    return;
+  }
+  errorEl.classList.remove("d-none");
+  errorEl.textContent = message;
+}
+
+function updatePhotoPreview() {
+  const file = document.getElementById("photo").files[0];
+  const previewWrap = document.getElementById("photoPreviewWrap");
+  const previewImg = document.getElementById("photoPreview");
+  const submitBtn = document.getElementById("submitBtn");
+
+  const validationMessage = validatePhoto(file);
+  showPhotoError(validationMessage);
+  submitBtn.disabled = Boolean(validationMessage) || isSubmitting;
+
+  if (!file || validationMessage) {
+    previewWrap.classList.add("d-none");
+    previewImg.removeAttribute("src");
+    return;
+  }
+
+  previewImg.src = URL.createObjectURL(file);
+  previewWrap.classList.remove("d-none");
+}
+
+function getLocation() {
+  const locText = document.getElementById("locText");
+
+  if (!navigator.geolocation) {
+    locText.className = "small text-danger mb-0";
+    locText.innerText = "Browser tidak mendukung lokasi";
+    return;
+  }
+
+  locText.className = "small text-primary mb-0 d-flex align-items-center";
+  locText.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengambil lokasi...';
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      latitude = position.coords.latitude;
+      longitude = position.coords.longitude;
+      locText.className = "small text-success mb-0";
+      locText.innerText =
+        "Lokasi: " + latitude.toFixed(6) + ", " + longitude.toFixed(6);
+    },
+    function () {
+      latitude = null;
+      longitude = null;
+      locText.className = "small text-danger mb-0";
+      locText.innerText = "Gagal mendapatkan lokasi";
+    },
+  );
+}
+
+function toggleLocation(checkbox) {
+  const locText = document.getElementById("locText");
+  if (checkbox.checked) {
+    getLocation();
+    return;
+  }
+
+  latitude = null;
+  longitude = null;
+  locText.className = "small text-secondary mb-0";
+  locText.innerText = "Lokasi dimatikan";
+}
+
+function renderLoadingSkeleton() {
+  const list = document.getElementById("reportList");
+  list.innerHTML = `
+    <div class="skeleton-item mb-3"></div>
+    <div class="skeleton-item mb-3"></div>
+    <div class="skeleton-item mb-0"></div>
+  `;
 }
 
 async function uploadToCloudinary(file) {
@@ -50,56 +158,8 @@ async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
-function getLocation() {
-  const locText = document.getElementById("locText");
-
-  if (!navigator.geolocation) {
-    locText.className = "small text-danger mb-3";
-    locText.innerText = "Browser tidak mendukung lokasi";
-    return;
-  }
-
-  locText.className = "small text-primary mb-3 d-flex align-items-center";
-  locText.innerHTML =
-    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengambil lokasi...';
-
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
-
-      locText.className = "small text-success mb-3";
-      locText.innerText =
-        "Lokasi: " + latitude.toFixed(6) + ", " + longitude.toFixed(6);
-    },
-    function () {
-      latitude = null;
-      longitude = null;
-
-      locText.className = "small text-danger mb-3";
-      locText.innerText = "Gagal mendapatkan lokasi";
-    },
-  );
-}
-
-function toggleLocation(checkbox) {
-  const locText = document.getElementById("locText");
-
-  if (checkbox.checked) {
-    getLocation();
-    return;
-  }
-
-  latitude = null;
-  longitude = null;
-  locText.className = "small text-secondary mb-3";
-  locText.innerText = "Lokasi dimatikan";
-}
-
 async function loadReports() {
-  const list = document.getElementById("reportList");
-  list.innerHTML =
-    '<p class="text-secondary mb-0">Memuat data dari database...</p>';
+  renderLoadingSkeleton();
 
   try {
     const response = await fetch(API_BASE + "/reports");
@@ -110,10 +170,19 @@ async function loadReports() {
     reports = await response.json();
     renderReports();
   } catch (error) {
-    list.innerHTML =
+    document.getElementById("reportList").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa terhubung ke backend/database.</p>';
     console.error(error);
   }
+}
+
+function resetForm() {
+  document.getElementById("desc").value = "";
+  document.getElementById("photo").value = "";
+  document.getElementById("useLocation").checked = false;
+  showPhotoError("");
+  toggleLocation(document.getElementById("useLocation"));
+  updatePhotoPreview();
 }
 
 async function submitReport() {
@@ -124,9 +193,11 @@ async function submitReport() {
   const desc = document.getElementById("desc").value.trim();
   const file = document.getElementById("photo").files[0];
   const submitBtn = document.getElementById("submitBtn");
+  const validationMessage = validatePhoto(file);
 
-  if (!file) {
-    alert("Foto wajib dipilih dulu.");
+  if (validationMessage) {
+    showPhotoError(validationMessage);
+    showToast(validationMessage, "error");
     return;
   }
 
@@ -158,14 +229,12 @@ async function submitReport() {
       throw new Error("Gagal menyimpan laporan");
     }
 
-    document.getElementById("desc").value = "";
-    document.getElementById("photo").value = "";
-    document.getElementById("useLocation").checked = false;
-    toggleLocation(document.getElementById("useLocation"));
-
+    resetForm();
+    reportModal.hide();
+    showToast("Laporan berhasil dikirim.", "success");
     await loadReports();
   } catch (error) {
-    alert("Laporan gagal dikirim. Cek backend/database.");
+    showToast("Laporan gagal dikirim. Cek backend/database.", "error");
     console.error(error);
   } finally {
     isSubmitting = false;
@@ -174,17 +243,29 @@ async function submitReport() {
   }
 }
 
+function getSortedReports() {
+  const mode = document.getElementById("sortFilter").value;
+  const sorted = reports.slice();
+  sorted.sort(function (a, b) {
+    const aDate = new Date(a.created_at || 0).getTime();
+    const bDate = new Date(b.created_at || 0).getTime();
+    return mode === "oldest" ? aDate - bDate : bDate - aDate;
+  });
+  return sorted;
+}
+
 function renderReports() {
   const list = document.getElementById("reportList");
+  const sortedReports = getSortedReports();
 
-  if (reports.length === 0) {
+  if (sortedReports.length === 0) {
     list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
     return;
   }
 
   list.innerHTML = "";
 
-  reports.forEach(function (r) {
+  sortedReports.forEach(function (r) {
     const hasLocation = r.lat !== null && r.lat !== undefined;
     const imageBlock =
       r.image_url && String(r.image_url).trim() !== ""
@@ -199,14 +280,35 @@ function renderReports() {
       <div class="border-bottom pb-3 mb-3">
         ${imageBlock}
         <p class="mb-1">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
-        <p class="mb-1">Lokasi: ${hasLocation ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4) : "tidak tersedia"}</p>
-        <p class="small text-secondary mb-0">${r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""}</p>
+        <p class="mb-1">Lokasi: ${
+          hasLocation
+            ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
+            : "tidak tersedia"
+        }</p>
+        <p class="small text-secondary mb-0">${
+          r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+        }</p>
       </div>
     `;
-
     list.innerHTML += html;
   });
 }
 
-toggleLocation(document.getElementById("useLocation"));
+function initUi() {
+  toastInstance = new bootstrap.Toast(document.getElementById("appToast"), {
+    delay: 2600,
+  });
+  reportModal = bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("reportModal"),
+  );
+
+  document.getElementById("photo").addEventListener("change", updatePhotoPreview);
+  document.getElementById("sortFilter").addEventListener("change", renderReports);
+  document
+    .getElementById("reportModal")
+    .addEventListener("hidden.bs.modal", resetForm);
+}
+
+initUi();
+resetForm();
 loadReports();
