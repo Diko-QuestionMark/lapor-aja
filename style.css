@@ -24,6 +24,15 @@
   object-fit: cover;
 }
 
+.inspect-image {
+  cursor: zoom-in;
+}
+
+.inspect-modal-image {
+  max-height: 75vh;
+  width: auto;
+}
+
 .skeleton-item {
   height: 120px;
   border-radius: 8px;

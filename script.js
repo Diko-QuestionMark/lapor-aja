@@ -13,6 +13,7 @@ let longitude = null;
 let isSubmitting = false;
 let toastInstance = null;
 let reportModal = null;
+let imageInspectModal = null;
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, function (char) {
@@ -271,9 +272,12 @@ function renderReports() {
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
             src="${escapeHtml(r.image_url)}"
-            class="img-fluid rounded mb-2"
+            class="img-fluid rounded mb-2 inspect-image"
             style="max-width: 260px"
             alt="Foto laporan"
+            title="Klik untuk lihat detail"
+            data-inspect-src="${escapeHtml(r.image_url)}"
+            data-inspect-title="${escapeHtml(r.desc || "Detail Foto Laporan")}"
           />`
         : '<p class="small text-secondary mb-2">Foto tidak tersedia</p>';
     const html = `
@@ -294,6 +298,14 @@ function renderReports() {
   });
 }
 
+function openImageInspect(src, title) {
+  const preview = document.getElementById("imageInspectPreview");
+  const modalTitle = document.getElementById("imageInspectTitle");
+  preview.src = src;
+  modalTitle.textContent = title || "Detail Foto Laporan";
+  imageInspectModal.show();
+}
+
 function initUi() {
   toastInstance = new bootstrap.Toast(document.getElementById("appToast"), {
     delay: 2600,
@@ -301,9 +313,22 @@ function initUi() {
   reportModal = bootstrap.Modal.getOrCreateInstance(
     document.getElementById("reportModal"),
   );
+  imageInspectModal = bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("imageInspectModal"),
+  );
 
   document.getElementById("photo").addEventListener("change", updatePhotoPreview);
   document.getElementById("sortFilter").addEventListener("change", renderReports);
+  document.getElementById("reportList").addEventListener("click", function (event) {
+    const image = event.target.closest(".inspect-image");
+    if (!image) {
+      return;
+    }
+    openImageInspect(
+      image.getAttribute("data-inspect-src"),
+      image.getAttribute("data-inspect-title"),
+    );
+  });
   document
     .getElementById("reportModal")
     .addEventListener("hidden.bs.modal", resetForm);
