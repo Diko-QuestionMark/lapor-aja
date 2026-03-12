@@ -1,2 +1,4 @@
 .env
-laporaja-backend/node_modules/
+node_modules/
+.netlify/
+.vscode/
