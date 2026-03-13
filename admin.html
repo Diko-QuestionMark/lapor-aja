@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LaporAja Admin</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark">
+      <div class="container d-flex justify-content-between">
+        <div>
+          <h1 class="h4 mb-0 text-white">Admin LaporAja</h1>
+          <small class="text-white-50">Kelola status laporan warga</small>
+        </div>
+        <a href="/" class="btn btn-outline-light btn-sm">Ke Halaman User</a>
+      </div>
+    </nav>
+
+    <main class="container py-4 admin-wrap">
+      <section class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+              <label for="adminKey" class="form-label">Admin Key</label>
+              <input id="adminKey" class="form-control" type="password" placeholder="Masukkan ADMIN_KEY" />
+            </div>
+            <div class="col-md-auto">
+              <button id="saveKeyBtn" class="btn btn-dark">Simpan & Muat Data</button>
+            </div>
+          </div>
+          <p class="small text-secondary mt-2 mb-0">
+            Gunakan Environment Variable <code>ADMIN_KEY</code> di Netlify agar endpoint admin terlindungi.
+          </p>
+        </div>
+      </section>
+
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="h5">Daftar Laporan</h2>
+          <div id="adminList" class="mt-3"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>

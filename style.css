@@ -41,8 +41,51 @@
   animation: skeleton-wave 1.2s ease-in-out infinite;
 }
 
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.report-card {
+  border: 1px solid #e8ecf1;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.report-thumb {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  background: #f4f5f7;
+}
+
+.report-desc {
+  min-height: 42px;
+}
+
+.report-empty {
+  border: 1px dashed #d6dce3;
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  color: #6b7785;
+}
+
 .toast-wrap {
   z-index: 1090;
+}
+
+.admin-wrap {
+  max-width: 900px;
+}
+
+.admin-thumb {
+  width: 140px;
+  height: 100px;
+  object-fit: cover;
+  background: #f0f0f0;
 }
 
 @keyframes skeleton-wave {

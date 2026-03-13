@@ -33,10 +33,14 @@ function initDatabase() {
           lat FLOAT,
           lng FLOAT,
           image_url TEXT,
+          status VARCHAR(30) NOT NULL DEFAULT 'Menunggu',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
+      await pool.query(
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'Menunggu'",
+      );
     })();
   }
 

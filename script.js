@@ -127,10 +127,13 @@ function toggleLocation(checkbox) {
 
 function renderLoadingSkeleton() {
   const list = document.getElementById("reportList");
+  document.getElementById("reportCount").textContent = "...";
   list.innerHTML = `
-    <div class="skeleton-item mb-3"></div>
-    <div class="skeleton-item mb-3"></div>
-    <div class="skeleton-item mb-0"></div>
+    <div class="report-grid">
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+    </div>
   `;
 }
 
@@ -257,14 +260,21 @@ function getSortedReports() {
 
 function renderReports() {
   const list = document.getElementById("reportList");
+  const countBadge = document.getElementById("reportCount");
   const sortedReports = getSortedReports();
+  countBadge.textContent = String(sortedReports.length);
 
   if (sortedReports.length === 0) {
-    list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
+    list.innerHTML = `
+      <div class="report-empty">
+        Belum ada laporan. Tekan tombol <strong>+</strong> untuk membuat laporan pertama.
+      </div>
+    `;
     return;
   }
 
-  list.innerHTML = "";
+  list.innerHTML = '<div class="report-grid" id="reportGrid"></div>';
+  const grid = document.getElementById("reportGrid");
 
   sortedReports.forEach(function (r) {
     const hasLocation = r.lat !== null && r.lat !== undefined;
@@ -272,8 +282,7 @@ function renderReports() {
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
             src="${escapeHtml(r.image_url)}"
-            class="img-fluid rounded mb-2 inspect-image"
-            style="max-width: 260px"
+            class="img-fluid rounded mb-2 inspect-image report-thumb"
             alt="Foto laporan"
             title="Klik untuk lihat detail"
             data-inspect-src="${escapeHtml(r.image_url)}"
@@ -281,9 +290,10 @@ function renderReports() {
           />`
         : '<p class="small text-secondary mb-2">Foto tidak tersedia</p>';
     const html = `
-      <div class="border-bottom pb-3 mb-3">
+      <article class="report-card">
         ${imageBlock}
-        <p class="mb-1">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
+        <p class="mb-1 report-desc">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
+        <p class="mb-1"><span class="badge text-bg-secondary">Status: ${escapeHtml(r.status || "Menunggu")}</span></p>
         <p class="mb-1">Lokasi: ${
           hasLocation
             ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
@@ -292,9 +302,9 @@ function renderReports() {
         <p class="small text-secondary mb-0">${
           r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
         }</p>
-      </div>
+      </article>
     `;
-    list.innerHTML += html;
+    grid.innerHTML += html;
   });
 }
 

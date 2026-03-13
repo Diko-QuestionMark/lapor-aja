@@ -23,7 +23,7 @@ exports.handler = async function handler(event) {
 
     if (event.httpMethod === "GET") {
       const result = await pool.query(
-        "SELECT id, description AS desc, lat, lng, image_url, created_at FROM reports ORDER BY created_at DESC",
+        "SELECT id, description AS desc, lat, lng, image_url, status, created_at FROM reports ORDER BY created_at DESC",
       );
       return json(200, result.rows);
     }
@@ -47,7 +47,7 @@ exports.handler = async function handler(event) {
       }
 
       const result = await pool.query(
-        "INSERT INTO reports(description, lat, lng, image_url) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
+        "INSERT INTO reports(description, lat, lng, image_url) VALUES ($1, $2, $3, $4) RETURNING id, status, created_at",
         [desc || "", parsedLat, parsedLng, image_url],
       );
 

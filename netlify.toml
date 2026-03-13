@@ -11,3 +11,8 @@
   from = "/health"
   to = "/.netlify/functions/health"
   status = 200
+
+[[redirects]]
+  from = "/admin/reports"
+  to = "/.netlify/functions/admin-reports"
+  status = 200
