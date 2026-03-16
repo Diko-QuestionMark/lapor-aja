@@ -55,7 +55,8 @@
 .nav-brand-text {
   display: inline-flex;
   flex-direction: column;
-  line-height: 1;
+  line-height: 1.15;
+  gap: 2px;
 }
 
 .nav-brand-title {
