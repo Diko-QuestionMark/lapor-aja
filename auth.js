@@ -23,6 +23,7 @@ function setSession(token, user) {
       id: user.id,
       name: user.name,
       email: user.email,
+      profile_image_url: user.profile_image_url || "",
       loginAt: Date.now(),
     }),
   );
@@ -36,6 +37,24 @@ function showAuthAlert(message, type) {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function setFormLoading(formId, isLoading, loadingText) {
+  const form = document.getElementById(formId);
+  if (!form) {
+    return;
+  }
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if (!submitBtn) {
+    return;
+  }
+  if (!submitBtn.dataset.defaultText) {
+    submitBtn.dataset.defaultText = submitBtn.textContent || "";
+  }
+  submitBtn.disabled = isLoading;
+  submitBtn.textContent = isLoading
+    ? loadingText
+    : submitBtn.dataset.defaultText;
 }
 
 async function requestAuth(path, payload) {
@@ -55,20 +74,24 @@ async function requestAuth(path, payload) {
 
 async function handleRegister(event) {
   event.preventDefault();
+  setFormLoading("registerForm", true, "Memproses...");
   const name = document.getElementById("registerName").value.trim();
   const email = normalizeEmail(document.getElementById("registerEmail").value);
   const password = document.getElementById("registerPassword").value;
 
   if (name.length < 2) {
     showAuthAlert("Nama minimal 2 karakter.", "danger");
+    setFormLoading("registerForm", false);
     return;
   }
   if (!email || !email.includes("@")) {
     showAuthAlert("Format email belum valid.", "danger");
+    setFormLoading("registerForm", false);
     return;
   }
   if (password.length < 6) {
     showAuthAlert("Password minimal 6 karakter.", "danger");
+    setFormLoading("registerForm", false);
     return;
   }
 
@@ -81,11 +104,13 @@ async function handleRegister(event) {
     }, 650);
   } catch (error) {
     showAuthAlert(error.message, "danger");
+    setFormLoading("registerForm", false);
   }
 }
 
 async function handleLogin(event) {
   event.preventDefault();
+  setFormLoading("loginForm", true, "Memproses...");
   const email = normalizeEmail(document.getElementById("loginEmail").value);
   const password = document.getElementById("loginPassword").value;
 
@@ -98,6 +123,7 @@ async function handleLogin(event) {
     }, 650);
   } catch (error) {
     showAuthAlert(error.message, "danger");
+    setFormLoading("loginForm", false);
   }
 }
 

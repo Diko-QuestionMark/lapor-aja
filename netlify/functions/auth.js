@@ -53,7 +53,7 @@ exports.handler = async function handler(event) {
       let created;
       try {
         created = await pool.query(
-          "INSERT INTO users(name, email, password_hash) VALUES($1, $2, $3) RETURNING id, name, email, created_at",
+          "INSERT INTO users(name, email, password_hash) VALUES($1, $2, $3) RETURNING id, name, email, profile_image_url, created_at",
           [name, email, passwordHash],
         );
       } catch (error) {
@@ -81,7 +81,7 @@ exports.handler = async function handler(event) {
       }
 
       const result = await pool.query(
-        "SELECT id, name, email, password_hash FROM users WHERE email = $1 LIMIT 1",
+        "SELECT id, name, email, profile_image_url, password_hash FROM users WHERE email = $1 LIMIT 1",
         [email],
       );
 
@@ -94,7 +94,12 @@ exports.handler = async function handler(event) {
         return json(401, { error: "Email atau password salah" });
       }
 
-      const user = { id: row.id, name: row.name, email: row.email };
+      const user = {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        profile_image_url: row.profile_image_url || "",
+      };
       const token = signToken({
         sub: user.id,
         name: user.name,

@@ -26,3 +26,8 @@
   from = "/auth/login"
   to = "/.netlify/functions/auth?action=login"
   status = 200
+
+[[redirects]]
+  from = "/me"
+  to = "/.netlify/functions/me"
+  status = 200

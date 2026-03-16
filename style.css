@@ -6,6 +6,46 @@
   max-width: 120px;
 }
 
+.search-input {
+  min-width: 210px;
+  max-width: 280px;
+}
+
+.nav-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-plain-btn {
+  color: #fff;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+}
+
+.nav-plain-btn:hover,
+.nav-plain-btn:focus,
+.nav-plain-btn:active {
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #d9e2ef;
+  background: #f3f6fa;
+}
+
 .preview-wrap img {
   max-height: 220px;
   width: 100%;

@@ -6,12 +6,14 @@ const API_BASE =
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
+const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 
 let reports = [];
 let latitude = null;
 let longitude = null;
+let isLocating = false;
 let isSubmitting = false;
 let toastInstance = null;
 let reportModal = null;
@@ -27,28 +29,28 @@ function readSession() {
 }
 
 function renderAuthNav() {
-  const authBtn = document.getElementById("authNavBtn");
-  const userInfo = document.getElementById("authUserInfo");
-  if (!authBtn || !userInfo) {
+  const actionBtn = document.getElementById("authActionBtn");
+  const avatar = document.getElementById("authUserAvatar");
+  const actionText = document.getElementById("authActionText");
+  if (!actionBtn || !actionText || !avatar) {
     return;
   }
 
   const session = readSession();
   if (!session || !session.email || !session.token) {
-    authBtn.textContent = "Login";
-    authBtn.href = "/login.html";
-    authBtn.onclick = null;
-    userInfo.textContent = "";
+    actionBtn.href = "/login.html";
+    actionText.textContent = "Login";
+    avatar.classList.add("d-none");
+    avatar.removeAttribute("src");
     return;
   }
 
-  userInfo.textContent = `Halo, ${session.name || session.email}`;
-  authBtn.textContent = "Keluar";
-  authBtn.href = "#";
-  authBtn.onclick = function (event) {
-    event.preventDefault();
-    localStorage.removeItem(SESSION_KEY);
-    window.location.reload();
+  actionText.textContent = `Halo, ${session.name || session.email}`;
+  actionBtn.href = "/profile.html";
+  avatar.src = session.profile_image_url || DEFAULT_AVATAR_URL;
+  avatar.classList.remove("d-none");
+  avatar.onerror = function () {
+    avatar.src = DEFAULT_AVATAR_URL;
   };
 }
 
@@ -127,15 +129,29 @@ function showPhotoError(message) {
   errorEl.textContent = message;
 }
 
+function updateSubmitState() {
+  const submitBtn = document.getElementById("submitBtn");
+  if (!submitBtn) {
+    return;
+  }
+
+  const file = document.getElementById("photo").files[0];
+  const useLocation = document.getElementById("useLocation").checked;
+  const photoError = validatePhoto(file);
+  const locationReady = latitude !== null && longitude !== null;
+  const locationBlocked = useLocation && (!locationReady || isLocating);
+
+  submitBtn.disabled = Boolean(photoError) || isSubmitting || locationBlocked;
+}
+
 function updatePhotoPreview() {
   const file = document.getElementById("photo").files[0];
   const previewWrap = document.getElementById("photoPreviewWrap");
   const previewImg = document.getElementById("photoPreview");
-  const submitBtn = document.getElementById("submitBtn");
 
   const validationMessage = validatePhoto(file);
   showPhotoError(validationMessage);
-  submitBtn.disabled = Boolean(validationMessage) || isSubmitting;
+  updateSubmitState();
 
   if (!file || validationMessage) {
     previewWrap.classList.add("d-none");
@@ -149,10 +165,16 @@ function updatePhotoPreview() {
 
 function getLocation() {
   const locText = document.getElementById("locText");
+  isLocating = true;
+  latitude = null;
+  longitude = null;
+  updateSubmitState();
 
   if (!navigator.geolocation) {
+    isLocating = false;
     locText.className = "small text-danger mb-0";
     locText.innerText = "Browser tidak mendukung lokasi";
+    updateSubmitState();
     return;
   }
 
@@ -162,17 +184,21 @@ function getLocation() {
 
   navigator.geolocation.getCurrentPosition(
     function (position) {
+      isLocating = false;
       latitude = position.coords.latitude;
       longitude = position.coords.longitude;
       locText.className = "small text-success mb-0";
       locText.innerText =
         "Lokasi: " + latitude.toFixed(6) + ", " + longitude.toFixed(6);
+      updateSubmitState();
     },
     function () {
+      isLocating = false;
       latitude = null;
       longitude = null;
       locText.className = "small text-danger mb-0";
       locText.innerText = "Gagal mendapatkan lokasi";
+      updateSubmitState();
     },
   );
 }
@@ -186,8 +212,10 @@ function toggleLocation(checkbox) {
 
   latitude = null;
   longitude = null;
+  isLocating = false;
   locText.className = "small text-secondary mb-0";
   locText.innerText = "Lokasi dimatikan";
+  updateSubmitState();
 }
 
 function renderLoadingSkeleton() {
@@ -265,12 +293,18 @@ async function submitReport() {
 
   const desc = document.getElementById("desc").value.trim();
   const file = document.getElementById("photo").files[0];
+  const useLocation = document.getElementById("useLocation").checked;
+  const hasLocation = latitude !== null && longitude !== null;
   const submitBtn = document.getElementById("submitBtn");
   const validationMessage = validatePhoto(file);
 
   if (validationMessage) {
     showPhotoError(validationMessage);
     showToast(validationMessage, "error");
+    return;
+  }
+  if (useLocation && !hasLocation) {
+    showToast("Lokasi belum tersedia. Tunggu lokasi didapat atau matikan centang lokasi.", "error");
     return;
   }
 
@@ -319,18 +353,81 @@ async function submitReport() {
     console.error(error);
   } finally {
     isSubmitting = false;
-    submitBtn.disabled = false;
+    updateSubmitState();
     submitBtn.textContent = "Kirim Laporan";
   }
 }
 
 function getSortedReports() {
   const mode = document.getElementById("sortFilter").value;
-  const sorted = reports.slice();
+  const timeMode = document.getElementById("timeFilter").value;
+  const keyword = String(
+    (document.getElementById("searchInput") || { value: "" }).value || "",
+  )
+    .trim()
+    .toLowerCase();
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dayOfWeek = (now.getDay() + 6) % 7;
+  const startOfWeek = startOfDay - dayOfWeek * 24 * 60 * 60 * 1000;
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  const filtered = reports.filter(function (item) {
+    const itemTime = new Date(item.created_at || 0).getTime();
+    if (timeMode === "today" && itemTime < startOfDay) {
+      return false;
+    }
+    if (timeMode === "week" && itemTime < startOfWeek) {
+      return false;
+    }
+    if (timeMode === "month" && itemTime < startOfMonth) {
+      return false;
+    }
+
+    if (!keyword) {
+      return true;
+    }
+    const parts = [
+      item.desc,
+      item.reporter_name,
+      item.reporter_email,
+      item.status,
+      item.lat !== null && item.lat !== undefined ? `${item.lat}, ${item.lng}` : "",
+    ];
+    const haystack = parts
+      .map(function (value) {
+        return String(value || "").toLowerCase();
+      })
+      .join(" ");
+    return haystack.includes(keyword);
+  });
+
+  const sorted = filtered.slice();
   sorted.sort(function (a, b) {
+    const aStatus = String(a.status || "Menunggu").toLowerCase();
+    const bStatus = String(b.status || "Menunggu").toLowerCase();
+    const aUpvotes = Number(a.upvotes || 0);
+    const bUpvotes = Number(b.upvotes || 0);
     const aDate = new Date(a.created_at || 0).getTime();
     const bDate = new Date(b.created_at || 0).getTime();
-    return mode === "oldest" ? aDate - bDate : bDate - aDate;
+    if (mode === "oldest") {
+      return aDate - bDate;
+    }
+    if (mode === "upvotes") {
+      return bUpvotes - aUpvotes || bDate - aDate;
+    }
+    if (mode === "status_waiting") {
+      const aPriority = aStatus === "menunggu" ? 0 : 1;
+      const bPriority = bStatus === "menunggu" ? 0 : 1;
+      return aPriority - bPriority || bDate - aDate;
+    }
+    if (mode === "status_done") {
+      const aPriority = aStatus === "selesai" ? 0 : 1;
+      const bPriority = bStatus === "selesai" ? 0 : 1;
+      return aPriority - bPriority || bDate - aDate;
+    }
+    return bDate - aDate;
   });
   return sorted;
 }
@@ -339,12 +436,19 @@ function renderReports() {
   const list = document.getElementById("reportList");
   const countBadge = document.getElementById("reportCount");
   const sortedReports = getSortedReports();
+  const keyword = String(
+    (document.getElementById("searchInput") || { value: "" }).value || "",
+  ).trim();
   countBadge.textContent = String(sortedReports.length);
 
   if (sortedReports.length === 0) {
     list.innerHTML = `
       <div class="report-empty">
-        Belum ada laporan. Tekan tombol <strong>Buat Laporan</strong> untuk menambah data.
+        ${
+          keyword
+            ? `Tidak ada hasil untuk <strong>${escapeHtml(keyword)}</strong>.`
+            : 'Belum ada laporan. Tekan tombol <strong>Buat Laporan</strong> untuk menambah data.'
+        }
       </div>
     `;
     return;
@@ -430,6 +534,14 @@ function initUi() {
     });
   }
   document.getElementById("sortFilter").addEventListener("change", renderReports);
+  const timeFilter = document.getElementById("timeFilter");
+  if (timeFilter) {
+    timeFilter.addEventListener("change", renderReports);
+  }
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", renderReports);
+  }
   document.getElementById("reportList").addEventListener("click", function (event) {
     const reportCard = event.target.closest(".report-card-clickable");
     if (reportCard) {
