@@ -241,16 +241,18 @@ function renderDetail(report) {
     <div class="mb-3">
       <h2 class="h5 mb-1">${escapeHtml(report.title || "Tanpa Judul")}</h2>
       <div class="small text-secondary mb-1">Laporan #${report.id}</div>
-      <div class="small text-secondary mb-1">Instansi: ${escapeHtml(report.agency || "Umum")}</div>
+      <div class="meta-item mb-1"><i class="bi bi-building"></i>${escapeHtml(report.agency || "Umum")}</div>
       <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
     </div>
     <img src="${escapeHtml(report.image_url || "")}" alt="Foto laporan" class="img-fluid rounded border mb-3 detail-image" />
     <p class="mb-3">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
-    <div class="small text-secondary mb-1">Pelapor: ${escapeHtml(report.reporter_name || "Anonim")} (${escapeHtml(report.reporter_email || "-")})</div>
-    <div class="small text-secondary mb-1">Waktu: ${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
-    <div class="small text-secondary mb-3">Lokasi: ${escapeHtml(formatLocation(report))}</div>
-    <button id="detailVoteBtn" class="btn btn-sm ${voted ? "btn-outline-danger" : "btn-outline-primary"}">
-      ${voted ? "Tarik Dukungan" : "Dukung"} (${Number(report.upvotes || 0)})
+    <div class="meta-item mb-1"><i class="bi bi-person"></i>${escapeHtml(report.reporter_name || "Anonim")} (${escapeHtml(report.reporter_email || "-")})</div>
+    <div class="meta-item mb-1"><i class="bi bi-clock"></i>${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
+    <div class="meta-item mb-3"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</div>
+    <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+      <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+      <span>${voted ? "Didukung" : "Dukung"}</span>
+      <span class="support-count">${Number(report.upvotes || 0)}</span>
     </button>
 
     <hr class="my-4" />

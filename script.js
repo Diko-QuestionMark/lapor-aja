@@ -9,6 +9,7 @@ const MAX_FILE_SIZE_MB = 2;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
+const UPVOTE_STORAGE_KEY = "laporaja_upvoted_ids";
 const AGENCY_OPTIONS = new Set([
   "Umum",
   "Dinas PU",
@@ -28,6 +29,46 @@ let isSubmitting = false;
 let toastInstance = null;
 let reportModal = null;
 let imageInspectModal = null;
+
+function getUpvotedIds() {
+  try {
+    const raw = localStorage.getItem(UPVOTE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function hasUpvoted(reportId) {
+  return getUpvotedIds().includes(reportId);
+}
+
+function markUpvoted(reportId) {
+  const ids = getUpvotedIds();
+  if (!ids.includes(reportId)) {
+    ids.push(reportId);
+    localStorage.setItem(UPVOTE_STORAGE_KEY, JSON.stringify(ids));
+  }
+}
+
+function unmarkUpvoted(reportId) {
+  const ids = getUpvotedIds().filter(function (id) {
+    return id !== reportId;
+  });
+  localStorage.setItem(UPVOTE_STORAGE_KEY, JSON.stringify(ids));
+}
+
+async function voteReport(id, action) {
+  const response = await fetch(API_BASE + "/reports", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, action }),
+  });
+  if (!response.ok) {
+    throw new Error("Gagal memperbarui dukungan.");
+  }
+}
 
 function readSession() {
   try {
@@ -531,6 +572,7 @@ function renderReports() {
     const reporterUserId = Number(r.reporter_user_id || 0);
     const hasReporterProfile = reporterUserId > 0;
     const hasLocation = r.lat !== null && r.lat !== undefined;
+    const isUpvoted = hasUpvoted(reportId);
     const statusMeta = getStatusMeta(r.status);
     const reporterName = String(r.reporter_name || "Anonim");
     const reporterAvatar = String(
@@ -562,7 +604,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${
+              <small class="report-meta"><i class="bi bi-clock text-primary me-1"></i>${
                 r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
               }</small>
             </div>
@@ -578,7 +620,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${
+              <small class="report-meta"><i class="bi bi-clock text-primary me-1"></i>${
                 r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
               }</small>
             </div>
@@ -594,11 +636,32 @@ function renderReports() {
         <div class="report-feed-body">
           <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
-            <span class="badge text-bg-secondary">${escapeHtml(agencyText)}</span>
-            <span class="badge text-bg-light border">Dukungan: ${Number(r.upvotes || 0)}</span>
-            <span class="report-meta">${hasLocation
-              ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
-              : "Lokasi tidak tersedia"}</span>
+            <span class="meta-main">
+              <span class="meta-item"><i class="bi bi-building"></i>${escapeHtml(agencyText)}</span>
+              <span class="meta-sep" aria-hidden="true">&bull;</span>
+              ${
+                hasLocation
+                  ? `<a
+                      href="https://www.google.com/maps?q=${Number(r.lat)},${Number(r.lng)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="meta-item meta-action-link"
+                      data-location-link="1"
+                    ><i class="bi bi-geo-alt"></i>${Number(r.lat).toFixed(4)}, ${Number(r.lng).toFixed(4)}</a>`
+                  : `<span class="meta-item"><i class="bi bi-geo-alt"></i>Lokasi tidak tersedia</span>`
+              }
+            </span>
+            <button
+              type="button"
+              class="meta-like meta-action-like ${isUpvoted ? "is-active" : ""}"
+              data-like-btn="1"
+              data-report-id="${reportId}"
+              aria-label="${isUpvoted ? "Tarik dukungan" : "Dukung laporan"}"
+            >
+              <i class="bi ${isUpvoted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>${Number(
+                r.upvotes || 0,
+              )}
+            </button>
           </div>
         </div>
       </article>
@@ -650,6 +713,49 @@ function initUi() {
     searchInput.addEventListener("input", renderReports);
   }
   document.getElementById("reportList").addEventListener("click", function (event) {
+    const likeBtn = event.target.closest("[data-like-btn='1']");
+    if (likeBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const reportId = Number(likeBtn.getAttribute("data-report-id"));
+      if (!reportId || Number.isNaN(reportId)) {
+        return;
+      }
+      const isLiked = hasUpvoted(reportId);
+      likeBtn.disabled = true;
+      likeBtn.classList.add("is-loading");
+
+      voteReport(reportId, isLiked ? "downvote" : "upvote")
+        .then(function () {
+          if (isLiked) {
+            unmarkUpvoted(reportId);
+          } else {
+            markUpvoted(reportId);
+          }
+          const target = reports.find(function (item) {
+            return Number(item.id) === reportId;
+          });
+          if (target) {
+            const curr = Number(target.upvotes || 0);
+            target.upvotes = isLiked ? Math.max(curr - 1, 0) : curr + 1;
+          }
+          renderReports();
+        })
+        .catch(function () {
+          showToast("Gagal memperbarui dukungan.", "error");
+        })
+        .finally(function () {
+          likeBtn.disabled = false;
+          likeBtn.classList.remove("is-loading");
+        });
+      return;
+    }
+
+    const locationLink = event.target.closest("[data-location-link='1']");
+    if (locationLink) {
+      return;
+    }
+
     const profileLink = event.target.closest("[data-profile-link='1']");
     if (profileLink) {
       return;
