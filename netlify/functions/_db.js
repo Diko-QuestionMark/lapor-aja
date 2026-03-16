@@ -27,6 +27,16 @@ function initDatabase() {
   if (!initPromise) {
     initPromise = (async function runMigration() {
       await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS reports (
           id SERIAL PRIMARY KEY,
           description TEXT,
@@ -35,6 +45,9 @@ function initDatabase() {
           image_url TEXT,
           status VARCHAR(30) NOT NULL DEFAULT 'Menunggu',
           upvotes INTEGER NOT NULL DEFAULT 0,
+          reporter_user_id INTEGER,
+          reporter_name TEXT,
+          reporter_email TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -45,6 +58,9 @@ function initDatabase() {
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS upvotes INTEGER NOT NULL DEFAULT 0",
       );
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_user_id INTEGER");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name TEXT");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
     })();
   }
 

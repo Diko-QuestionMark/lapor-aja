@@ -16,3 +16,13 @@
   from = "/admin/reports"
   to = "/.netlify/functions/admin-reports"
   status = 200
+
+[[redirects]]
+  from = "/auth/register"
+  to = "/.netlify/functions/auth?action=register"
+  status = 200
+
+[[redirects]]
+  from = "/auth/login"
+  to = "/.netlify/functions/auth?action=login"
+  status = 200

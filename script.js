@@ -6,6 +6,8 @@ const API_BASE =
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
+const SESSION_KEY = "laporaja_session_v1";
+const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 
 let reports = [];
 let latitude = null;
@@ -14,6 +16,57 @@ let isSubmitting = false;
 let toastInstance = null;
 let reportModal = null;
 let imageInspectModal = null;
+
+function readSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function renderAuthNav() {
+  const authBtn = document.getElementById("authNavBtn");
+  const userInfo = document.getElementById("authUserInfo");
+  if (!authBtn || !userInfo) {
+    return;
+  }
+
+  const session = readSession();
+  if (!session || !session.email || !session.token) {
+    authBtn.textContent = "Login";
+    authBtn.href = "/login.html";
+    authBtn.onclick = null;
+    userInfo.textContent = "";
+    return;
+  }
+
+  userInfo.textContent = `Halo, ${session.name || session.email}`;
+  authBtn.textContent = "Keluar";
+  authBtn.href = "#";
+  authBtn.onclick = function (event) {
+    event.preventDefault();
+    localStorage.removeItem(SESSION_KEY);
+    window.location.reload();
+  };
+}
+
+function redirectToLoginWithNotice(message) {
+  if (message) {
+    localStorage.setItem(AUTH_NOTICE_KEY, message);
+  }
+  window.location.href = "/login.html";
+}
+
+function requireSessionForReport() {
+  const session = readSession();
+  if (session && session.email && session.token) {
+    return session;
+  }
+  window.location.href = "/login.html";
+  return null;
+}
 
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, function (char) {
@@ -205,6 +258,10 @@ async function submitReport() {
   if (isSubmitting) {
     return;
   }
+  const session = requireSessionForReport();
+  if (!session) {
+    return;
+  }
 
   const desc = document.getElementById("desc").value.trim();
   const file = document.getElementById("photo").files[0];
@@ -237,10 +294,18 @@ async function submitReport() {
 
     const response = await fetch(API_BASE + "/reports", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.token}`,
+      },
       body: JSON.stringify(payload),
     });
 
+    if (response.status === 401) {
+      localStorage.removeItem(SESSION_KEY);
+      redirectToLoginWithNotice("Sesi kamu sudah habis. Silakan login lagi.");
+      return;
+    }
     if (!response.ok) {
       throw new Error("Gagal menyimpan laporan");
     }
@@ -292,6 +357,7 @@ function renderReports() {
     const reportId = Number(r.id);
     const hasLocation = r.lat !== null && r.lat !== undefined;
     const statusMeta = getStatusMeta(r.status);
+    const reporterName = String(r.reporter_name || "Anonim");
     const imageBlock =
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
@@ -308,6 +374,9 @@ function renderReports() {
         ${imageBlock}
         <div>
           <p class="mb-1 report-desc text-truncate-2">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
+          <div class="report-meta-row mb-1">
+            <span class="report-meta">Pelapor: ${escapeHtml(reporterName)}</span>
+          </div>
           <div class="report-meta-row mb-1">
             <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
             <span class="report-meta">${
@@ -349,6 +418,17 @@ function initUi() {
   );
 
   document.getElementById("photo").addEventListener("change", updatePhotoPreview);
+  const createReportBtn = document.getElementById("createReportBtn");
+  if (createReportBtn) {
+    createReportBtn.addEventListener("click", function (event) {
+      const session = readSession();
+      if (!session || !session.email || !session.token) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = "/login.html";
+      }
+    });
+  }
   document.getElementById("sortFilter").addEventListener("change", renderReports);
   document.getElementById("reportList").addEventListener("click", function (event) {
     const reportCard = event.target.closest(".report-card-clickable");
@@ -375,5 +455,6 @@ function initUi() {
 }
 
 initUi();
+renderAuthNav();
 resetForm();
 loadReports();

@@ -1,4 +1,5 @@
 const { pool, initDatabase } = require("./_db");
+const { getBearerToken, verifyToken } = require("./_auth");
 
 function json(statusCode, payload) {
   return {
@@ -7,7 +8,7 @@ function json(statusCode, payload) {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization",
     },
     body: JSON.stringify(payload),
   };
@@ -23,12 +24,18 @@ exports.handler = async function handler(event) {
 
     if (event.httpMethod === "GET") {
       const result = await pool.query(
-        "SELECT id, description AS desc, lat, lng, image_url, status, upvotes, created_at FROM reports ORDER BY created_at DESC",
+        "SELECT id, description AS desc, lat, lng, image_url, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email FROM reports ORDER BY created_at DESC",
       );
       return json(200, result.rows);
     }
 
     if (event.httpMethod === "POST") {
+      const token = getBearerToken(event);
+      const authUser = verifyToken(token);
+      if (!authUser || !authUser.sub || !authUser.email) {
+        return json(401, { error: "Login dibutuhkan untuk mengirim laporan" });
+      }
+
       const body = event.body ? JSON.parse(event.body) : {};
       const { desc, lat, lng, image_url } = body;
 
@@ -46,9 +53,22 @@ exports.handler = async function handler(event) {
         return json(400, { error: "image_url wajib diisi" });
       }
 
+      const safeReporterName = String(authUser.name || "Warga").trim();
+      const safeReporterEmail = String(authUser.email || "")
+        .trim()
+        .toLowerCase();
+
       const result = await pool.query(
-        "INSERT INTO reports(description, lat, lng, image_url) VALUES ($1, $2, $3, $4) RETURNING id, status, upvotes, created_at",
-        [desc || "", parsedLat, parsedLng, image_url],
+        "INSERT INTO reports(description, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email",
+        [
+          desc || "",
+          parsedLat,
+          parsedLng,
+          image_url,
+          Number(authUser.sub),
+          safeReporterName,
+          safeReporterEmail,
+        ],
       );
 
       return json(201, { status: "ok", report: result.rows[0] });

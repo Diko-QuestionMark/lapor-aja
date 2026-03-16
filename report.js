@@ -85,6 +85,7 @@ function renderDetail(report) {
     </div>
     <img src="${report.image_url}" alt="Foto laporan" class="img-fluid rounded border mb-3 detail-image" />
     <p class="mb-3">${report.desc || "Tidak ada deskripsi"}</p>
+    <div class="small text-secondary mb-1">Pelapor: ${report.reporter_name || "Anonim"} (${report.reporter_email || "-"})</div>
     <div class="small text-secondary mb-1">Waktu: ${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
     <div class="small text-secondary mb-3">Lokasi: ${formatLocation(report)}</div>
     <button id="detailVoteBtn" class="btn btn-sm ${voted ? "btn-outline-danger" : "btn-outline-primary"}">

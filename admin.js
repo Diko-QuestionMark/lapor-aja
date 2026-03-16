@@ -87,6 +87,7 @@ function renderAdminReports() {
         <img src="${report.image_url || ""}" alt="Foto laporan" class="admin-thumb rounded border" />
         <div class="flex-grow-1">
           <p class="mb-1"><strong>#${report.id}</strong> - ${report.desc || "Tidak ada deskripsi"}</p>
+          <p class="small text-secondary mb-1">Pelapor: ${report.reporter_name || "Anonim"} (${report.reporter_email || "-"})</p>
           <p class="mb-1"><span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span></p>
           <p class="mb-1"><span class="badge text-bg-primary">Dukungan: ${Number(report.upvotes || 0)}</span></p>
           <p class="small text-secondary mb-2">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : ""}</p>
