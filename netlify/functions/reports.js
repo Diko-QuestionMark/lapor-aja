@@ -24,7 +24,25 @@ exports.handler = async function handler(event) {
 
     if (event.httpMethod === "GET") {
       const result = await pool.query(
-        "SELECT id, description AS desc, lat, lng, image_url, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email FROM reports ORDER BY created_at DESC",
+        `
+          SELECT
+            r.id,
+            r.title,
+            r.description AS desc,
+            r.lat,
+            r.lng,
+            r.image_url,
+            r.status,
+            r.upvotes,
+            r.created_at,
+            r.reporter_user_id,
+            r.reporter_name,
+            r.reporter_email,
+            u.profile_image_url AS reporter_profile_image_url
+          FROM reports r
+          LEFT JOIN users u ON u.id = r.reporter_user_id
+          ORDER BY r.created_at DESC
+        `,
       );
       return json(200, result.rows);
     }
@@ -37,7 +55,7 @@ exports.handler = async function handler(event) {
       }
 
       const body = event.body ? JSON.parse(event.body) : {};
-      const { desc, lat, lng, image_url } = body;
+      const { title, desc, lat, lng, image_url } = body;
 
       const parsedLat = lat === null || lat === undefined ? null : Number(lat);
       const parsedLng = lng === null || lng === undefined ? null : Number(lng);
@@ -52,6 +70,10 @@ exports.handler = async function handler(event) {
       if (!image_url || typeof image_url !== "string") {
         return json(400, { error: "image_url wajib diisi" });
       }
+      const safeTitle = String(title || "").trim();
+      if (safeTitle.length < 3) {
+        return json(400, { error: "Judul minimal 3 karakter" });
+      }
 
       const safeReporterName = String(authUser.name || "Warga").trim();
       const safeReporterEmail = String(authUser.email || "")
@@ -59,8 +81,9 @@ exports.handler = async function handler(event) {
         .toLowerCase();
 
       const result = await pool.query(
-        "INSERT INTO reports(description, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email",
+        "INSERT INTO reports(title, description, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, title, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email",
         [
+          safeTitle,
           desc || "",
           parsedLat,
           parsedLng,

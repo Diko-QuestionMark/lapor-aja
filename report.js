@@ -80,7 +80,8 @@ function renderDetail(report) {
   const container = document.getElementById("detailContainer");
   container.innerHTML = `
     <div class="mb-3">
-      <h2 class="h5 mb-1">Laporan #${report.id}</h2>
+      <h2 class="h5 mb-1">${report.title || "Tanpa Judul"}</h2>
+      <div class="small text-secondary mb-1">Laporan #${report.id}</div>
       <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
     </div>
     <img src="${report.image_url}" alt="Foto laporan" class="img-fluid rounded border mb-3 detail-image" />

@@ -11,17 +11,7 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark">
-      <div class="container d-flex justify-content-between">
-        <div>
-          <h1 class="h4 mb-0">
-            <a href="/index.html" class="text-white text-decoration-none">Admin LaporAja</a>
-          </h1>
-          <small class="text-white-50">Kelola status laporan warga</small>
-        </div>
-        <a href="/" class="btn btn-sm nav-plain-btn">Ke Halaman User</a>
-      </div>
-    </nav>
+    <div id="navbarMount"></div>
 
     <main class="container py-4 admin-wrap">
       <section class="card shadow-sm mb-3">
@@ -50,6 +40,8 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="navbar-component.js"></script>
+    <script src="nav-scroll.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>

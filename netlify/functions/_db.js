@@ -40,6 +40,7 @@ function initDatabase() {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS reports (
           id SERIAL PRIMARY KEY,
+          title TEXT,
           description TEXT,
           lat FLOAT,
           lng FLOAT,
@@ -52,6 +53,7 @@ function initDatabase() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS title TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'Menunggu'",
@@ -63,6 +65,14 @@ function initDatabase() {
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
+      await pool.query(`
+        UPDATE reports
+        SET title = COALESCE(
+          NULLIF(TRIM(SUBSTRING(COALESCE(description, '') FROM 1 FOR 80)), ''),
+          'Laporan Warga'
+        )
+        WHERE title IS NULL OR TRIM(title) = ''
+      `);
     })();
   }
 

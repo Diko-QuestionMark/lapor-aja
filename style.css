@@ -37,6 +37,28 @@
   box-shadow: none;
 }
 
+body.has-fixed-navbar {
+  padding-top: var(--site-navbar-height, 68px);
+}
+
+.site-navbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1030;
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+  will-change: transform;
+}
+
+.site-navbar:not(.nav-hidden) {
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+
+.site-navbar.nav-hidden {
+  transform: translateY(calc(-100% - 2px));
+}
+
 .profile-avatar {
   width: 96px;
   height: 96px;
@@ -72,18 +94,16 @@
 .report-list {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .report-card {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 12px;
   background: #fff;
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 14px;
-  align-items: start;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 .report-card-clickable {
@@ -97,18 +117,57 @@
   transform: translateY(-1px);
 }
 
-.report-thumb {
-  width: 96px;
-  height: 96px;
+.report-feed-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.report-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.report-author-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
   object-fit: cover;
-  background: #f4f5f7;
-  border-radius: 8px;
+  border: 1px solid #d7deea;
+  background: #eef2f7;
+}
+
+.report-cover {
+  width: 100%;
+  height: 460px;
+  object-fit: contain;
+  background: #d6dbe2;
+  display: block;
+}
+
+.report-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7a8796;
+  font-size: 0.9rem;
+}
+
+.report-feed-body {
+  padding: 12px 14px 14px;
+}
+
+.report-title {
+  font-size: 1rem;
+  margin: 0 0 6px;
 }
 
 .report-desc {
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.4;
-  margin-top: 2px;
 }
 
 .text-truncate-2 {
@@ -192,7 +251,7 @@
   max-height: 460px;
   width: 100%;
   object-fit: contain;
-  background: #f7f9fb;
+  background: #d6dbe2;
 }
 
 @keyframes skeleton-wave {
@@ -205,14 +264,7 @@
 }
 
 @media (max-width: 560px) {
-  .report-card {
-    grid-template-columns: 78px 1fr;
-    gap: 10px;
-    padding: 10px;
-  }
-
-  .report-thumb {
-    width: 78px;
-    height: 78px;
+  .report-cover {
+    height: 300px;
   }
 }

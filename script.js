@@ -129,19 +129,47 @@ function showPhotoError(message) {
   errorEl.textContent = message;
 }
 
+function validateTitle(value) {
+  const title = String(value || "").trim();
+  if (title.length < 3) {
+    return "Judul minimal 3 karakter.";
+  }
+  return "";
+}
+
+function showTitleError(message) {
+  const errorEl = document.getElementById("titleError");
+  if (!errorEl) {
+    return;
+  }
+  if (!message) {
+    errorEl.classList.add("d-none");
+    errorEl.textContent = "";
+    return;
+  }
+  errorEl.classList.remove("d-none");
+  errorEl.textContent = message;
+}
+
 function updateSubmitState() {
   const submitBtn = document.getElementById("submitBtn");
   if (!submitBtn) {
     return;
   }
 
+  const title = document.getElementById("title").value;
   const file = document.getElementById("photo").files[0];
   const useLocation = document.getElementById("useLocation").checked;
+  const titleError = validateTitle(title);
   const photoError = validatePhoto(file);
   const locationReady = latitude !== null && longitude !== null;
   const locationBlocked = useLocation && (!locationReady || isLocating);
 
-  submitBtn.disabled = Boolean(photoError) || isSubmitting || locationBlocked;
+  submitBtn.disabled =
+    Boolean(photoError) ||
+    Boolean(titleError) ||
+    isSubmitting ||
+    locationBlocked;
 }
 
 function updatePhotoPreview() {
@@ -161,6 +189,13 @@ function updatePhotoPreview() {
 
   previewImg.src = URL.createObjectURL(file);
   previewWrap.classList.remove("d-none");
+}
+
+function updateTitleState() {
+  const title = document.getElementById("title").value;
+  const titleError = validateTitle(title);
+  showTitleError(titleError);
+  updateSubmitState();
 }
 
 function getLocation() {
@@ -274,9 +309,11 @@ async function loadReports() {
 }
 
 function resetForm() {
+  document.getElementById("title").value = "";
   document.getElementById("desc").value = "";
   document.getElementById("photo").value = "";
   document.getElementById("useLocation").checked = false;
+  showTitleError("");
   showPhotoError("");
   toggleLocation(document.getElementById("useLocation"));
   updatePhotoPreview();
@@ -291,13 +328,20 @@ async function submitReport() {
     return;
   }
 
+  const title = document.getElementById("title").value.trim();
   const desc = document.getElementById("desc").value.trim();
   const file = document.getElementById("photo").files[0];
   const useLocation = document.getElementById("useLocation").checked;
   const hasLocation = latitude !== null && longitude !== null;
   const submitBtn = document.getElementById("submitBtn");
+  const titleValidationMessage = validateTitle(title);
   const validationMessage = validatePhoto(file);
 
+  if (titleValidationMessage) {
+    showTitleError(titleValidationMessage);
+    showToast(titleValidationMessage, "error");
+    return;
+  }
   if (validationMessage) {
     showPhotoError(validationMessage);
     showToast(validationMessage, "error");
@@ -320,6 +364,7 @@ async function submitReport() {
       '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan laporan...';
 
     const payload = {
+      title: title,
       desc: desc,
       lat: latitude,
       lng: longitude,
@@ -389,6 +434,7 @@ function getSortedReports() {
       return true;
     }
     const parts = [
+      item.title,
       item.desc,
       item.reporter_name,
       item.reporter_email,
@@ -462,35 +508,42 @@ function renderReports() {
     const hasLocation = r.lat !== null && r.lat !== undefined;
     const statusMeta = getStatusMeta(r.status);
     const reporterName = String(r.reporter_name || "Anonim");
+    const reporterAvatar = String(
+      r.reporter_profile_image_url || DEFAULT_AVATAR_URL,
+    );
+    const titleText = String(r.title || "Laporan Warga");
     const imageBlock =
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
             src="${escapeHtml(r.image_url)}"
-            class="img-fluid rounded mb-2 inspect-image report-thumb"
+            class="img-fluid report-cover"
             alt="Foto laporan"
-            title="Klik untuk lihat detail"
-            data-inspect-src="${escapeHtml(r.image_url)}"
-            data-inspect-title="${escapeHtml(r.desc || "Detail Foto Laporan")}"
           />`
-        : '<p class="small text-secondary mb-2">Foto tidak tersedia</p>';
+        : '<div class="report-cover report-cover-empty">Foto tidak tersedia</div>';
     const html = `
       <article class="report-card report-card-clickable" data-report-id="${reportId}">
-        ${imageBlock}
-        <div>
-          <p class="mb-1 report-desc text-truncate-2">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
-          <div class="report-meta-row mb-1">
-            <span class="report-meta">Pelapor: ${escapeHtml(reporterName)}</span>
-          </div>
-          <div class="report-meta-row mb-1">
-            <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
-            <span class="report-meta">${
+        <div class="report-feed-head">
+          <div class="report-author">
+            <img
+              src="${escapeHtml(reporterAvatar)}"
+              class="report-author-avatar"
+              alt="Avatar pelapor"
+              onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+            />
+            <div>
+            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+            <small class="report-meta">${
               r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
-            }</span>
+            }</small>
+            </div>
           </div>
+          <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
+        </div>
+        ${imageBlock}
+        <div class="report-feed-body">
+          <h4 class="report-title">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
             <span class="badge text-bg-light border">Dukungan: ${Number(r.upvotes || 0)}</span>
-          </div>
-          <div class="report-meta-row mt-1">
             <span class="report-meta">${hasLocation
               ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
               : "Lokasi tidak tersedia"}</span>
@@ -522,6 +575,7 @@ function initUi() {
   );
 
   document.getElementById("photo").addEventListener("change", updatePhotoPreview);
+  document.getElementById("title").addEventListener("input", updateTitleState);
   const createReportBtn = document.getElementById("createReportBtn");
   if (createReportBtn) {
     createReportBtn.addEventListener("click", function (event) {
@@ -551,15 +605,6 @@ function initUi() {
       }
       return;
     }
-
-    const image = event.target.closest(".inspect-image");
-    if (!image) {
-      return;
-    }
-    openImageInspect(
-      image.getAttribute("data-inspect-src"),
-      image.getAttribute("data-inspect-title"),
-    );
   });
   document
     .getElementById("reportModal")
@@ -567,6 +612,7 @@ function initUi() {
 }
 
 initUi();
+document.addEventListener("navbar:ready", renderAuthNav);
 renderAuthNav();
 resetForm();
 loadReports();

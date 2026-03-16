@@ -221,7 +221,8 @@ function renderMyReports(myReports) {
         <article class="border rounded p-3 mb-2">
           <div class="d-flex justify-content-between align-items-start gap-2">
             <div>
-              <div class="fw-semibold">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
+              <div class="fw-semibold">${escapeHtml(report.title || "Tanpa Judul")}</div>
+              <div class="small mb-1">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
               <div class="small text-secondary">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
             </div>
             <span class="badge status-badge ${status.className}">${status.label}</span>
