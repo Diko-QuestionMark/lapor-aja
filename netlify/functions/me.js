@@ -16,7 +16,7 @@ function json(statusCode, payload) {
 
 async function getUserById(userId) {
   const result = await pool.query(
-    "SELECT id, name, email, profile_image_url, created_at FROM users WHERE id = $1 LIMIT 1",
+    "SELECT id, name, email, role, profile_image_url, created_at FROM users WHERE id = $1 LIMIT 1",
     [userId],
   );
   return result.rowCount ? result.rows[0] : null;
@@ -83,7 +83,7 @@ exports.handler = async function handler(event) {
 
       values.push(userId);
       const updated = await pool.query(
-        `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING id, name, email, profile_image_url, created_at`,
+        `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING id, name, email, role, profile_image_url, created_at`,
         values,
       );
       if (updated.rowCount === 0) {
@@ -102,6 +102,7 @@ exports.handler = async function handler(event) {
         sub: user.id,
         name: user.name,
         email: user.email,
+        role: user.role || "user",
       });
 
       return json(200, { status: "ok", user, token: nextToken });

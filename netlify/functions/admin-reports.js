@@ -1,6 +1,8 @@
 const { pool, initDatabase } = require("./_db");
+const { getBearerToken, verifyToken } = require("./_auth");
 
 const ALLOWED_STATUS = new Set(["Menunggu", "Diproses", "Selesai"]);
+const ADMIN_DISPLAY_NAME = process.env.ADMIN_DISPLAY_NAME || "Admin";
 
 function json(statusCode, payload) {
   return {
@@ -9,20 +11,19 @@ function json(statusCode, payload) {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET,PATCH,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type,X-Admin-Key",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization",
     },
     body: JSON.stringify(payload),
   };
 }
 
 function isAuthorized(event) {
-  const required = process.env.ADMIN_KEY;
-  if (!required) {
-    return true;
+  const token = getBearerToken(event);
+  const authUser = verifyToken(token);
+  if (!authUser || !authUser.sub) {
+    return false;
   }
-  const headerValue =
-    event.headers["x-admin-key"] || event.headers["X-Admin-Key"] || "";
-  return headerValue === required;
+  return String(authUser.role || "").toLowerCase() === "admin";
 }
 
 exports.handler = async function handler(event) {
@@ -39,7 +40,40 @@ exports.handler = async function handler(event) {
 
     if (event.httpMethod === "GET") {
       const result = await pool.query(
-        "SELECT id, title, description AS desc, agency, lat, lng, image_url, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email FROM reports ORDER BY created_at DESC",
+        `
+          SELECT
+            r.id,
+            r.title,
+            r.description AS desc,
+            r.agency,
+            r.lat,
+            r.lng,
+            r.image_url,
+            r.status,
+            r.admin_note,
+            r.admin_evidence_url,
+            r.admin_updated_at,
+            r.admin_updated_by,
+            r.upvotes,
+            r.created_at,
+            r.reporter_user_id,
+            r.reporter_name,
+            r.reporter_email,
+            COALESCE(
+              rm.image_urls,
+              CASE
+                WHEN COALESCE(TRIM(r.image_url), '') <> '' THEN ARRAY[r.image_url]::TEXT[]
+                ELSE ARRAY[]::TEXT[]
+              END
+            ) AS image_urls
+          FROM reports r
+          LEFT JOIN LATERAL (
+            SELECT ARRAY_AGG(url ORDER BY sort_order ASC, id ASC) AS image_urls
+            FROM report_media
+            WHERE report_id = r.id
+          ) rm ON TRUE
+          ORDER BY r.created_at DESC
+        `,
       );
       return json(200, result.rows);
     }
@@ -48,6 +82,8 @@ exports.handler = async function handler(event) {
       const body = event.body ? JSON.parse(event.body) : {};
       const id = Number(body.id);
       const status = body.status;
+      const note = String(body.admin_note || "").trim();
+      const evidenceUrl = String(body.admin_evidence_url || "").trim();
 
       if (!id || Number.isNaN(id)) {
         return json(400, { error: "ID laporan tidak valid" });
@@ -55,10 +91,16 @@ exports.handler = async function handler(event) {
       if (!ALLOWED_STATUS.has(status)) {
         return json(400, { error: "Status tidak valid" });
       }
+      if (note.length > 0 && note.length < 3) {
+        return json(400, { error: "Catatan respons minimal 3 karakter" });
+      }
+      if (evidenceUrl && !/^https?:\/\//i.test(evidenceUrl)) {
+        return json(400, { error: "URL bukti tidak valid" });
+      }
 
       const result = await pool.query(
-        "UPDATE reports SET status = $1 WHERE id = $2 RETURNING id, status",
-        [status, id],
+        "UPDATE reports SET status = $1, admin_note = $2, admin_evidence_url = $3, admin_updated_at = CURRENT_TIMESTAMP, admin_updated_by = $4 WHERE id = $5 RETURNING id, status, admin_note, admin_evidence_url, admin_updated_at, admin_updated_by",
+        [status, note || null, evidenceUrl || null, ADMIN_DISPLAY_NAME, id],
       );
 
       if (result.rowCount === 0) {

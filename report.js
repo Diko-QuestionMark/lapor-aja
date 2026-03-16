@@ -8,6 +8,93 @@ const SESSION_KEY = "laporaja_session_v1";
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const COMMENT_MAX_LENGTH = 300;
 
+async function loadResponseFeedback(reportId) {
+  const root = document.getElementById("responseFeedbackWrap");
+  if (!root) {
+    return;
+  }
+
+  root.innerHTML = '<p class="small text-secondary mb-0">Memuat penilaian respons...</p>';
+  try {
+    const session = readSession();
+    const headers = session && session.token ? { Authorization: `Bearer ${session.token}` } : {};
+    const response = await fetch(`${API_BASE}/report-feedback?report_id=${reportId}`, {
+      headers,
+    });
+    if (!response.ok) {
+      throw new Error("Gagal memuat penilaian respons.");
+    }
+    const data = await response.json();
+    const myVote = data.my_vote;
+    const helpfulCount = Number(data.helpful_count || 0);
+    const unhelpfulCount = Number(data.unhelpful_count || 0);
+
+    root.innerHTML = `
+      <div class="d-flex align-items-center flex-wrap gap-2">
+        <button id="feedbackHelpfulBtn" type="button" class="btn btn-sm ${myVote === true ? "btn-primary" : "btn-outline-primary"}">
+          Membantu (${helpfulCount})
+        </button>
+        <button id="feedbackUnhelpfulBtn" type="button" class="btn btn-sm ${myVote === false ? "btn-danger" : "btn-outline-danger"}">
+          Tidak membantu (${unhelpfulCount})
+        </button>
+      </div>
+      <p id="feedbackHelpText" class="small text-secondary mb-0 mt-2">Penilaian ini untuk kualitas respons instansi.</p>
+    `;
+
+    const helpfulBtn = document.getElementById("feedbackHelpfulBtn");
+    const unhelpfulBtn = document.getElementById("feedbackUnhelpfulBtn");
+    const helpText = document.getElementById("feedbackHelpText");
+
+    async function sendFeedback(helpful) {
+      const currentSession = readSession();
+      if (!currentSession || !currentSession.token) {
+        window.location.href = "/login.html";
+        return;
+      }
+
+      helpfulBtn.disabled = true;
+      unhelpfulBtn.disabled = true;
+      helpText.textContent = "Menyimpan penilaian...";
+      try {
+        const save = await fetch(`${API_BASE}/report-feedback`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentSession.token}`,
+          },
+          body: JSON.stringify({ report_id: reportId, helpful }),
+        });
+        const payload = await save.json().catch(function () {
+          return {};
+        });
+        if (save.status === 401) {
+          window.location.href = "/login.html";
+          return;
+        }
+        if (!save.ok) {
+          throw new Error(payload.error || "Gagal menyimpan penilaian.");
+        }
+        helpText.textContent = "Penilaian tersimpan.";
+        await loadResponseFeedback(reportId);
+      } catch (error) {
+        helpText.textContent = error.message || "Gagal menyimpan penilaian.";
+      } finally {
+        helpfulBtn.disabled = false;
+        unhelpfulBtn.disabled = false;
+      }
+    }
+
+    helpfulBtn.addEventListener("click", function () {
+      sendFeedback(true);
+    });
+    unhelpfulBtn.addEventListener("click", function () {
+      sendFeedback(false);
+    });
+  } catch (_) {
+    root.innerHTML = '<p class="small text-danger mb-0">Penilaian respons tidak bisa dimuat.</p>';
+  }
+}
+
 function getStatusMeta(status) {
   const label = String(status || "Menunggu").trim();
   const normalized = label.toLowerCase();
@@ -262,6 +349,9 @@ function renderDetail(report) {
         class="meta-item meta-action-link"
       ><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</a>`
     : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</span>`;
+  const adminNote = String(report.admin_note || "").trim();
+  const adminEvidence = String(report.admin_evidence_url || "").trim();
+  const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
   const container = document.getElementById("detailContainer");
   const galleryId = `reportGallery${Number(report.id)}`;
   const galleryBlock =
@@ -317,6 +407,34 @@ function renderDetail(report) {
       <span class="support-count">${Number(report.upvotes || 0)}</span>
       </button>
     </div>
+
+    <hr class="my-4" />
+    <section class="mb-3 report-response-section">
+      <h3 class="h6 mb-2">Respons Instansi</h3>
+      ${
+        hasAdminResponse
+          ? `
+            <div class="response-panel">
+              <p class="mb-2">${escapeHtml(adminNote || "Instansi sudah memberi update.")}</p>
+              ${
+                adminEvidence
+                  ? `<p class="mb-2"><a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer">Lihat foto bukti tindak lanjut</a></p>`
+                  : ""
+              }
+              <p class="small text-secondary mb-0 response-panel-meta">
+                ${
+                  report.admin_updated_at
+                    ? `Diperbarui ${new Date(report.admin_updated_at).toLocaleString("id-ID")}`
+                    : "Belum ada waktu update"
+                }
+                ${report.admin_updated_by ? ` oleh ${escapeHtml(report.admin_updated_by)}` : ""}
+              </p>
+            </div>
+            <div id="responseFeedbackWrap" class="mt-2"></div>
+          `
+          : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
+      }
+    </section>
 
     <hr class="my-4" />
     <section>
@@ -414,6 +532,9 @@ function renderDetail(report) {
 
   wireCommentForm(report.id);
   loadComments(report.id);
+  if (hasAdminResponse) {
+    loadResponseFeedback(report.id);
+  }
 }
 
 async function init() {

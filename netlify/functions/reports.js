@@ -9,6 +9,7 @@ const ALLOWED_AGENCIES = new Set([
   "Dinas Lingkungan Hidup",
   "PDAM",
   "PLN",
+  "Makan Bergizi Gratis (MBG)",
   "Satpol PP",
 ]);
 const MAX_PHOTO_COUNT = 5;
@@ -46,6 +47,10 @@ exports.handler = async function handler(event) {
             r.lng,
             r.image_url,
             r.status,
+            r.admin_note,
+            r.admin_evidence_url,
+            r.admin_updated_at,
+            r.admin_updated_by,
             r.upvotes,
             r.created_at,
             r.reporter_user_id,

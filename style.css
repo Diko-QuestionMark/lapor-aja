@@ -428,6 +428,104 @@ body.has-fixed-navbar {
   background: #f0f0f0;
 }
 
+.admin-report-card {
+  border-color: #d7dce3;
+  background: #fff;
+}
+
+.admin-report-card:hover {
+  border-color: #adb5bd;
+  box-shadow: 0 6px 16px rgba(33, 37, 41, 0.08);
+}
+
+.admin-card-thumb {
+  width: 148px;
+  height: 106px;
+  object-fit: cover;
+  background: #eef1f4;
+  border-color: #d7dce3 !important;
+  flex-shrink: 0;
+}
+
+.admin-card-content {
+  min-width: 0;
+}
+
+.admin-card-id {
+  font-weight: 700;
+  color: #212529;
+  font-size: 0.86rem;
+  border: 1px solid #d7dce3;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #f8f9fa;
+}
+
+.admin-card-chevron {
+  color: #212529;
+  opacity: 0.5;
+}
+
+.admin-card-title {
+  font-size: 1rem;
+  line-height: 1.35;
+  color: #111418;
+}
+
+.admin-card-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.admin-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+.admin-card-meta i {
+  color: #212529;
+  opacity: 0.82;
+}
+
+.admin-card-desc {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.86rem;
+  color: #30363d;
+}
+
+.admin-card-desc i {
+  color: #212529;
+  opacity: 0.82;
+  margin-top: 2px;
+}
+
+.admin-card-response {
+  border: 1px solid #d7dce3;
+  border-left: 3px solid #212529;
+  border-radius: 8px;
+  background: #f8f9fb;
+  padding: 8px 10px;
+}
+
+.admin-card-response-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #212529;
+}
+
+.admin-card-response-text {
+  font-size: 0.84rem;
+  color: #3f4752;
+}
+
 .detail-image {
   max-height: 460px;
   width: 100%;
@@ -477,6 +575,23 @@ body.has-fixed-navbar {
 .support-btn.is-active .support-count {
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
+}
+
+.response-panel {
+  border: 1px solid #dfe3ea;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.response-panel-meta {
+  padding-top: 4px;
+  border-top: 1px solid #e6e9ef;
+}
+
+.response-panel-empty {
+  border-color: #e3e6ec;
+  background: #f8fafc;
 }
 
 @keyframes skeleton-wave {

@@ -10,6 +10,7 @@ const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
+const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
 
 let currentSession = null;
 let currentUser = null;
@@ -93,6 +94,15 @@ function renderAvatar(user) {
   avatar.onerror = function () {
     avatar.src = DEFAULT_AVATAR_URL;
   };
+}
+
+function renderAdminAccess(session, user) {
+  const adminBtn = document.getElementById("adminDashboardBtn");
+  if (!adminBtn) {
+    return;
+  }
+  const role = String((user && user.role) || (session && session.role) || "").toLowerCase();
+  adminBtn.classList.toggle("d-none", role !== "admin");
 }
 
 function setSaveLoading(isLoading) {
@@ -203,6 +213,90 @@ function renderStats(myReports) {
     .join("");
 }
 
+function getNotificationSeenKey(userId) {
+  return `${NOTIFICATION_SEEN_PREFIX}_${Number(userId || 0)}`;
+}
+
+function readNotificationSeenAt(userId) {
+  const key = getNotificationSeenKey(userId);
+  const raw = localStorage.getItem(key);
+  const parsed = Number(raw || 0);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function writeNotificationSeenAt(userId, timestamp) {
+  const key = getNotificationSeenKey(userId);
+  localStorage.setItem(key, String(Math.max(0, Number(timestamp) || 0)));
+}
+
+function getNotificationItems(myReports) {
+  return myReports
+    .map(function (report) {
+      const updatedAt = new Date(report.admin_updated_at || 0).getTime();
+      if (!updatedAt || Number.isNaN(updatedAt)) {
+        return null;
+      }
+      const statusLabel = getStatusMeta(report.status).label;
+      const summary = String(report.admin_note || "").trim();
+      return {
+        reportId: Number(report.id),
+        title: String(report.title || "Tanpa Judul"),
+        statusLabel: statusLabel,
+        summary: summary,
+        updatedAt: updatedAt,
+      };
+    })
+    .filter(Boolean)
+    .sort(function (a, b) {
+      return b.updatedAt - a.updatedAt;
+    });
+}
+
+function renderNotifications(myReports, user) {
+  const root = document.getElementById("profileNotifications");
+  const badge = document.getElementById("notificationUnreadBadge");
+  if (!root || !badge) {
+    return;
+  }
+
+  const items = getNotificationItems(myReports);
+  if (items.length === 0) {
+    badge.classList.add("d-none");
+    root.innerHTML =
+      '<p class="text-secondary mb-0">Belum ada update dari instansi untuk laporan kamu.</p>';
+    return;
+  }
+
+  const seenAt = readNotificationSeenAt(user.id);
+  const unreadCount = items.filter(function (item) {
+    return item.updatedAt > seenAt;
+  }).length;
+  badge.textContent = `${unreadCount} baru`;
+  badge.classList.toggle("d-none", unreadCount === 0);
+
+  root.innerHTML = items
+    .slice(0, 12)
+    .map(function (item) {
+      return `
+        <article class="border rounded p-3 mb-2">
+          <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+            <div>
+              <div class="fw-semibold">#${item.reportId} - ${escapeHtml(item.title)}</div>
+              <div class="small text-secondary">${new Date(item.updatedAt).toLocaleString("id-ID")}</div>
+            </div>
+            <span class="badge status-badge ${getStatusMeta(item.statusLabel).className}">${item.statusLabel}</span>
+          </div>
+          <p class="small mb-2 mt-2">${escapeHtml(item.summary || "Instansi memperbarui respons laporan kamu.")}</p>
+          <a class="small" href="/report.html?id=${item.reportId}">Lihat detail laporan</a>
+        </article>
+      `;
+    })
+    .join("");
+
+  const latestTimestamp = items[0].updatedAt;
+  writeNotificationSeenAt(user.id, latestTimestamp);
+}
+
 function getReportPreviewUrl(report) {
   if (Array.isArray(report.image_urls) && report.image_urls.length > 0) {
     return String(report.image_urls[0] || "").trim();
@@ -284,6 +378,7 @@ async function loadReportsForUser(user) {
     return Number(item.reporter_user_id || 0) === Number(user.id);
   });
   renderStats(myReports);
+  renderNotifications(myReports, user);
   renderMyReports(myReports);
 }
 
@@ -298,6 +393,7 @@ async function loadProfile() {
     currentUser = data.user;
     renderAvatar(currentUser);
     renderProfileInfo(currentUser, currentSession);
+    renderAdminAccess(currentSession, currentUser);
     document.getElementById("profileName").value = currentUser.name || "";
 
     const nextSession = {
@@ -305,6 +401,7 @@ async function loadProfile() {
       id: currentUser.id,
       name: currentUser.name,
       email: currentUser.email,
+      role: currentUser.role || currentSession.role || "user",
       profile_image_url: currentUser.profile_image_url || "",
     };
     writeSession(nextSession);
@@ -317,6 +414,8 @@ async function loadProfile() {
       '<p class="text-danger mb-0">Tidak bisa memuat profil.</p>';
     document.getElementById("profileReports").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa memuat laporan profil.</p>';
+    document.getElementById("profileNotifications").innerHTML =
+      '<p class="text-danger mb-0">Tidak bisa memuat notifikasi.</p>';
     document.getElementById("profileStats").innerHTML = "";
   }
 }
@@ -364,6 +463,7 @@ async function handleSaveProfile(event) {
       id: currentUser.id,
       name: currentUser.name,
       email: currentUser.email,
+      role: currentUser.role || currentSession.role || "user",
       profile_image_url: currentUser.profile_image_url || "",
     };
     writeSession(nextSession);
@@ -371,6 +471,7 @@ async function handleSaveProfile(event) {
 
     renderAvatar(currentUser);
     renderProfileInfo(currentUser, currentSession);
+    renderAdminAccess(currentSession, currentUser);
     document.getElementById("profilePhoto").value = "";
     showAlert("Profil berhasil diperbarui.", "success");
     await loadReportsForUser(currentUser);

@@ -32,6 +32,7 @@ function initDatabase() {
           name TEXT NOT NULL,
           email TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'user',
           profile_image_url TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -47,6 +48,10 @@ function initDatabase() {
           lng FLOAT,
           image_url TEXT,
           status VARCHAR(30) NOT NULL DEFAULT 'Menunggu',
+          admin_note TEXT,
+          admin_evidence_url TEXT,
+          admin_updated_at TIMESTAMP,
+          admin_updated_by TEXT,
           upvotes INTEGER NOT NULL DEFAULT 0,
           reporter_user_id INTEGER,
           reporter_name TEXT,
@@ -64,6 +69,17 @@ function initDatabase() {
           user_avatar_url TEXT,
           comment TEXT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS report_response_feedback (
+          id SERIAL PRIMARY KEY,
+          report_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          helpful BOOLEAN NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(report_id, user_id)
         )
       `);
 
@@ -87,15 +103,26 @@ function initDatabase() {
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'Menunggu'",
       );
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_note TEXT");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_evidence_url TEXT");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_updated_at TIMESTAMP");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_updated_by TEXT");
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS upvotes INTEGER NOT NULL DEFAULT 0",
       );
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_user_id INTEGER");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS user_avatar_url TEXT");
       await pool.query("ALTER TABLE report_media ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0");
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_report_feedback_report_id ON report_response_feedback(report_id)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_report_feedback_user_id ON report_response_feedback(user_id)",
+      );
 
       await pool.query(`
         INSERT INTO report_media (report_id, url, sort_order)
@@ -106,6 +133,11 @@ function initDatabase() {
          AND m.sort_order = 0
         WHERE COALESCE(TRIM(r.image_url), '') <> ''
           AND m.id IS NULL
+      `);
+      await pool.query(`
+        UPDATE users
+        SET role = 'user'
+        WHERE role IS NULL OR TRIM(role) = ''
       `);
       await pool.query(`
         UPDATE reports

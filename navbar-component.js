@@ -19,6 +19,7 @@
     if (path.endsWith("/login.html")) return "login";
     if (path.endsWith("/profile.html")) return "profile";
     if (path.endsWith("/report.html")) return "report";
+    if (path.endsWith("/admin-report.html")) return "admin-report";
     if (path.endsWith("/user.html")) return "user";
     if (path.endsWith("/admin.html")) return "admin";
     return "index";
@@ -52,25 +53,34 @@
         navClass: "navbar-dark bg-primary",
         brandText: "LaporAja",
         subtitle: "Profil Akun",
-        rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml:
+          '<button type="button" class="btn btn-sm nav-plain-btn" data-nav-back="1">Kembali</button>',
       },
       report: {
         navClass: "navbar-dark bg-primary",
         brandText: "LaporAja",
         subtitle: "Detail laporan warga",
-        rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml:
+          '<button type="button" class="btn btn-sm nav-plain-btn" data-nav-back="1">Kembali</button>',
       },
       user: {
         navClass: "navbar-dark bg-primary",
         brandText: "LaporAja",
         subtitle: "Profil Pelapor",
-        rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml:
+          '<button type="button" class="btn btn-sm nav-plain-btn" data-nav-back="1">Kembali</button>',
       },
       admin: {
         navClass: "navbar-dark bg-dark",
         brandText: "Admin LaporAja",
         subtitle: "Kelola status laporan warga",
         rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Ke Halaman User</a>',
+      },
+      "admin-report": {
+        navClass: "navbar-dark bg-dark",
+        brandText: "Admin LaporAja",
+        subtitle: "Detail penanganan laporan",
+        rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
     };
     return byPage[key] || byPage.index;
@@ -115,6 +125,16 @@
       .replace("__RIGHT_SLOT__", config.rightHtml || "");
 
     mount.innerHTML = html;
+    const backBtn = mount.querySelector("[data-nav-back='1']");
+    if (backBtn) {
+      backBtn.addEventListener("click", function () {
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        window.location.href = "/index.html";
+      });
+    }
     document.dispatchEvent(new CustomEvent("navbar:ready"));
   }
 

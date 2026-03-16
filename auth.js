@@ -6,6 +6,11 @@ const API_BASE =
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 
+function getPostLoginPath(user) {
+  const role = String((user && user.role) || "").toLowerCase();
+  return role === "admin" ? "/admin.html" : "/index.html";
+}
+
 function readSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -23,6 +28,7 @@ function setSession(token, user) {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role || "user",
       profile_image_url: user.profile_image_url || "",
       loginAt: Date.now(),
     }),
@@ -98,9 +104,16 @@ async function handleRegister(event) {
   try {
     const data = await requestAuth("/auth/register", { name, email, password });
     setSession(data.token, data.user);
-    showAuthAlert("Registrasi berhasil. Mengarahkan ke halaman warga...", "success");
+    const nextPath = getPostLoginPath(data.user);
+    const isAdmin = nextPath === "/admin.html";
+    showAuthAlert(
+      isAdmin
+        ? "Registrasi berhasil. Mengarahkan ke dashboard admin..."
+        : "Registrasi berhasil. Mengarahkan ke halaman warga...",
+      "success",
+    );
     window.setTimeout(function () {
-      window.location.href = "/index.html";
+      window.location.href = nextPath;
     }, 650);
   } catch (error) {
     showAuthAlert(error.message, "danger");
@@ -117,9 +130,16 @@ async function handleLogin(event) {
   try {
     const data = await requestAuth("/auth/login", { email, password });
     setSession(data.token, data.user);
-    showAuthAlert("Login berhasil. Mengarahkan ke halaman warga...", "success");
+    const nextPath = getPostLoginPath(data.user);
+    const isAdmin = nextPath === "/admin.html";
+    showAuthAlert(
+      isAdmin
+        ? "Login berhasil. Mengarahkan ke dashboard admin..."
+        : "Login berhasil. Mengarahkan ke halaman warga...",
+      "success",
+    );
     window.setTimeout(function () {
-      window.location.href = "/index.html";
+      window.location.href = nextPath;
     }, 650);
   } catch (error) {
     showAuthAlert(error.message, "danger");
@@ -142,7 +162,8 @@ function initAuthPage() {
 
   const session = readSession();
   if (session && session.token && session.email) {
-    window.location.href = "/index.html";
+    const role = String(session.role || "").toLowerCase();
+    window.location.href = role === "admin" ? "/admin.html" : "/index.html";
     return;
   }
   loginForm.addEventListener("submit", handleLogin);

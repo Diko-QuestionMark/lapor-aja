@@ -22,6 +22,7 @@ const AGENCY_OPTIONS = new Set([
   "Dinas Lingkungan Hidup",
   "PDAM",
   "PLN",
+  "Makan Bergizi Gratis (MBG)",
   "Satpol PP",
 ]);
 
@@ -83,6 +84,17 @@ function readSession() {
   }
 }
 
+function updateCreateReportAccess(session) {
+  const createReportBtn = document.getElementById("createReportBtn");
+  if (!createReportBtn) {
+    return;
+  }
+  const role = String((session && session.role) || "").toLowerCase();
+  const isAdmin = role === "admin";
+  createReportBtn.classList.toggle("d-none", isAdmin);
+  createReportBtn.disabled = isAdmin;
+}
+
 function renderAuthNav() {
   const actionBtn = document.getElementById("authActionBtn");
   const avatar = document.getElementById("authUserAvatar");
@@ -93,6 +105,7 @@ function renderAuthNav() {
 
   const session = readSession();
   if (!session || !session.email || !session.token) {
+    updateCreateReportAccess(null);
     actionBtn.href = "/login.html";
     actionText.textContent = "Login";
     avatar.classList.add("d-none");
@@ -100,6 +113,7 @@ function renderAuthNav() {
     return;
   }
 
+  updateCreateReportAccess(session);
   actionText.textContent = `Halo, ${session.name || session.email}`;
   actionBtn.href = "/profile.html";
   avatar.src = session.profile_image_url || DEFAULT_AVATAR_URL;

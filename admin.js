@@ -4,13 +4,27 @@ const API_BASE =
     ? "http://localhost:3000"
     : window.location.origin);
 
-const ADMIN_KEY_STORAGE = "laporaja_admin_key";
-const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai"];
+const SESSION_KEY = "laporaja_session_v1";
 
 let adminReports = [];
 
 function getAgencyFilter() {
   const el = document.getElementById("agencyFilter");
+  return el ? String(el.value || "all") : "all";
+}
+
+function getSearchQuery() {
+  const el = document.getElementById("adminSearchInput");
+  return el ? String(el.value || "").trim().toLowerCase() : "";
+}
+
+function getSortMode() {
+  const el = document.getElementById("adminSortFilter");
+  return el ? String(el.value || "newest") : "newest";
+}
+
+function getTimeMode() {
+  const el = document.getElementById("adminTimeFilter");
   return el ? String(el.value || "all") : "all";
 }
 
@@ -26,17 +40,51 @@ function getStatusMeta(status) {
   return { label: "Menunggu", className: "status-menunggu" };
 }
 
-function getAdminKey() {
-  return localStorage.getItem(ADMIN_KEY_STORAGE) || "";
+function readSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
 }
 
-function setAdminKey(value) {
-  localStorage.setItem(ADMIN_KEY_STORAGE, value);
+function requireAdminSession() {
+  const session = readSession();
+  const role = String(session && session.role ? session.role : "").toLowerCase();
+  if (!session || !session.token || role !== "admin") {
+    window.location.href = "/login.html";
+    return null;
+  }
+  return session;
 }
 
 function authHeaders() {
-  const key = getAdminKey();
-  return key ? { "X-Admin-Key": key } : {};
+  const session = readSession();
+  return session && session.token
+    ? { Authorization: `Bearer ${session.token}` }
+    : {};
+}
+
+function escapeHtml(text) {
+  return String(text || "").replace(/[&<>"']/g, function (char) {
+    return (
+      {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char] || char
+    );
+  });
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+  return new Date(value).toLocaleString("id-ID");
 }
 
 function showError(message) {
@@ -55,7 +103,7 @@ async function loadAdminReports() {
       headers: authHeaders(),
     });
     if (response.status === 401) {
-      showError("Admin key salah atau belum diisi.");
+      showError("Akses admin tidak valid. Login sebagai admin.");
       return;
     }
     if (!response.ok) {
@@ -73,11 +121,79 @@ async function loadAdminReports() {
 function renderAdminReports() {
   const list = document.getElementById("adminList");
   const agencyFilter = getAgencyFilter();
-  const visibleReports = adminReports.filter(function (report) {
-    if (agencyFilter === "all") {
+  const searchQuery = getSearchQuery();
+  const sortMode = getSortMode();
+  const timeMode = getTimeMode();
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dayOfWeek = (now.getDay() + 6) % 7;
+  const startOfWeek = startOfDay - dayOfWeek * 24 * 60 * 60 * 1000;
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  const filteredReports = adminReports.filter(function (report) {
+    const agencyMatch =
+      agencyFilter === "all" || String(report.agency || "Umum") === agencyFilter;
+    if (!agencyMatch) {
+      return false;
+    }
+
+    const reportTime = new Date(report.created_at || 0).getTime();
+    if (timeMode === "today" && reportTime < startOfDay) {
+      return false;
+    }
+    if (timeMode === "week" && reportTime < startOfWeek) {
+      return false;
+    }
+    if (timeMode === "month" && reportTime < startOfMonth) {
+      return false;
+    }
+
+    if (!searchQuery) {
       return true;
     }
-    return String(report.agency || "Umum") === agencyFilter;
+
+    const haystack = [
+      report.id,
+      report.title,
+      report.desc,
+      report.reporter_name,
+      report.reporter_email,
+      report.status,
+      report.agency,
+    ]
+      .map(function (value) {
+        return String(value || "").toLowerCase();
+      })
+      .join(" ");
+    return haystack.includes(searchQuery);
+  });
+
+  const visibleReports = filteredReports.slice();
+  visibleReports.sort(function (a, b) {
+    const aStatus = String(a.status || "Menunggu").toLowerCase();
+    const bStatus = String(b.status || "Menunggu").toLowerCase();
+    const aUpvotes = Number(a.upvotes || 0);
+    const bUpvotes = Number(b.upvotes || 0);
+    const aDate = new Date(a.created_at || 0).getTime();
+    const bDate = new Date(b.created_at || 0).getTime();
+    if (sortMode === "oldest") {
+      return aDate - bDate;
+    }
+    if (sortMode === "upvotes") {
+      return bUpvotes - aUpvotes || bDate - aDate;
+    }
+    if (sortMode === "status_waiting") {
+      const aPriority = aStatus === "menunggu" ? 0 : 1;
+      const bPriority = bStatus === "menunggu" ? 0 : 1;
+      return aPriority - bPriority || bDate - aDate;
+    }
+    if (sortMode === "status_done") {
+      const aPriority = aStatus === "selesai" ? 0 : 1;
+      const bPriority = bStatus === "selesai" ? 0 : 1;
+      return aPriority - bPriority || bDate - aDate;
+    }
+    return bDate - aDate;
   });
 
   if (visibleReports.length === 0) {
@@ -89,111 +205,125 @@ function renderAdminReports() {
   visibleReports.forEach(function (report) {
     const statusMeta = getStatusMeta(report.status);
     const agencyLabel = String(report.agency || "Umum");
-    const selectOptions = STATUS_OPTIONS.map(function (item) {
-      const selected = item === report.status ? "selected" : "";
-      return `<option value="${item}" ${selected}>${item}</option>`;
-    }).join("");
+    const imageUrl = String(report.image_url || "").trim();
+    const reportTitle = String(report.title || "Tanpa Judul");
+    const reporterName = String(report.reporter_name || "Anonim");
+    const reporterEmail = String(report.reporter_email || "-");
+    const createdAtLabel = formatDateTime(report.created_at);
+    const responseSummary = String(report.admin_note || "").trim()
+      ? report.admin_note
+      : "Belum ada respons instansi.";
 
     const row = document.createElement("div");
-    row.className = "border rounded p-3 mb-3";
+    row.className = "admin-report-card border rounded p-3 mb-3 report-card-clickable";
+    row.setAttribute("data-report-id", String(Number(report.id)));
+    row.setAttribute("role", "link");
+    row.setAttribute("tabindex", "0");
+    row.setAttribute("aria-label", `Lihat detail penanganan laporan ${Number(report.id)}`);
     row.innerHTML = `
-      <div class="d-flex flex-column flex-md-row gap-3">
-        <img src="${report.image_url || ""}" alt="Foto laporan" class="admin-thumb rounded border" />
-        <div class="flex-grow-1">
-          <p class="mb-1"><strong>#${report.id}</strong> - ${report.title || "Tanpa Judul"}</p>
-          <p class="small mb-1">${report.desc || "Tidak ada deskripsi"}</p>
-          <p class="small text-secondary mb-1">Pelapor: ${report.reporter_name || "Anonim"} (${report.reporter_email || "-"})</p>
-          <p class="mb-1"><span class="badge text-bg-secondary">Instansi: ${agencyLabel}</span></p>
-          <p class="mb-1"><span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span></p>
-          <p class="mb-1"><span class="badge text-bg-primary">Dukungan: ${Number(report.upvotes || 0)}</span></p>
-          <p class="small text-secondary mb-2">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : ""}</p>
-          <div class="row g-2 align-items-center">
-            <div class="col-sm-6 col-md-4">
-              <select class="form-select form-select-sm admin-status-select" data-id="${report.id}">
-                ${selectOptions}
-              </select>
+      <div class="d-flex flex-column flex-md-row gap-3 align-items-start">
+        <img
+          src="${escapeHtml(imageUrl || "/img/defaultAvatar.jpg")}"
+          alt="Foto laporan"
+          class="admin-card-thumb rounded border"
+        />
+        <div class="admin-card-content flex-grow-1 w-100">
+          <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="admin-card-id">#${report.id}</span>
+              <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
             </div>
-            <div class="col-sm-6 col-md-auto">
-              <button class="btn btn-sm btn-dark admin-save-status" data-id="${report.id}">Simpan Status</button>
-            </div>
+            <span class="admin-card-chevron" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+          </div>
+          <h3 class="admin-card-title mb-2">${escapeHtml(reportTitle)}</h3>
+          <div class="admin-card-meta-row mb-2">
+            <span class="admin-card-meta"><i class="bi bi-building"></i>${escapeHtml(agencyLabel)}</span>
+            <span class="admin-card-meta"><i class="bi bi-person"></i>${escapeHtml(reporterName)} (${escapeHtml(reporterEmail)})</span>
+            <span class="admin-card-meta"><i class="bi bi-clock"></i>${createdAtLabel}</span>
+            <span class="admin-card-meta"><i class="bi bi-hand-thumbs-up"></i>${Number(report.upvotes || 0)} dukungan</span>
+          </div>
+          <p class="admin-card-desc mb-2">
+            <i class="bi bi-card-text"></i>
+            <span>${escapeHtml(report.desc || "Tidak ada deskripsi")}</span>
+          </p>
+          <div class="admin-card-response">
+            <p class="admin-card-response-label mb-1">Ringkasan respons</p>
+            <p class="admin-card-response-text mb-0">${escapeHtml(responseSummary)}</p>
           </div>
         </div>
       </div>
     `;
+    row.addEventListener("click", function (event) {
+      const interactiveTarget = event.target.closest("a, button, input, select, textarea, label");
+      if (interactiveTarget) {
+        return;
+      }
+      window.location.href = `/admin-report.html?id=${Number(report.id)}`;
+    });
+    row.addEventListener("keydown", function (event) {
+      const key = event.key;
+      if (key !== "Enter" && key !== " ") {
+        return;
+      }
+      const interactiveTarget = event.target.closest("a, button, input, select, textarea, label");
+      if (interactiveTarget) {
+        return;
+      }
+      event.preventDefault();
+      window.location.href = `/admin-report.html?id=${Number(report.id)}`;
+    });
     list.appendChild(row);
   });
 }
 
-async function updateStatus(id, status) {
-  const response = await fetch(API_BASE + "/admin/reports", {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-    },
-    body: JSON.stringify({ id, status }),
-  });
-
-  if (response.status === 401) {
-    throw new Error("Admin key salah.");
-  }
-  if (!response.ok) {
-    throw new Error("Gagal update status.");
-  }
-}
-
 function wireEvents() {
-  document.getElementById("saveKeyBtn").addEventListener("click", function () {
-    const value = document.getElementById("adminKey").value.trim();
-    setAdminKey(value);
-    loadAdminReports();
-  });
-
-  document.getElementById("adminList").addEventListener("click", async function (event) {
-    const button = event.target.closest(".admin-save-status");
-    if (!button) {
-      return;
-    }
-
-    const reportId = Number(button.getAttribute("data-id"));
-    const select = document.querySelector(
-      `.admin-status-select[data-id="${reportId}"]`,
-    );
-    const nextStatus = select.value;
-
-    button.disabled = true;
-    button.textContent = "Menyimpan...";
-    try {
-      await updateStatus(reportId, nextStatus);
-      button.textContent = "Tersimpan";
-      await loadAdminReports();
-    } catch (error) {
-      console.error(error);
-      button.textContent = "Gagal";
-      alert(error.message);
-    } finally {
-      setTimeout(function () {
-        button.disabled = false;
-        button.textContent = "Simpan Status";
-      }, 700);
-    }
-  });
-
   const agencyFilterEl = document.getElementById("agencyFilter");
   if (agencyFilterEl) {
     agencyFilterEl.addEventListener("change", renderAdminReports);
   }
+  const searchInputEl = document.getElementById("adminSearchInput");
+  if (searchInputEl) {
+    searchInputEl.addEventListener("input", renderAdminReports);
+  }
+  const sortFilterEl = document.getElementById("adminSortFilter");
+  if (sortFilterEl) {
+    sortFilterEl.addEventListener("change", renderAdminReports);
+  }
+  const timeFilterEl = document.getElementById("adminTimeFilter");
+  if (timeFilterEl) {
+    timeFilterEl.addEventListener("change", renderAdminReports);
+  }
+  const resetBtn = document.getElementById("adminResetFilterBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", function () {
+      const agencyFilter = document.getElementById("agencyFilter");
+      const searchInput = document.getElementById("adminSearchInput");
+      const sortFilter = document.getElementById("adminSortFilter");
+      const timeFilter = document.getElementById("adminTimeFilter");
+      if (agencyFilter) {
+        agencyFilter.value = "all";
+      }
+      if (searchInput) {
+        searchInput.value = "";
+      }
+      if (sortFilter) {
+        sortFilter.value = "newest";
+      }
+      if (timeFilter) {
+        timeFilter.value = "all";
+      }
+      renderAdminReports();
+    });
+  }
 }
 
 function init() {
-  const key = getAdminKey();
-  document.getElementById("adminKey").value = key;
-  wireEvents();
-  if (key) {
-    loadAdminReports();
-  } else {
-    showError("Masukkan admin key dulu untuk memuat laporan.");
+  const session = requireAdminSession();
+  if (!session) {
+    return;
   }
+  wireEvents();
+  loadAdminReports();
 }
 
 init();

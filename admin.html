@@ -8,44 +8,89 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body class="bg-light">
     <div id="navbarMount"></div>
 
     <main class="container py-4 pengecilan">
-      <section class="card shadow-sm mb-3">
-        <div class="card-body">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-              <label for="adminKey" class="form-label">Admin Key</label>
-              <input id="adminKey" class="form-control" type="password" placeholder="Masukkan ADMIN_KEY" />
-            </div>
-            <div class="col-md-auto">
-              <button id="saveKeyBtn" class="btn btn-dark">Simpan & Muat Data</button>
-            </div>
-          </div>
-          <p class="small text-secondary mt-2 mb-0">
-            Gunakan Environment Variable <code>ADMIN_KEY</code> di Netlify agar endpoint admin terlindungi.
-          </p>
-        </div>
-      </section>
-
       <section class="card shadow-sm">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
             <h2 class="h5 mb-0">Daftar Laporan</h2>
-            <select id="agencyFilter" class="form-select form-select-sm" style="max-width: 260px;">
-              <option value="all">Semua Instansi</option>
-              <option value="Umum">Umum</option>
-              <option value="Dinas PU">Dinas PU</option>
-              <option value="Dinas Perhubungan">Dinas Perhubungan</option>
-              <option value="Dinas Kebersihan">Dinas Kebersihan</option>
-              <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
-              <option value="PDAM">PDAM</option>
-              <option value="PLN">PLN</option>
-              <option value="Satpol PP">Satpol PP</option>
-            </select>
+            <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
+              <input
+                id="adminSearchInput"
+                type="search"
+                class="form-control form-control-sm search-input search-inline-input"
+                placeholder="Cari laporan..."
+                autocomplete="off"
+              />
+              <button
+                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#adminFilterPanel"
+                aria-expanded="false"
+                aria-controls="adminFilterPanel"
+              >
+                <i class="bi bi-funnel"></i>
+                <span>Filter</span>
+              </button>
+            </div>
+          </div>
+          <div class="collapse mb-3" id="adminFilterPanel">
+            <div class="border rounded p-2">
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <label for="adminSortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
+                  <select id="adminSortFilter" class="form-select form-select-sm">
+                    <option value="newest">Terbaru</option>
+                    <option value="oldest">Terlama</option>
+                    <option value="upvotes">Dukungan Terbanyak</option>
+                    <option value="status_waiting">Menunggu Dulu</option>
+                    <option value="status_done">Selesai Dulu</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="adminTimeFilter" class="form-label form-label-sm mb-1 small text-secondary">Rentang Waktu</label>
+                  <select id="adminTimeFilter" class="form-select form-select-sm">
+                    <option value="all">Semua Waktu</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="week">Minggu Ini</option>
+                    <option value="month">Bulan Ini</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="agencyFilter" class="form-label form-label-sm mb-1 small text-secondary">Instansi</label>
+                  <div class="d-flex align-items-center gap-2 w-100">
+                    <select id="agencyFilter" class="form-select form-select-sm flex-grow-1">
+                      <option value="all">Semua Instansi</option>
+                      <option value="Umum">Umum</option>
+                      <option value="Dinas PU">Dinas PU</option>
+                      <option value="Dinas Perhubungan">Dinas Perhubungan</option>
+                      <option value="Dinas Kebersihan">Dinas Kebersihan</option>
+                      <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+                      <option value="PDAM">PDAM</option>
+                      <option value="PLN">PLN</option>
+                      <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>
+                      <option value="Satpol PP">Satpol PP</option>
+                    </select>
+                    <button
+                      id="adminResetFilterBtn"
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div id="adminList" class="mt-3"></div>
         </div>
