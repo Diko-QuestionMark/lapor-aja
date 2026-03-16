@@ -268,3 +268,23 @@ body.has-fixed-navbar {
     height: 300px;
   }
 }
+
+@media (min-width: 992px) {
+  .report-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-cover {
+    height: 360px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .report-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .report-cover {
+    height: 300px;
+  }
+}
