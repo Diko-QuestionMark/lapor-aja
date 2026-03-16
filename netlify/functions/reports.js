@@ -74,6 +74,9 @@ exports.handler = async function handler(event) {
       if (safeTitle.length < 3) {
         return json(400, { error: "Judul minimal 3 karakter" });
       }
+      if (safeTitle.length > 100) {
+        return json(400, { error: "Judul maksimal 100 karakter" });
+      }
 
       const safeReporterName = String(authUser.name || "Warga").trim();
       const safeReporterEmail = String(authUser.email || "")

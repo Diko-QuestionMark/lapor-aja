@@ -31,3 +31,8 @@
   from = "/me"
   to = "/.netlify/functions/me"
   status = 200
+
+[[redirects]]
+  from = "/users"
+  to = "/.netlify/functions/users"
+  status = 200

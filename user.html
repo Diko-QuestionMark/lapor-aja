@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profil Pelapor - LaporAja</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-light">
+    <div id="navbarMount"></div>
+
+    <main class="container py-4 pengecilan">
+      <section class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div id="userAlert" class="alert d-none py-2 mb-3" role="alert"></div>
+          <div class="d-flex align-items-center gap-3">
+            <img id="userAvatar" class="profile-avatar" alt="Avatar pelapor" />
+            <div>
+              <h2 id="userName" class="h5 mb-1">Memuat...</h2>
+              <p id="userMeta" class="small text-secondary mb-0">Memuat data pelapor...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="h6 mb-3">Laporan Terbaru Pelapor</h3>
+          <div id="userReports" class="text-secondary">Memuat laporan...</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="navbar-component.js"></script>
+    <script src="nav-scroll.js"></script>
+    <script src="user.js"></script>
+  </body>
+</html>

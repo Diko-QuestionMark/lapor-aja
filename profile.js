@@ -9,6 +9,7 @@ const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
+const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 
 let currentSession = null;
 let currentUser = null;
@@ -71,12 +72,6 @@ function ensureLoggedIn() {
   return session;
 }
 
-function avatarFallback(name) {
-  const initial = String(name || "U").trim().charAt(0).toUpperCase() || "U";
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='100%' height='100%' fill='#dbe4f2'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' font-family='Arial' fill='#4b5d77'>${initial}</text></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
 function renderProfileInfo(user, session) {
   const el = document.getElementById("profileInfo");
   const loginAt = session.loginAt
@@ -94,7 +89,10 @@ function renderProfileInfo(user, session) {
 
 function renderAvatar(user) {
   const avatar = document.getElementById("profileAvatar");
-  avatar.src = user.profile_image_url || avatarFallback(user.name);
+  avatar.src = user.profile_image_url || DEFAULT_AVATAR_URL;
+  avatar.onerror = function () {
+    avatar.src = DEFAULT_AVATAR_URL;
+  };
 }
 
 function setSaveLoading(isLoading) {

@@ -19,6 +19,7 @@
     if (path.endsWith("/login.html")) return "login";
     if (path.endsWith("/profile.html")) return "profile";
     if (path.endsWith("/report.html")) return "report";
+    if (path.endsWith("/user.html")) return "user";
     if (path.endsWith("/admin.html")) return "admin";
     return "index";
   }
@@ -57,6 +58,12 @@
         navClass: "navbar-dark bg-primary",
         brandText: "LaporAja",
         subtitle: "Detail laporan warga",
+        rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+      },
+      user: {
+        navClass: "navbar-dark bg-primary",
+        brandText: "LaporAja",
+        subtitle: "Profil Pelapor",
         rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
       admin: {

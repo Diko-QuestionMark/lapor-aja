@@ -134,6 +134,9 @@ function validateTitle(value) {
   if (title.length < 3) {
     return "Judul minimal 3 karakter.";
   }
+  if (title.length > 100) {
+    return "Judul maksimal 100 karakter.";
+  }
   return "";
 }
 
@@ -505,6 +508,8 @@ function renderReports() {
 
   sortedReports.forEach(function (r) {
     const reportId = Number(r.id);
+    const reporterUserId = Number(r.reporter_user_id || 0);
+    const hasReporterProfile = reporterUserId > 0;
     const hasLocation = r.lat !== null && r.lat !== undefined;
     const statusMeta = getStatusMeta(r.status);
     const reporterName = String(r.reporter_name || "Anonim");
@@ -520,9 +525,29 @@ function renderReports() {
             alt="Foto laporan"
           />`
         : '<div class="report-cover report-cover-empty">Foto tidak tersedia</div>';
-    const html = `
-      <article class="report-card report-card-clickable" data-report-id="${reportId}">
-        <div class="report-feed-head">
+    const authorBlock = hasReporterProfile
+      ? `
+          <a
+            href="/user.html?id=${reporterUserId}"
+            class="report-author report-author-link"
+            data-profile-link="1"
+            aria-label="Lihat profil pelapor ${escapeHtml(reporterName)}"
+          >
+            <img
+              src="${escapeHtml(reporterAvatar)}"
+              class="report-author-avatar"
+              alt="Avatar pelapor"
+              onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+            />
+            <div>
+              <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+              <small class="report-meta">${
+                r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+              }</small>
+            </div>
+          </a>
+        `
+      : `
           <div class="report-author">
             <img
               src="${escapeHtml(reporterAvatar)}"
@@ -531,17 +556,22 @@ function renderReports() {
               onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
             />
             <div>
-            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-            <small class="report-meta">${
-              r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
-            }</small>
+              <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+              <small class="report-meta">${
+                r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+              }</small>
             </div>
           </div>
+        `;
+    const html = `
+      <article class="report-card report-card-clickable" data-report-id="${reportId}">
+        <div class="report-feed-head">
+          ${authorBlock}
           <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
         </div>
         ${imageBlock}
         <div class="report-feed-body">
-          <h4 class="report-title">${escapeHtml(titleText)}</h4>
+          <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
             <span class="badge text-bg-light border">Dukungan: ${Number(r.upvotes || 0)}</span>
             <span class="report-meta">${hasLocation
@@ -597,6 +627,10 @@ function initUi() {
     searchInput.addEventListener("input", renderReports);
   }
   document.getElementById("reportList").addEventListener("click", function (event) {
+    const profileLink = event.target.closest("[data-profile-link='1']");
+    if (profileLink) {
+      return;
+    }
     const reportCard = event.target.closest(".report-card-clickable");
     if (reportCard) {
       const reportId = Number(reportCard.getAttribute("data-report-id"));
