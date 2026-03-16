@@ -203,6 +203,13 @@ function renderStats(myReports) {
     .join("");
 }
 
+function getReportPreviewUrl(report) {
+  if (Array.isArray(report.image_urls) && report.image_urls.length > 0) {
+    return String(report.image_urls[0] || "").trim();
+  }
+  return String(report.image_url || "").trim();
+}
+
 function renderMyReports(myReports) {
   const root = document.getElementById("profileReports");
   if (myReports.length === 0) {
@@ -212,25 +219,63 @@ function renderMyReports(myReports) {
   }
 
   root.innerHTML = myReports
-    .slice(0, 8)
     .map(function (report) {
       const status = getStatusMeta(report.status);
+      const previewUrl = getReportPreviewUrl(report);
+      const reportId = Number(report.id);
       return `
         <article class="border rounded p-3 mb-2">
           <div class="d-flex justify-content-between align-items-start gap-2">
-            <div>
-              <div class="fw-semibold">${escapeHtml(report.title || "Tanpa Judul")}</div>
-              <div class="small mb-1">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
-              <div class="small text-secondary">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
+            <div class="d-flex align-items-start gap-2 flex-grow-1">
+              <img
+                src="${escapeHtml(previewUrl || DEFAULT_AVATAR_URL)}"
+                class="profile-report-thumb"
+                alt="Preview laporan"
+                onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+              />
+              <div class="w-100">
+                <div class="fw-semibold">${escapeHtml(report.title || "Tanpa Judul")}</div>
+                <div class="small mb-1">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
+                <div class="small text-secondary">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
+                <div class="small text-secondary mt-1">Dukungan: ${Number(report.upvotes || 0)}</div>
+              </div>
             </div>
             <span class="badge status-badge ${status.className}">${status.label}</span>
           </div>
-          <div class="small text-secondary mt-2">Dukungan: ${Number(report.upvotes || 0)}</div>
-          <a class="small" href="/report.html?id=${Number(report.id)}">Lihat detail</a>
+          <div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+            <a class="small" href="/report.html?id=${reportId}">Lihat detail</a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-delete-report="${reportId}"
+            >
+              Hapus
+            </button>
+          </div>
         </article>
       `;
     })
     .join("");
+}
+
+async function handleDeleteReport(reportId) {
+  if (!reportId || Number.isNaN(reportId)) {
+    return;
+  }
+  const shouldDelete = window.confirm("Yakin ingin menghapus laporan ini?");
+  if (!shouldDelete) {
+    return;
+  }
+
+  try {
+    await apiFetch(`/reports?id=${reportId}`, { method: "DELETE" });
+    showAlert("Laporan berhasil dihapus.", "success");
+    if (currentUser) {
+      await loadReportsForUser(currentUser);
+    }
+  } catch (error) {
+    showAlert(error.message || "Gagal menghapus laporan.", "danger");
+  }
 }
 
 async function loadReportsForUser(user) {
@@ -360,6 +405,17 @@ function init() {
         logoutConfirmModal.hide();
       }
       window.location.href = "/login.html";
+    });
+  }
+  const reportsRoot = document.getElementById("profileReports");
+  if (reportsRoot) {
+    reportsRoot.addEventListener("click", function (event) {
+      const deleteBtn = event.target.closest("[data-delete-report]");
+      if (!deleteBtn) {
+        return;
+      }
+      const reportId = Number(deleteBtn.getAttribute("data-delete-report"));
+      handleDeleteReport(reportId);
     });
   }
   loadProfile();

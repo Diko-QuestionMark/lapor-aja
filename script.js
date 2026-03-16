@@ -5,7 +5,11 @@ const API_BASE =
     : window.location.origin);
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
-const MAX_FILE_SIZE_MB = 2;
+const HARD_MAX_FILE_SIZE_MB = 15;
+const COMPRESS_TRIGGER_MB = 2;
+const COMPRESS_TARGET_MB = 1.8;
+const COMPRESS_MAX_DIMENSION = 1600;
+const MAX_PHOTO_COUNT = 5;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
@@ -156,17 +160,116 @@ function showToast(message, type) {
   toastInstance.show();
 }
 
-function validatePhoto(file) {
-  if (!file) {
-    return "Foto wajib dipilih dulu.";
+function getSelectedPhotos() {
+  return Array.from(document.getElementById("photo").files || []);
+}
+
+function validatePhotos(files) {
+  if (!Array.isArray(files) || files.length === 0) {
+    return "Minimal pilih 1 foto.";
   }
-  if (!file.type.startsWith("image/")) {
-    return "File harus berupa gambar.";
+  if (files.length > MAX_PHOTO_COUNT) {
+    return `Maksimal ${MAX_PHOTO_COUNT} foto per laporan.`;
   }
-  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-    return `Ukuran foto maksimal ${MAX_FILE_SIZE_MB}MB.`;
+
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) {
+      return "Semua file harus berupa gambar.";
+    }
+    if (file.size > HARD_MAX_FILE_SIZE_MB * 1024 * 1024) {
+      return `Ada foto yang terlalu besar. Maksimal ${HARD_MAX_FILE_SIZE_MB}MB per foto.`;
+    }
   }
   return "";
+}
+
+async function compressImageIfNeeded(file) {
+  if (!(file instanceof File) || !file.type.startsWith("image/")) {
+    return file;
+  }
+
+  if (file.size <= COMPRESS_TRIGGER_MB * 1024 * 1024) {
+    return file;
+  }
+
+  const dataUrl = await new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      resolve(reader.result);
+    };
+    reader.onerror = function () {
+      reject(new Error("Gagal membaca file foto."));
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const image = await new Promise(function (resolve, reject) {
+    const img = new Image();
+    img.onload = function () {
+      resolve(img);
+    };
+    img.onerror = function () {
+      reject(new Error("Gagal memuat foto untuk kompresi."));
+    };
+    img.src = dataUrl;
+  });
+
+  let width = image.width;
+  let height = image.height;
+  const maxSide = Math.max(width, height);
+  if (maxSide > COMPRESS_MAX_DIMENSION) {
+    const scale = COMPRESS_MAX_DIMENSION / maxSide;
+    width = Math.max(1, Math.round(width * scale));
+    height = Math.max(1, Math.round(height * scale));
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return file;
+  }
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const targetBytes = COMPRESS_TARGET_MB * 1024 * 1024;
+  let quality = 0.85;
+  let bestBlob = null;
+
+  for (let i = 0; i < 6; i += 1) {
+    // Iterasi kualitas agar ukuran mendekati target tanpa terlalu menurunkan detail.
+    const blob = await new Promise(function (resolve) {
+      canvas.toBlob(
+        function (result) {
+          resolve(result);
+        },
+        "image/jpeg",
+        quality,
+      );
+    });
+
+    if (!blob) {
+      break;
+    }
+    bestBlob = blob;
+    if (blob.size <= targetBytes) {
+      break;
+    }
+    quality -= 0.12;
+    if (quality < 0.35) {
+      quality = 0.35;
+    }
+  }
+
+  if (!bestBlob || bestBlob.size >= file.size) {
+    return file;
+  }
+
+  const compressedName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+  return new File([bestBlob], compressedName, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
 }
 
 function showPhotoError(message) {
@@ -213,10 +316,10 @@ function updateSubmitState() {
 
   const title = document.getElementById("title").value;
   const agencyValue = (document.getElementById("agency") || { value: "Umum" }).value;
-  const file = document.getElementById("photo").files[0];
+  const files = getSelectedPhotos();
   const useLocation = document.getElementById("useLocation").checked;
   const titleError = validateTitle(title);
-  const photoError = validatePhoto(file);
+  const photoError = validatePhotos(files);
   const locationReady = latitude !== null && longitude !== null;
   const locationBlocked = useLocation && (!locationReady || isLocating);
 
@@ -229,22 +332,51 @@ function updateSubmitState() {
 }
 
 function updatePhotoPreview() {
-  const file = document.getElementById("photo").files[0];
+  const files = getSelectedPhotos();
   const previewWrap = document.getElementById("photoPreviewWrap");
-  const previewImg = document.getElementById("photoPreview");
+  const previewGrid = document.getElementById("photoPreviewGrid");
+  const previewCount = document.getElementById("photoPreviewCount");
 
-  const validationMessage = validatePhoto(file);
+  const validationMessage = validatePhotos(files);
   showPhotoError(validationMessage);
   updateSubmitState();
 
-  if (!file || validationMessage) {
+  if (previewGrid) {
+    const oldImages = previewGrid.querySelectorAll("img[data-preview-url='1']");
+    oldImages.forEach(function (imgEl) {
+      if (imgEl.src) {
+        URL.revokeObjectURL(imgEl.src);
+      }
+    });
+    previewGrid.innerHTML = "";
+  }
+
+  if (files.length === 0 || validationMessage) {
     previewWrap.classList.add("d-none");
-    previewImg.removeAttribute("src");
+    if (previewCount) {
+      previewCount.textContent = "";
+    }
     return;
   }
 
-  previewImg.src = URL.createObjectURL(file);
+  if (previewGrid) {
+    files.forEach(function (file, index) {
+      const item = document.createElement("figure");
+      item.className = "photo-preview-item";
+
+      const img = document.createElement("img");
+      img.alt = `Preview foto ${index + 1}`;
+      img.src = URL.createObjectURL(file);
+      img.setAttribute("data-preview-url", "1");
+      item.appendChild(img);
+      previewGrid.appendChild(item);
+    });
+  }
+
   previewWrap.classList.remove("d-none");
+  if (previewCount) {
+    previewCount.textContent = `${files.length} foto dipilih`;
+  }
 }
 
 function updateTitleState() {
@@ -388,12 +520,12 @@ async function submitReport() {
   const title = document.getElementById("title").value.trim();
   const desc = document.getElementById("desc").value.trim();
   const agency = String(document.getElementById("agency").value || "Umum").trim();
-  const file = document.getElementById("photo").files[0];
+  const files = getSelectedPhotos();
   const useLocation = document.getElementById("useLocation").checked;
   const hasLocation = latitude !== null && longitude !== null;
   const submitBtn = document.getElementById("submitBtn");
   const titleValidationMessage = validateTitle(title);
-  const validationMessage = validatePhoto(file);
+  const validationMessage = validatePhotos(files);
 
   if (titleValidationMessage) {
     showTitleError(titleValidationMessage);
@@ -418,9 +550,17 @@ async function submitReport() {
     isSubmitting = true;
     submitBtn.disabled = true;
     submitBtn.innerHTML =
-      '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengupload foto...';
-
-    const imageUrl = await uploadToCloudinary(file);
+      '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memproses foto...';
+    const imageUrls = [];
+    for (let i = 0; i < files.length; i += 1) {
+      submitBtn.innerHTML =
+        `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memproses foto ${i + 1}/${files.length}...`;
+      const processedFile = await compressImageIfNeeded(files[i]);
+      submitBtn.innerHTML =
+        `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengupload foto ${i + 1}/${files.length}...`;
+      const imageUrl = await uploadToCloudinary(processedFile);
+      imageUrls.push(imageUrl);
+    }
 
     submitBtn.innerHTML =
       '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan laporan...';
@@ -431,7 +571,8 @@ async function submitReport() {
       agency: agency,
       lat: latitude,
       lng: longitude,
-      image_url: imageUrl,
+      image_url: imageUrls[0] || "",
+      image_urls: imageUrls,
     };
 
     const response = await fetch(API_BASE + "/reports", {
@@ -469,6 +610,9 @@ async function submitReport() {
 function getSortedReports() {
   const mode = document.getElementById("sortFilter").value;
   const timeMode = document.getElementById("timeFilter").value;
+  const agencyMode = String(
+    (document.getElementById("agencyFilterUser") || { value: "all" }).value || "all",
+  );
   const keyword = String(
     (document.getElementById("searchInput") || { value: "" }).value || "",
   )
@@ -482,6 +626,11 @@ function getSortedReports() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
   const filtered = reports.filter(function (item) {
+    const itemAgency = String(item.agency || "Umum");
+    if (agencyMode !== "all" && itemAgency !== agencyMode) {
+      return false;
+    }
+
     const itemTime = new Date(item.created_at || 0).getTime();
     if (timeMode === "today" && itemTime < startOfDay) {
       return false;
@@ -542,7 +691,23 @@ function getSortedReports() {
   return sorted;
 }
 
+function updateSectionTitle() {
+  const titleEl = document.getElementById("reportSectionTitle");
+  if (!titleEl) {
+    return;
+  }
+  const agencyMode = String(
+    (document.getElementById("agencyFilterUser") || { value: "all" }).value || "all",
+  );
+  if (agencyMode === "all") {
+    titleEl.textContent = "Laporan Warga";
+    return;
+  }
+  titleEl.textContent = `Laporan Instansi: ${agencyMode}`;
+}
+
 function renderReports() {
+  updateSectionTitle();
   const list = document.getElementById("reportList");
   const countBadge = document.getElementById("reportCount");
   const sortedReports = getSortedReports();
@@ -580,10 +745,12 @@ function renderReports() {
     );
     const titleText = String(r.title || "Laporan Warga");
     const agencyText = String(r.agency || "Umum");
+    const imageCandidates = Array.isArray(r.image_urls) ? r.image_urls : [];
+    const coverImage = String(imageCandidates[0] || r.image_url || "").trim();
     const imageBlock =
-      r.image_url && String(r.image_url).trim() !== ""
+      coverImage !== ""
         ? `<img
-            src="${escapeHtml(r.image_url)}"
+            src="${escapeHtml(coverImage)}"
             class="img-fluid report-cover"
             alt="Foto laporan"
           />`
@@ -604,7 +771,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta"><i class="bi bi-clock text-primary me-1"></i>${
+              <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
                 r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
               }</small>
             </div>
@@ -620,7 +787,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta"><i class="bi bi-clock text-primary me-1"></i>${
+              <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
                 r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
               }</small>
             </div>
@@ -637,7 +804,12 @@ function renderReports() {
           <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
             <span class="meta-main">
-              <span class="meta-item"><i class="bi bi-building"></i>${escapeHtml(agencyText)}</span>
+              <button
+                type="button"
+                class="meta-item meta-action-link meta-action-btn"
+                data-agency-filter="${escapeHtml(agencyText)}"
+                aria-label="Filter laporan instansi ${escapeHtml(agencyText)}"
+              ><i class="bi bi-building"></i>${escapeHtml(agencyText)}</button>
               <span class="meta-sep" aria-hidden="true">&bull;</span>
               ${
                 hasLocation
@@ -708,11 +880,53 @@ function initUi() {
   if (timeFilter) {
     timeFilter.addEventListener("change", renderReports);
   }
+  const agencyFilter = document.getElementById("agencyFilterUser");
+  if (agencyFilter) {
+    agencyFilter.addEventListener("change", renderReports);
+  }
+  const resetFilterBtn = document.getElementById("resetFilterBtn");
+  if (resetFilterBtn) {
+    resetFilterBtn.addEventListener("click", function () {
+      const sortFilter = document.getElementById("sortFilter");
+      const timeFilterInner = document.getElementById("timeFilter");
+      const agencyFilterInner = document.getElementById("agencyFilterUser");
+      if (sortFilter) {
+        sortFilter.value = "newest";
+      }
+      if (timeFilterInner) {
+        timeFilterInner.value = "all";
+      }
+      if (agencyFilterInner) {
+        agencyFilterInner.value = "all";
+      }
+      renderReports();
+    });
+  }
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
     searchInput.addEventListener("input", renderReports);
   }
   document.getElementById("reportList").addEventListener("click", function (event) {
+    const agencyBtn = event.target.closest("[data-agency-filter]");
+    if (agencyBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      const agencyValue = String(agencyBtn.getAttribute("data-agency-filter") || "").trim();
+      const agencyFilterEl = document.getElementById("agencyFilterUser");
+      if (agencyFilterEl && agencyValue) {
+        agencyFilterEl.value = agencyValue;
+        const filterPanel = document.getElementById("filterPanel");
+        if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
+          const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
+            toggle: false,
+          });
+          collapse.show();
+        }
+        renderReports();
+      }
+      return;
+    }
+
     const likeBtn = event.target.closest("[data-like-btn='1']");
     if (likeBtn) {
       event.preventDefault();

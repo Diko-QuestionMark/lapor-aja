@@ -66,6 +66,19 @@ function initDatabase() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS report_media (
+          id SERIAL PRIMARY KEY,
+          report_id INTEGER NOT NULL,
+          url TEXT NOT NULL,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_report_media_report_id ON report_media(report_id)",
+      );
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS title TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
       await pool.query(
@@ -82,6 +95,18 @@ function initDatabase() {
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS user_avatar_url TEXT");
+      await pool.query("ALTER TABLE report_media ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0");
+
+      await pool.query(`
+        INSERT INTO report_media (report_id, url, sort_order)
+        SELECT r.id, r.image_url, 0
+        FROM reports r
+        LEFT JOIN report_media m
+          ON m.report_id = r.id
+         AND m.sort_order = 0
+        WHERE COALESCE(TRIM(r.image_url), '') <> ''
+          AND m.id IS NULL
+      `);
       await pool.query(`
         UPDATE reports
         SET agency = 'Umum'

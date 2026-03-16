@@ -236,7 +236,62 @@ function wireCommentForm(reportId) {
 function renderDetail(report) {
   const voted = hasUpvoted(report.id);
   const statusMeta = getStatusMeta(report.status);
+  const imageUrls = Array.isArray(report.image_urls)
+    ? report.image_urls
+        .map(function (url) {
+          return String(url || "").trim();
+        })
+        .filter(Boolean)
+    : [];
+  if (imageUrls.length === 0 && report.image_url) {
+    imageUrls.push(String(report.image_url).trim());
+  }
+  const reporterName = escapeHtml(report.reporter_name || "Anonim");
+  const reporterEmail = escapeHtml(report.reporter_email || "-");
+  const reporterUserId = Number(report.reporter_user_id || 0);
+  const hasLocation = report.lat !== null && report.lat !== undefined;
+  const reporterBlock =
+    reporterUserId > 0
+      ? `<span class="meta-item"><i class="bi bi-person"></i>${reporterName} (<a href="/user.html?id=${reporterUserId}" class="meta-action-link">${reporterEmail}</a>)</span>`
+      : `<span class="meta-item"><i class="bi bi-person"></i>${reporterName} (${reporterEmail})</span>`;
+  const locationBlock = hasLocation
+    ? `<a
+        href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="meta-item meta-action-link"
+      ><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</a>`
+    : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</span>`;
   const container = document.getElementById("detailContainer");
+  const galleryId = `reportGallery${Number(report.id)}`;
+  const galleryBlock =
+    imageUrls.length === 0
+      ? '<div class="detail-image rounded border mb-3 d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
+      : imageUrls.length === 1
+      ? `<img
+          src="${escapeHtml(imageUrls[0] || "")}"
+          alt="Foto laporan"
+          class="img-fluid rounded border mb-3 detail-image"
+        />`
+      : `
+        <div class="mb-3">
+          <div class="rounded border p-2 bg-light">
+            <img
+              id="${galleryId}Main"
+              src="${escapeHtml(imageUrls[0])}"
+              class="d-block w-100 detail-image rounded"
+              alt="Foto laporan 1"
+            />
+          </div>
+          <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
+            <button id="${galleryId}Prev" class="btn btn-sm btn-outline-primary" type="button">Prev</button>
+            <div class="small text-secondary">
+              <span id="${galleryId}Index">1</span> / ${imageUrls.length} foto
+            </div>
+            <button id="${galleryId}Next" class="btn btn-sm btn-outline-primary" type="button">Next</button>
+          </div>
+        </div>
+      `;
   container.innerHTML = `
     <div class="mb-3">
       <h2 class="h5 mb-1">${escapeHtml(report.title || "Tanpa Judul")}</h2>
@@ -244,16 +299,24 @@ function renderDetail(report) {
       <div class="meta-item mb-1"><i class="bi bi-building"></i>${escapeHtml(report.agency || "Umum")}</div>
       <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
     </div>
-    <img src="${escapeHtml(report.image_url || "")}" alt="Foto laporan" class="img-fluid rounded border mb-3 detail-image" />
+    ${galleryBlock}
     <p class="mb-3">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
-    <div class="meta-item mb-1"><i class="bi bi-person"></i>${escapeHtml(report.reporter_name || "Anonim")} (${escapeHtml(report.reporter_email || "-")})</div>
-    <div class="meta-item mb-1"><i class="bi bi-clock"></i>${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
-    <div class="meta-item mb-3"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</div>
-    <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+    <div class="report-meta-row mb-3">
+      <span class="meta-main">
+        ${reporterBlock}
+        <span class="meta-sep" aria-hidden="true">&bull;</span>
+        <span class="meta-item"><i class="bi bi-clock"></i>${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</span>
+        <span class="meta-sep" aria-hidden="true">&bull;</span>
+        ${locationBlock}
+      </span>
+    </div>
+    <div class="mb-3">
+      <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
       <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
       <span>${voted ? "Didukung" : "Dukung"}</span>
       <span class="support-count">${Number(report.upvotes || 0)}</span>
-    </button>
+      </button>
+    </div>
 
     <hr class="my-4" />
     <section>
@@ -279,6 +342,38 @@ function renderDetail(report) {
     </section>
   `;
 
+  if (imageUrls.length > 1) {
+    let activeIndex = 0;
+    const main = document.getElementById(`${galleryId}Main`);
+    const indexEl = document.getElementById(`${galleryId}Index`);
+    const prevBtn = document.getElementById(`${galleryId}Prev`);
+    const nextBtn = document.getElementById(`${galleryId}Next`);
+
+    function setActive(nextIndex) {
+      const total = imageUrls.length;
+      activeIndex = ((nextIndex % total) + total) % total;
+      if (main) {
+        main.src = imageUrls[activeIndex];
+        main.alt = `Foto laporan ${activeIndex + 1}`;
+      }
+      if (indexEl) {
+        indexEl.textContent = String(activeIndex + 1);
+      }
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        setActive(activeIndex - 1);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        setActive(activeIndex + 1);
+      });
+    }
+    setActive(0);
+  }
+
   document.getElementById("detailVoteBtn").addEventListener("click", async function () {
     const currentlyVoted = hasUpvoted(report.id);
     const btn = this;
@@ -291,10 +386,29 @@ function renderDetail(report) {
       } else {
         markUpvoted(report.id);
       }
-      window.location.reload();
+      const nextUpvotes = currentlyVoted
+        ? Math.max(Number(report.upvotes || 0) - 1, 0)
+        : Number(report.upvotes || 0) + 1;
+      report.upvotes = nextUpvotes;
+      const nextVoted = !currentlyVoted;
+      btn.classList.toggle("is-active", nextVoted);
+      btn.innerHTML = `
+        <i class="bi ${nextVoted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+        <span>${nextVoted ? "Didukung" : "Dukung"}</span>
+        <span class="support-count">${nextUpvotes}</span>
+      `;
     } catch (_) {
+      btn.innerHTML = "Gagal, coba lagi";
+      setTimeout(function () {
+        btn.classList.toggle("is-active", currentlyVoted);
+        btn.innerHTML = `
+          <i class="bi ${currentlyVoted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+          <span>${currentlyVoted ? "Didukung" : "Dukung"}</span>
+          <span class="support-count">${Number(report.upvotes || 0)}</span>
+        `;
+      }, 800);
+    } finally {
       btn.disabled = false;
-      btn.textContent = "Gagal, coba lagi";
     }
   });
 

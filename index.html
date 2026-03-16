@@ -20,7 +20,7 @@
 
     <main class="container py-4 pengecilan">
       <section class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h5 mb-0">Laporan Warga</h2>
+        <h2 id="reportSectionTitle" class="h5 mb-0">Laporan Warga</h2>
         <button
           id="createReportBtn"
           class="btn btn-primary"
@@ -39,27 +39,73 @@
               <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
               <span id="reportCount" class="badge text-bg-light border">0</span>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
               <input
                 id="searchInput"
                 type="search"
-                class="form-control form-control-sm search-input"
+                class="form-control form-control-sm search-input search-inline-input"
                 placeholder="Cari laporan..."
                 autocomplete="off"
               />
-              <select id="sortFilter" class="form-select form-select-sm filter-select">
-                <option value="newest">Terbaru</option>
-                <option value="oldest">Terlama</option>
-                <option value="upvotes">Dukungan Terbanyak</option>
-                <option value="status_waiting">Menunggu Dulu</option>
-                <option value="status_done">Selesai Dulu</option>
-              </select>
-              <select id="timeFilter" class="form-select form-select-sm filter-select">
-                <option value="all">Semua Waktu</option>
-                <option value="today">Hari Ini</option>
-                <option value="week">Minggu Ini</option>
-                <option value="month">Bulan Ini</option>
-              </select>
+              <button
+                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#filterPanel"
+                aria-expanded="false"
+                aria-controls="filterPanel"
+              >
+                <i class="bi bi-funnel"></i>
+                <span>Filter</span>
+              </button>
+            </div>
+          </div>
+          <div class="collapse mb-3" id="filterPanel">
+            <div class="border rounded p-2">
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <label for="sortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
+                  <select id="sortFilter" class="form-select form-select-sm">
+                    <option value="newest">Terbaru</option>
+                    <option value="oldest">Terlama</option>
+                    <option value="upvotes">Dukungan Terbanyak</option>
+                    <option value="status_waiting">Menunggu Dulu</option>
+                    <option value="status_done">Selesai Dulu</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="timeFilter" class="form-label form-label-sm mb-1 small text-secondary">Rentang Waktu</label>
+                  <select id="timeFilter" class="form-select form-select-sm">
+                    <option value="all">Semua Waktu</option>
+                    <option value="today">Hari Ini</option>
+                    <option value="week">Minggu Ini</option>
+                    <option value="month">Bulan Ini</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="agencyFilterUser" class="form-label form-label-sm mb-1 small text-secondary">Instansi</label>
+                  <div class="d-flex align-items-center gap-2 w-100">
+                    <select id="agencyFilterUser" class="form-select form-select-sm flex-grow-1">
+                      <option value="all">Semua Instansi</option>
+                      <option value="Umum">Umum</option>
+                      <option value="Dinas PU">Dinas PU</option>
+                      <option value="Dinas Perhubungan">Dinas Perhubungan</option>
+                      <option value="Dinas Kebersihan">Dinas Kebersihan</option>
+                      <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+                      <option value="PDAM">PDAM</option>
+                      <option value="PLN">PLN</option>
+                      <option value="Satpol PP">Satpol PP</option>
+                    </select>
+                    <button
+                      id="resetFilterBtn"
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div id="reportList"></div>
@@ -68,72 +114,87 @@
     </main>
 
     <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
             <h2 class="modal-title fs-5">Kirim Laporan</h2>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <div class="mb-3">
-              <label for="photo" class="form-label">Foto Masalah</label>
-              <input class="form-control" type="file" id="photo" accept="image/*" />
-              <div id="photoError" class="small text-danger mt-1 d-none"></div>
-            </div>
+            <div class="row g-3">
+              <div class="col-12 col-lg-7">
+                <div class="mb-3">
+                  <label for="photo" class="form-label">Foto Masalah</label>
+                  <input
+                    class="form-control"
+                    type="file"
+                    id="photo"
+                    accept="image/*"
+                    multiple
+                    capture="environment"
+                  />
+                  <div class="form-text">Bisa pilih hingga 5 foto. Di HP, kamera belakang bisa langsung terbuka.</div>
+                  <div id="photoError" class="small text-danger mt-1 d-none"></div>
+                </div>
 
-            <div id="photoPreviewWrap" class="preview-wrap d-none mb-3">
-              <img id="photoPreview" alt="Preview foto" class="img-fluid rounded border" />
-            </div>
+                <div id="photoPreviewWrap" class="preview-wrap d-none">
+                  <div id="photoPreviewGrid" class="photo-preview-grid"></div>
+                  <div id="photoPreviewCount" class="small text-secondary mt-2"></div>
+                </div>
+              </div>
 
-            <div class="mb-3">
-              <label for="title" class="form-label">Judul</label>
-              <input
-                id="title"
-                type="text"
-                class="form-control"
-                maxlength="100"
-                placeholder="contoh: Lampu Jalan Mati di Jl. Merdeka"
-              />
-              <div id="titleError" class="small text-danger mt-1 d-none"></div>
-            </div>
+              <div class="col-12 col-lg-5">
+                <div class="mb-3">
+                  <label for="title" class="form-label">Judul</label>
+                  <input
+                    id="title"
+                    type="text"
+                    class="form-control"
+                    maxlength="100"
+                    placeholder="contoh: Lampu Jalan Mati di Jl. Merdeka"
+                  />
+                  <div id="titleError" class="small text-danger mt-1 d-none"></div>
+                </div>
 
-            <div class="mb-3">
-              <label for="desc" class="form-label">Deskripsi (opsional)</label>
-              <textarea
-                id="desc"
-                class="form-control"
-                rows="3"
-                placeholder="contoh: lampu jalan mati"
-              ></textarea>
-            </div>
+                <div class="mb-3">
+                  <label for="agency" class="form-label">Tujuan Instansi</label>
+                  <select id="agency" class="form-select">
+                    <option value="Umum">Umum</option>
+                    <option value="Dinas PU">Dinas PU</option>
+                    <option value="Dinas Perhubungan">Dinas Perhubungan</option>
+                    <option value="Dinas Kebersihan">Dinas Kebersihan</option>
+                    <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+                    <option value="PDAM">PDAM</option>
+                    <option value="PLN">PLN</option>
+                    <option value="Satpol PP">Satpol PP</option>
+                  </select>
+                </div>
 
-            <div class="mb-3">
-              <label for="agency" class="form-label">Tujuan Instansi</label>
-              <select id="agency" class="form-select">
-                <option value="Umum">Umum</option>
-                <option value="Dinas PU">Dinas PU</option>
-                <option value="Dinas Perhubungan">Dinas Perhubungan</option>
-                <option value="Dinas Kebersihan">Dinas Kebersihan</option>
-                <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
-                <option value="PDAM">PDAM</option>
-                <option value="PLN">PLN</option>
-                <option value="Satpol PP">Satpol PP</option>
-              </select>
-            </div>
+                <div class="mb-3">
+                  <label for="desc" class="form-label">Deskripsi (opsional)</label>
+                  <textarea
+                    id="desc"
+                    class="form-control"
+                    rows="6"
+                    placeholder="contoh: lampu jalan mati"
+                  ></textarea>
+                </div>
 
-            <div class="form-check mb-2">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="useLocation"
-                onchange="toggleLocation(this)"
-              />
-              <label class="form-check-label" for="useLocation">
-                Gunakan Lokasi Saya
-              </label>
-            </div>
+                <div class="form-check mb-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="useLocation"
+                    onchange="toggleLocation(this)"
+                  />
+                  <label class="form-check-label" for="useLocation">
+                    Gunakan Lokasi Saya
+                  </label>
+                </div>
 
-            <p id="locText" class="small text-secondary mb-0"></p>
+                <p id="locText" class="small text-secondary mb-0"></p>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
