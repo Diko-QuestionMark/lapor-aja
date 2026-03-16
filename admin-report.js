@@ -116,7 +116,6 @@ async function uploadToCloudinary(file) {
 function fillForm(report) {
   document.getElementById("statusInput").value = report.status || "Menunggu";
   document.getElementById("noteInput").value = String(report.admin_note || "");
-  document.getElementById("evidenceUrlInput").value = String(report.admin_evidence_url || "");
 }
 
 function renderDetail(report) {
@@ -199,11 +198,10 @@ function renderDetail(report) {
       </span>
     </div>
     <div class="mb-3">
-      <span class="btn btn-sm support-btn is-active" aria-disabled="true">
+      <p class="small text-secondary mb-0">
         <i class="bi bi-hand-thumbs-up-fill"></i>
-        <span>Dukungan</span>
-        <span class="support-count">${Number(report.upvotes || 0)}</span>
-      </span>
+        Dukungan: ${Number(report.upvotes || 0)}
+      </p>
     </div>
     <hr class="my-4" />
     <section>
@@ -212,7 +210,19 @@ function renderDetail(report) {
         <p class="mb-2">${escapeHtml(adminNote || "Belum ada respons.")}</p>
         ${
           adminEvidence
-            ? `<p class="mb-2"><a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer">Lihat bukti foto saat ini</a></p>`
+            ? `
+              <div class="evidence-preview">
+                <img
+                  src="${escapeHtml(adminEvidence)}"
+                  alt="Bukti tindak lanjut instansi"
+                  class="evidence-thumb"
+                  loading="lazy"
+                />
+                <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer" class="small">
+                  Lihat ukuran penuh
+                </a>
+              </div>
+            `
             : ""
         }
         <p class="small text-secondary mb-0">
@@ -300,9 +310,8 @@ async function saveResponse(event) {
   const saveBtn = document.getElementById("saveHandleBtn");
   const status = document.getElementById("statusInput").value;
   const note = String(document.getElementById("noteInput").value || "").trim();
-  const urlInput = document.getElementById("evidenceUrlInput");
   const fileInput = document.getElementById("evidenceFileInput");
-  let evidenceUrl = String(urlInput.value || "").trim();
+  let evidenceUrl = String(activeReport.admin_evidence_url || "").trim();
   const evidenceFile = fileInput.files ? fileInput.files[0] : null;
 
   const fileError = validateEvidenceFile(evidenceFile);
@@ -318,7 +327,6 @@ async function saveResponse(event) {
     if (evidenceFile) {
       saveBtn.textContent = "Upload bukti...";
       evidenceUrl = await uploadToCloudinary(evidenceFile);
-      urlInput.value = evidenceUrl;
     }
 
     const response = await fetch(API_BASE + "/admin/reports", {

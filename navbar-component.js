@@ -40,6 +40,7 @@
           >
             <img id="authUserAvatar" class="nav-avatar d-none" alt="Avatar user" />
             <span id="authActionText">Login</span>
+            <span id="navNotifBadge" class="badge text-bg-danger ms-1 d-none">0</span>
           </a>
         `,
       },

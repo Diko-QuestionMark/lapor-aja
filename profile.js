@@ -11,6 +11,7 @@ const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
+const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
 
 let currentSession = null;
 let currentUser = null;
@@ -229,6 +230,10 @@ function writeNotificationSeenAt(userId, timestamp) {
   localStorage.setItem(key, String(Math.max(0, Number(timestamp) || 0)));
 }
 
+function setUnreadNotificationCount(count) {
+  localStorage.setItem(NOTIFICATION_COUNT_KEY, String(Math.max(0, Number(count) || 0)));
+}
+
 function getNotificationItems(myReports) {
   return myReports
     .map(function (report) {
@@ -273,6 +278,7 @@ function renderNotifications(myReports, user) {
   }).length;
   badge.textContent = `${unreadCount} baru`;
   badge.classList.toggle("d-none", unreadCount === 0);
+  setUnreadNotificationCount(unreadCount);
 
   root.innerHTML = items
     .slice(0, 12)
@@ -283,10 +289,12 @@ function renderNotifications(myReports, user) {
             <div>
               <div class="fw-semibold">#${item.reportId} - ${escapeHtml(item.title)}</div>
               <div class="small text-secondary">${new Date(item.updatedAt).toLocaleString("id-ID")}</div>
+              <div class="small text-secondary">Sudah direspons instansi.</div>
             </div>
             <span class="badge status-badge ${getStatusMeta(item.statusLabel).className}">${item.statusLabel}</span>
           </div>
           <p class="small mb-2 mt-2">${escapeHtml(item.summary || "Instansi memperbarui respons laporan kamu.")}</p>
+          <p class="small text-secondary mb-2">Status saat ini: ${escapeHtml(item.statusLabel)}.</p>
           <a class="small" href="/report.html?id=${item.reportId}">Lihat detail laporan</a>
         </article>
       `;
@@ -295,6 +303,7 @@ function renderNotifications(myReports, user) {
 
   const latestTimestamp = items[0].updatedAt;
   writeNotificationSeenAt(user.id, latestTimestamp);
+  setUnreadNotificationCount(0);
 }
 
 function getReportPreviewUrl(report) {

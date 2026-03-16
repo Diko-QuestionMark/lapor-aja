@@ -32,10 +32,10 @@ async function loadResponseFeedback(reportId) {
     root.innerHTML = `
       <div class="d-flex align-items-center flex-wrap gap-2">
         <button id="feedbackHelpfulBtn" type="button" class="btn btn-sm ${myVote === true ? "btn-primary" : "btn-outline-primary"}">
-          Membantu (${helpfulCount})
+          ${myVote === true ? "Membantu (dipilih)" : "Membantu"} (${helpfulCount})
         </button>
         <button id="feedbackUnhelpfulBtn" type="button" class="btn btn-sm ${myVote === false ? "btn-danger" : "btn-outline-danger"}">
-          Tidak membantu (${unhelpfulCount})
+          ${myVote === false ? "Tidak membantu (dipilih)" : "Tidak membantu"} (${unhelpfulCount})
         </button>
       </div>
       <p id="feedbackHelpText" class="small text-secondary mb-0 mt-2">Penilaian ini untuk kualitas respons instansi.</p>
@@ -406,6 +406,9 @@ function renderDetail(report) {
       <span>${voted ? "Didukung" : "Dukung"}</span>
       <span class="support-count">${Number(report.upvotes || 0)}</span>
       </button>
+      <p id="detailVoteState" class="small text-secondary mt-1 mb-0">
+        ${voted ? "Kamu sudah mendukung laporan ini." : "Kamu belum mendukung laporan ini."}
+      </p>
     </div>
 
     <hr class="my-4" />
@@ -418,7 +421,19 @@ function renderDetail(report) {
               <p class="mb-2">${escapeHtml(adminNote || "Instansi sudah memberi update.")}</p>
               ${
                 adminEvidence
-                  ? `<p class="mb-2"><a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer">Lihat foto bukti tindak lanjut</a></p>`
+                  ? `
+                    <div class="evidence-preview">
+                      <img
+                        src="${escapeHtml(adminEvidence)}"
+                        alt="Bukti tindak lanjut instansi"
+                        class="evidence-thumb"
+                        loading="lazy"
+                      />
+                      <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer" class="small">
+                        Lihat ukuran penuh
+                      </a>
+                    </div>
+                  `
                   : ""
               }
               <p class="small text-secondary mb-0 response-panel-meta">
@@ -495,6 +510,7 @@ function renderDetail(report) {
   document.getElementById("detailVoteBtn").addEventListener("click", async function () {
     const currentlyVoted = hasUpvoted(report.id);
     const btn = this;
+    const voteState = document.getElementById("detailVoteState");
     btn.disabled = true;
     btn.textContent = "Menyimpan...";
     try {
@@ -515,6 +531,11 @@ function renderDetail(report) {
         <span>${nextVoted ? "Didukung" : "Dukung"}</span>
         <span class="support-count">${nextUpvotes}</span>
       `;
+      if (voteState) {
+        voteState.textContent = nextVoted
+          ? "Kamu sudah mendukung laporan ini."
+          : "Kamu belum mendukung laporan ini.";
+      }
     } catch (_) {
       btn.innerHTML = "Gagal, coba lagi";
       setTimeout(function () {
@@ -524,6 +545,11 @@ function renderDetail(report) {
           <span>${currentlyVoted ? "Didukung" : "Dukung"}</span>
           <span class="support-count">${Number(report.upvotes || 0)}</span>
         `;
+        if (voteState) {
+          voteState.textContent = currentlyVoted
+            ? "Kamu sudah mendukung laporan ini."
+            : "Kamu belum mendukung laporan ini.";
+        }
       }, 800);
     } finally {
       btn.disabled = false;

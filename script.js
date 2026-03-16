@@ -14,6 +14,8 @@ const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 const UPVOTE_STORAGE_KEY = "laporaja_upvoted_ids";
+const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
+const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
 const AGENCY_OPTIONS = new Set([
   "Umum",
   "Dinas PU",
@@ -34,6 +36,7 @@ let isSubmitting = false;
 let toastInstance = null;
 let reportModal = null;
 let imageInspectModal = null;
+let selectedPhotos = [];
 
 function getUpvotedIds() {
   try {
@@ -84,6 +87,46 @@ function readSession() {
   }
 }
 
+function getNotificationSeenAt(userId) {
+  const key = `${NOTIFICATION_SEEN_PREFIX}_${Number(userId || 0)}`;
+  const raw = localStorage.getItem(key);
+  const parsed = Number(raw || 0);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function updateNotificationBadge(count) {
+  const badge = document.getElementById("navNotifBadge");
+  if (!badge) {
+    return;
+  }
+  const safeCount = Math.max(0, Number(count) || 0);
+  if (safeCount <= 0) {
+    badge.classList.add("d-none");
+    return;
+  }
+  badge.textContent = safeCount > 99 ? "99+" : String(safeCount);
+  badge.classList.remove("d-none");
+}
+
+function updateUnreadNotifications(reportsData) {
+  const session = readSession();
+  if (!session || !session.id) {
+    updateNotificationBadge(0);
+    return;
+  }
+  const seenAt = getNotificationSeenAt(session.id);
+  const unreadCount = (reportsData || []).filter(function (item) {
+    const ownerId = Number(item.reporter_user_id || 0);
+    if (ownerId !== Number(session.id)) {
+      return false;
+    }
+    const updatedAt = new Date(item.admin_updated_at || 0).getTime();
+    return updatedAt && updatedAt > seenAt;
+  }).length;
+  localStorage.setItem(NOTIFICATION_COUNT_KEY, String(unreadCount));
+  updateNotificationBadge(unreadCount);
+}
+
 function updateCreateReportAccess(session) {
   const createReportBtn = document.getElementById("createReportBtn");
   if (!createReportBtn) {
@@ -106,6 +149,7 @@ function renderAuthNav() {
   const session = readSession();
   if (!session || !session.email || !session.token) {
     updateCreateReportAccess(null);
+    updateNotificationBadge(0);
     actionBtn.href = "/login.html";
     actionText.textContent = "Login";
     avatar.classList.add("d-none");
@@ -175,7 +219,7 @@ function showToast(message, type) {
 }
 
 function getSelectedPhotos() {
-  return Array.from(document.getElementById("photo").files || []);
+  return selectedPhotos.slice();
 }
 
 function validatePhotos(files) {
@@ -195,6 +239,35 @@ function validatePhotos(files) {
     }
   }
   return "";
+}
+
+function addSelectedPhotos(files) {
+  if (!files || files.length === 0) {
+    return;
+  }
+
+  let hasError = "";
+  for (const file of files) {
+    if (selectedPhotos.length >= MAX_PHOTO_COUNT) {
+      hasError = `Maksimal ${MAX_PHOTO_COUNT} foto per laporan.`;
+      break;
+    }
+    if (!file.type.startsWith("image/")) {
+      hasError = "Semua file harus berupa gambar.";
+      continue;
+    }
+    if (file.size > HARD_MAX_FILE_SIZE_MB * 1024 * 1024) {
+      hasError = `Ada foto yang terlalu besar. Maksimal ${HARD_MAX_FILE_SIZE_MB}MB per foto.`;
+      continue;
+    }
+    selectedPhotos.push(file);
+  }
+
+  if (hasError) {
+    showPhotoError(hasError);
+  } else {
+    showPhotoError("");
+  }
 }
 
 async function compressImageIfNeeded(file) {
@@ -383,6 +456,15 @@ function updatePhotoPreview() {
       img.src = URL.createObjectURL(file);
       img.setAttribute("data-preview-url", "1");
       item.appendChild(img);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "photo-remove-btn";
+      removeBtn.setAttribute("data-remove-index", String(index));
+      removeBtn.setAttribute("aria-label", `Hapus foto ${index + 1}`);
+      removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+      item.appendChild(removeBtn);
+
       previewGrid.appendChild(item);
     });
   }
@@ -503,10 +585,12 @@ async function loadReports() {
 
     reports = await response.json();
     renderReports();
+    updateUnreadNotifications(reports);
   } catch (error) {
     document.getElementById("reportList").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa terhubung ke backend/database.</p>';
     console.error(error);
+    updateNotificationBadge(0);
   }
 }
 
@@ -515,6 +599,7 @@ function resetForm() {
   document.getElementById("desc").value = "";
   document.getElementById("agency").value = "Umum";
   document.getElementById("photo").value = "";
+  selectedPhotos = [];
   document.getElementById("useLocation").checked = false;
   showTitleError("");
   showPhotoError("");
@@ -875,7 +960,31 @@ function initUi() {
     document.getElementById("imageInspectModal"),
   );
 
-  document.getElementById("photo").addEventListener("change", updatePhotoPreview);
+  const photoInput = document.getElementById("photo");
+  if (photoInput) {
+    photoInput.addEventListener("change", function () {
+      const files = Array.from(photoInput.files || []);
+      addSelectedPhotos(files);
+      photoInput.value = "";
+      updatePhotoPreview();
+    });
+  }
+  const previewGrid = document.getElementById("photoPreviewGrid");
+  if (previewGrid) {
+    previewGrid.addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-remove-index]");
+      if (!btn) {
+        return;
+      }
+      const index = Number(btn.getAttribute("data-remove-index"));
+      if (!Number.isNaN(index)) {
+        selectedPhotos = selectedPhotos.filter(function (_, idx) {
+          return idx !== index;
+        });
+        updatePhotoPreview();
+      }
+    });
+  }
   document.getElementById("title").addEventListener("input", updateTitleState);
   document.getElementById("agency").addEventListener("change", updateSubmitState);
   const createReportBtn = document.getElementById("createReportBtn");

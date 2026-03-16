@@ -134,6 +134,7 @@ body.has-fixed-navbar {
   border-radius: 10px;
   overflow: hidden;
   background: #f8fafc;
+  position: relative;
 }
 
 .photo-preview-item img {
@@ -141,6 +142,26 @@ body.has-fixed-navbar {
   width: 100%;
   height: 180px;
   object-fit: cover;
+}
+
+.photo-remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.photo-remove-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 
 .inspect-image {
@@ -592,6 +613,22 @@ body.has-fixed-navbar {
 .response-panel-empty {
   border-color: #e3e6ec;
   background: #f8fafc;
+}
+
+.evidence-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.evidence-thumb {
+  width: 100%;
+  max-width: 360px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d9e2ef;
+  background: #eef2f7;
 }
 
 @keyframes skeleton-wave {
