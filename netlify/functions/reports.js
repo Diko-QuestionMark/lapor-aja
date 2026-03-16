@@ -1,6 +1,17 @@
 const { pool, initDatabase } = require("./_db");
 const { getBearerToken, verifyToken } = require("./_auth");
 
+const ALLOWED_AGENCIES = new Set([
+  "Umum",
+  "Dinas PU",
+  "Dinas Perhubungan",
+  "Dinas Kebersihan",
+  "Dinas Lingkungan Hidup",
+  "PDAM",
+  "PLN",
+  "Satpol PP",
+]);
+
 function json(statusCode, payload) {
   return {
     statusCode,
@@ -29,6 +40,7 @@ exports.handler = async function handler(event) {
             r.id,
             r.title,
             r.description AS desc,
+            r.agency,
             r.lat,
             r.lng,
             r.image_url,
@@ -55,7 +67,7 @@ exports.handler = async function handler(event) {
       }
 
       const body = event.body ? JSON.parse(event.body) : {};
-      const { title, desc, lat, lng, image_url } = body;
+      const { title, desc, agency, lat, lng, image_url } = body;
 
       const parsedLat = lat === null || lat === undefined ? null : Number(lat);
       const parsedLng = lng === null || lng === undefined ? null : Number(lng);
@@ -77,6 +89,10 @@ exports.handler = async function handler(event) {
       if (safeTitle.length > 100) {
         return json(400, { error: "Judul maksimal 100 karakter" });
       }
+      const safeAgency = String(agency || "Umum").trim() || "Umum";
+      if (!ALLOWED_AGENCIES.has(safeAgency)) {
+        return json(400, { error: "Tujuan instansi tidak valid" });
+      }
 
       const safeReporterName = String(authUser.name || "Warga").trim();
       const safeReporterEmail = String(authUser.email || "")
@@ -84,10 +100,11 @@ exports.handler = async function handler(event) {
         .toLowerCase();
 
       const result = await pool.query(
-        "INSERT INTO reports(title, description, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, title, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email",
+        "INSERT INTO reports(title, description, agency, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, title, agency, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email",
         [
           safeTitle,
           desc || "",
+          safeAgency,
           parsedLat,
           parsedLng,
           image_url,

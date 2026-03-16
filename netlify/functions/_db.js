@@ -42,6 +42,7 @@ function initDatabase() {
           id SERIAL PRIMARY KEY,
           title TEXT,
           description TEXT,
+          agency TEXT NOT NULL DEFAULT 'Umum',
           lat FLOAT,
           lng FLOAT,
           image_url TEXT,
@@ -53,8 +54,23 @@ function initDatabase() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS report_comments (
+          id SERIAL PRIMARY KEY,
+          report_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          user_name TEXT NOT NULL,
+          user_avatar_url TEXT,
+          comment TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS title TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
+      await pool.query(
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS agency TEXT NOT NULL DEFAULT 'Umum'",
+      );
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS status VARCHAR(30) NOT NULL DEFAULT 'Menunggu'",
       );
@@ -65,6 +81,12 @@ function initDatabase() {
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
+      await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS user_avatar_url TEXT");
+      await pool.query(`
+        UPDATE reports
+        SET agency = 'Umum'
+        WHERE agency IS NULL OR TRIM(agency) = ''
+      `);
       await pool.query(`
         UPDATE reports
         SET title = COALESCE(

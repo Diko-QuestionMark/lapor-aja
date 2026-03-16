@@ -9,6 +9,11 @@ const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai"];
 
 let adminReports = [];
 
+function getAgencyFilter() {
+  const el = document.getElementById("agencyFilter");
+  return el ? String(el.value || "all") : "all";
+}
+
 function getStatusMeta(status) {
   const label = String(status || "Menunggu").trim();
   const normalized = label.toLowerCase();
@@ -67,14 +72,23 @@ async function loadAdminReports() {
 
 function renderAdminReports() {
   const list = document.getElementById("adminList");
-  if (adminReports.length === 0) {
+  const agencyFilter = getAgencyFilter();
+  const visibleReports = adminReports.filter(function (report) {
+    if (agencyFilter === "all") {
+      return true;
+    }
+    return String(report.agency || "Umum") === agencyFilter;
+  });
+
+  if (visibleReports.length === 0) {
     list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
     return;
   }
 
   list.innerHTML = "";
-  adminReports.forEach(function (report) {
+  visibleReports.forEach(function (report) {
     const statusMeta = getStatusMeta(report.status);
+    const agencyLabel = String(report.agency || "Umum");
     const selectOptions = STATUS_OPTIONS.map(function (item) {
       const selected = item === report.status ? "selected" : "";
       return `<option value="${item}" ${selected}>${item}</option>`;
@@ -89,6 +103,7 @@ function renderAdminReports() {
           <p class="mb-1"><strong>#${report.id}</strong> - ${report.title || "Tanpa Judul"}</p>
           <p class="small mb-1">${report.desc || "Tidak ada deskripsi"}</p>
           <p class="small text-secondary mb-1">Pelapor: ${report.reporter_name || "Anonim"} (${report.reporter_email || "-"})</p>
+          <p class="mb-1"><span class="badge text-bg-secondary">Instansi: ${agencyLabel}</span></p>
           <p class="mb-1"><span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span></p>
           <p class="mb-1"><span class="badge text-bg-primary">Dukungan: ${Number(report.upvotes || 0)}</span></p>
           <p class="small text-secondary mb-2">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : ""}</p>
@@ -163,6 +178,11 @@ function wireEvents() {
       }, 700);
     }
   });
+
+  const agencyFilterEl = document.getElementById("agencyFilter");
+  if (agencyFilterEl) {
+    agencyFilterEl.addEventListener("change", renderAdminReports);
+  }
 }
 
 function init() {

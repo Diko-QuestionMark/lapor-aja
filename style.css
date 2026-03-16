@@ -1,5 +1,5 @@
 .pengecilan {
-  max-width: 980px;
+  max-width: 1180px;
 }
 
 .filter-select {
@@ -256,10 +256,6 @@ body.has-fixed-navbar {
 
 .toast-wrap {
   z-index: 1090;
-}
-
-.admin-wrap {
-  max-width: 900px;
 }
 
 .login-wrap {

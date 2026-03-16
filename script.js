@@ -9,6 +9,16 @@ const MAX_FILE_SIZE_MB = 2;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
+const AGENCY_OPTIONS = new Set([
+  "Umum",
+  "Dinas PU",
+  "Dinas Perhubungan",
+  "Dinas Kebersihan",
+  "Dinas Lingkungan Hidup",
+  "PDAM",
+  "PLN",
+  "Satpol PP",
+]);
 
 let reports = [];
 let latitude = null;
@@ -161,6 +171,7 @@ function updateSubmitState() {
   }
 
   const title = document.getElementById("title").value;
+  const agencyValue = (document.getElementById("agency") || { value: "Umum" }).value;
   const file = document.getElementById("photo").files[0];
   const useLocation = document.getElementById("useLocation").checked;
   const titleError = validateTitle(title);
@@ -171,6 +182,7 @@ function updateSubmitState() {
   submitBtn.disabled =
     Boolean(photoError) ||
     Boolean(titleError) ||
+    !AGENCY_OPTIONS.has(String(agencyValue || "").trim()) ||
     isSubmitting ||
     locationBlocked;
 }
@@ -314,6 +326,7 @@ async function loadReports() {
 function resetForm() {
   document.getElementById("title").value = "";
   document.getElementById("desc").value = "";
+  document.getElementById("agency").value = "Umum";
   document.getElementById("photo").value = "";
   document.getElementById("useLocation").checked = false;
   showTitleError("");
@@ -333,6 +346,7 @@ async function submitReport() {
 
   const title = document.getElementById("title").value.trim();
   const desc = document.getElementById("desc").value.trim();
+  const agency = String(document.getElementById("agency").value || "Umum").trim();
   const file = document.getElementById("photo").files[0];
   const useLocation = document.getElementById("useLocation").checked;
   const hasLocation = latitude !== null && longitude !== null;
@@ -348,6 +362,10 @@ async function submitReport() {
   if (validationMessage) {
     showPhotoError(validationMessage);
     showToast(validationMessage, "error");
+    return;
+  }
+  if (!AGENCY_OPTIONS.has(agency)) {
+    showToast("Pilih tujuan instansi yang valid.", "error");
     return;
   }
   if (useLocation && !hasLocation) {
@@ -369,6 +387,7 @@ async function submitReport() {
     const payload = {
       title: title,
       desc: desc,
+      agency: agency,
       lat: latitude,
       lng: longitude,
       image_url: imageUrl,
@@ -442,6 +461,7 @@ function getSortedReports() {
       item.reporter_name,
       item.reporter_email,
       item.status,
+      item.agency,
       item.lat !== null && item.lat !== undefined ? `${item.lat}, ${item.lng}` : "",
     ];
     const haystack = parts
@@ -517,6 +537,7 @@ function renderReports() {
       r.reporter_profile_image_url || DEFAULT_AVATAR_URL,
     );
     const titleText = String(r.title || "Laporan Warga");
+    const agencyText = String(r.agency || "Umum");
     const imageBlock =
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
@@ -573,6 +594,7 @@ function renderReports() {
         <div class="report-feed-body">
           <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
+            <span class="badge text-bg-secondary">${escapeHtml(agencyText)}</span>
             <span class="badge text-bg-light border">Dukungan: ${Number(r.upvotes || 0)}</span>
             <span class="report-meta">${hasLocation
               ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
@@ -606,6 +628,7 @@ function initUi() {
 
   document.getElementById("photo").addEventListener("change", updatePhotoPreview);
   document.getElementById("title").addEventListener("input", updateTitleState);
+  document.getElementById("agency").addEventListener("change", updateSubmitState);
   const createReportBtn = document.getElementById("createReportBtn");
   if (createReportBtn) {
     createReportBtn.addEventListener("click", function (event) {
