@@ -29,6 +29,18 @@ function escapeHtml(text) {
   });
 }
 
+function getStatusMeta(status) {
+  const label = String(status || "Menunggu").trim();
+  const normalized = label.toLowerCase();
+  if (normalized === "diproses") {
+    return { label: "Diproses", className: "status-diproses" };
+  }
+  if (normalized === "selesai") {
+    return { label: "Selesai", className: "status-selesai" };
+  }
+  return { label: "Menunggu", className: "status-menunggu" };
+}
+
 function showToast(message, type) {
   const toastEl = document.getElementById("appToast");
   const toastBody = document.getElementById("appToastBody");
@@ -129,7 +141,7 @@ function renderLoadingSkeleton() {
   const list = document.getElementById("reportList");
   document.getElementById("reportCount").textContent = "...";
   list.innerHTML = `
-    <div class="report-grid">
+    <div class="report-list">
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
@@ -267,17 +279,19 @@ function renderReports() {
   if (sortedReports.length === 0) {
     list.innerHTML = `
       <div class="report-empty">
-        Belum ada laporan. Tekan tombol <strong>+</strong> untuk membuat laporan pertama.
+        Belum ada laporan. Tekan tombol <strong>Buat Laporan</strong> untuk menambah data.
       </div>
     `;
     return;
   }
 
-  list.innerHTML = '<div class="report-grid" id="reportGrid"></div>';
+  list.innerHTML = '<div class="report-list" id="reportGrid"></div>';
   const grid = document.getElementById("reportGrid");
 
   sortedReports.forEach(function (r) {
+    const reportId = Number(r.id);
     const hasLocation = r.lat !== null && r.lat !== undefined;
+    const statusMeta = getStatusMeta(r.status);
     const imageBlock =
       r.image_url && String(r.image_url).trim() !== ""
         ? `<img
@@ -290,18 +304,25 @@ function renderReports() {
           />`
         : '<p class="small text-secondary mb-2">Foto tidak tersedia</p>';
     const html = `
-      <article class="report-card">
+      <article class="report-card report-card-clickable" data-report-id="${reportId}">
         ${imageBlock}
-        <p class="mb-1 report-desc">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
-        <p class="mb-1"><span class="badge text-bg-secondary">Status: ${escapeHtml(r.status || "Menunggu")}</span></p>
-        <p class="mb-1">Lokasi: ${
-          hasLocation
-            ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
-            : "tidak tersedia"
-        }</p>
-        <p class="small text-secondary mb-0">${
-          r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
-        }</p>
+        <div>
+          <p class="mb-1 report-desc text-truncate-2">${escapeHtml(r.desc || "Tidak ada deskripsi")}</p>
+          <div class="report-meta-row mb-1">
+            <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
+            <span class="report-meta">${
+              r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+            }</span>
+          </div>
+          <div class="report-meta-row">
+            <span class="badge text-bg-light border">Dukungan: ${Number(r.upvotes || 0)}</span>
+          </div>
+          <div class="report-meta-row mt-1">
+            <span class="report-meta">${hasLocation
+              ? Number(r.lat).toFixed(4) + ", " + Number(r.lng).toFixed(4)
+              : "Lokasi tidak tersedia"}</span>
+          </div>
+        </div>
       </article>
     `;
     grid.innerHTML += html;
@@ -330,6 +351,15 @@ function initUi() {
   document.getElementById("photo").addEventListener("change", updatePhotoPreview);
   document.getElementById("sortFilter").addEventListener("change", renderReports);
   document.getElementById("reportList").addEventListener("click", function (event) {
+    const reportCard = event.target.closest(".report-card-clickable");
+    if (reportCard) {
+      const reportId = Number(reportCard.getAttribute("data-report-id"));
+      if (reportId) {
+        window.location.href = `/report.html?id=${reportId}`;
+      }
+      return;
+    }
+
     const image = event.target.closest(".inspect-image");
     if (!image) {
       return;

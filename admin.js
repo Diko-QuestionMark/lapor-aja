@@ -9,6 +9,18 @@ const STATUS_OPTIONS = ["Menunggu", "Diproses", "Selesai"];
 
 let adminReports = [];
 
+function getStatusMeta(status) {
+  const label = String(status || "Menunggu").trim();
+  const normalized = label.toLowerCase();
+  if (normalized === "diproses") {
+    return { label: "Diproses", className: "status-diproses" };
+  }
+  if (normalized === "selesai") {
+    return { label: "Selesai", className: "status-selesai" };
+  }
+  return { label: "Menunggu", className: "status-menunggu" };
+}
+
 function getAdminKey() {
   return localStorage.getItem(ADMIN_KEY_STORAGE) || "";
 }
@@ -62,6 +74,7 @@ function renderAdminReports() {
 
   list.innerHTML = "";
   adminReports.forEach(function (report) {
+    const statusMeta = getStatusMeta(report.status);
     const selectOptions = STATUS_OPTIONS.map(function (item) {
       const selected = item === report.status ? "selected" : "";
       return `<option value="${item}" ${selected}>${item}</option>`;
@@ -74,6 +87,8 @@ function renderAdminReports() {
         <img src="${report.image_url || ""}" alt="Foto laporan" class="admin-thumb rounded border" />
         <div class="flex-grow-1">
           <p class="mb-1"><strong>#${report.id}</strong> - ${report.desc || "Tidak ada deskripsi"}</p>
+          <p class="mb-1"><span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span></p>
+          <p class="mb-1"><span class="badge text-bg-primary">Dukungan: ${Number(report.upvotes || 0)}</span></p>
           <p class="small text-secondary mb-2">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : ""}</p>
           <div class="row g-2 align-items-center">
             <div class="col-sm-6 col-md-4">

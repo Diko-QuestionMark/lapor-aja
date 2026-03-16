@@ -39,7 +39,7 @@ exports.handler = async function handler(event) {
 
     if (event.httpMethod === "GET") {
       const result = await pool.query(
-        "SELECT id, description AS desc, lat, lng, image_url, status, created_at FROM reports ORDER BY created_at DESC",
+        "SELECT id, description AS desc, lat, lng, image_url, status, upvotes, created_at FROM reports ORDER BY created_at DESC",
       );
       return json(200, result.rows);
     }

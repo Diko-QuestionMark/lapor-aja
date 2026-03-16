@@ -15,24 +15,32 @@
     <nav class="navbar navbar-dark bg-primary">
       <div class="container d-flex justify-content-between align-items-center">
         <div>
-          <h1 class="h4 mb-0 text-white">LaporAja</h1>
+          <h1 class="h4 mb-0">
+            <a href="/" class="text-white text-decoration-none">LaporAja</a>
+          </h1>
           <small class="text-white-50">Laporkan masalah kota dengan cepat</small>
         </div>
-        <a href="/admin.html" class="btn btn-outline-light btn-sm">Admin</a>
       </div>
     </nav>
 
     <main class="container py-4 pengecilan">
-      <section class="mb-3">
-        <p class="text-secondary mb-2">
-          Pantau laporan warga terbaru, klik foto untuk melihat detail.
-        </p>
+      <section class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">Laporan Warga</h2>
+        <button
+          class="btn btn-primary"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#reportModal"
+        >
+          Buat Laporan
+        </button>
       </section>
+
       <section class="card shadow-sm">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="d-flex align-items-center gap-2">
-              <h2 class="h5 card-title mb-0">Laporan Terbaru</h2>
+              <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
               <span id="reportCount" class="badge text-bg-light border">0</span>
             </div>
             <select id="sortFilter" class="form-select form-select-sm filter-select">
@@ -44,16 +52,6 @@
         </div>
       </section>
     </main>
-
-    <button
-      class="btn btn-primary fab-add shadow"
-      type="button"
-      data-bs-toggle="modal"
-      data-bs-target="#reportModal"
-      aria-label="Buat Laporan"
-    >
-      +
-    </button>
 
     <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
