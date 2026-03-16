@@ -225,7 +225,10 @@ function renderAdminReports() {
         <img
           src="${escapeHtml(imageUrl || "/img/defaultAvatar.jpg")}"
           alt="Foto laporan"
-          class="admin-card-thumb rounded border"
+          class="admin-card-thumb rounded border img-lazy"
+          loading="lazy"
+          decoding="async"
+          onload="this.classList.add('is-loaded')"
         />
         <div class="admin-card-content flex-grow-1 w-100">
           <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-1">

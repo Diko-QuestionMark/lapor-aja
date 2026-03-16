@@ -95,6 +95,55 @@ async function loadResponseFeedback(reportId) {
   }
 }
 
+async function loadStatusHistory(reportId) {
+  const root = document.getElementById("statusHistoryList");
+  if (!root) {
+    return;
+  }
+
+  root.innerHTML = '<p class="small text-secondary mb-0">Memuat histori...</p>';
+  try {
+    const session = readSession();
+    const headers = session && session.token ? { Authorization: `Bearer ${session.token}` } : {};
+    const response = await fetch(`${API_BASE}/report-status-history?report_id=${reportId}`, {
+      headers,
+    });
+    if (!response.ok) {
+      throw new Error("Gagal memuat histori status.");
+    }
+    const items = await response.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      root.innerHTML = '<p class="small text-secondary mb-0">Belum ada histori.</p>';
+      return;
+    }
+    root.innerHTML = items
+      .map(function (item) {
+        const note = String(item.admin_note || "").trim();
+        const evidence = String(item.admin_evidence_url || "").trim();
+        return `
+          <article class="border rounded p-2 mb-2">
+            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+              <span class="badge status-badge ${getStatusMeta(item.status).className}">${item.status}</span>
+              <span class="small text-secondary">${
+                item.updated_at ? new Date(item.updated_at).toLocaleString("id-ID") : "-"
+              }</span>
+            </div>
+            ${item.updated_by ? `<p class="small text-secondary mb-1">Oleh: ${escapeHtml(item.updated_by)}</p>` : ""}
+            ${note ? `<p class="small mb-1">${escapeHtml(note)}</p>` : ""}
+            ${
+              evidence
+                ? `<a class="small" href="${escapeHtml(evidence)}" target="_blank" rel="noopener noreferrer">Lihat bukti</a>`
+                : ""
+            }
+          </article>
+        `;
+      })
+      .join("");
+  } catch (_) {
+    root.innerHTML = '<p class="small text-danger mb-0">Histori tidak bisa dimuat.</p>';
+  }
+}
+
 function getStatusMeta(status) {
   const label = String(status || "Menunggu").trim();
   const normalized = label.toLowerCase();
@@ -187,7 +236,7 @@ function formatLocation(report) {
     : "Lokasi tidak tersedia";
 }
 
-function renderComments(comments) {
+function renderComments(comments, isAdmin) {
   const list = document.getElementById("commentList");
   if (!list) {
     return;
@@ -201,6 +250,15 @@ function renderComments(comments) {
   list.innerHTML = comments
     .map(function (item) {
       const avatar = item.user_avatar_url || DEFAULT_AVATAR_URL;
+      const isDeleted = Boolean(item.is_deleted);
+      const deleteReason = String(item.delete_reason || "").trim();
+      const commentBody = isDeleted
+        ? `<em class="text-secondary">Komentar dihapus oleh admin${deleteReason ? `: ${escapeHtml(deleteReason)}` : "."}</em>`
+        : escapeHtml(item.comment || "");
+      const deleteBtn =
+        isAdmin && !isDeleted
+          ? `<button type="button" class="btn btn-sm btn-outline-danger" data-comment-delete="${Number(item.id)}">Hapus</button>`
+          : "";
       return `
         <article class="border rounded p-2 mb-2">
           <div class="d-flex align-items-start gap-2">
@@ -217,7 +275,8 @@ function renderComments(comments) {
                   item.created_at ? new Date(item.created_at).toLocaleString("id-ID") : "-"
                 }</span>
               </div>
-              <p class="small mb-0">${escapeHtml(item.comment || "")}</p>
+              <p class="small mb-0">${commentBody}</p>
+              ${deleteBtn ? `<div class="mt-2">${deleteBtn}</div>` : ""}
             </div>
           </div>
         </article>
@@ -239,7 +298,9 @@ async function loadComments(reportId) {
       throw new Error("Gagal memuat komentar");
     }
     const comments = await response.json();
-    renderComments(comments);
+    const session = readSession();
+    const isAdmin = Boolean(session && String(session.role || "").toLowerCase() === "admin");
+    renderComments(comments, isAdmin);
   } catch (_) {
     list.innerHTML = '<p class="text-danger small mb-0">Komentar gagal dimuat.</p>';
   }
@@ -451,7 +512,6 @@ function renderDetail(report) {
       }
     </section>
 
-    <hr class="my-4" />
     <section>
       <h3 class="h6 mb-3">Komentar</h3>
       <form id="commentForm" class="mb-3">
@@ -560,6 +620,49 @@ function renderDetail(report) {
   loadComments(report.id);
   if (hasAdminResponse) {
     loadResponseFeedback(report.id);
+  }
+
+  const commentList = document.getElementById("commentList");
+  if (commentList) {
+    commentList.addEventListener("click", async function (event) {
+      const btn = event.target.closest("[data-comment-delete]");
+      if (!btn) {
+        return;
+      }
+      const commentId = Number(btn.getAttribute("data-comment-delete"));
+      if (!commentId || Number.isNaN(commentId)) {
+        return;
+      }
+      const reason = window.prompt("Alasan penghapusan komentar:");
+      if (!reason || String(reason).trim().length < 3) {
+        window.alert("Alasan minimal 3 karakter.");
+        return;
+      }
+      const session = readSession();
+      if (!session || !session.token) {
+        window.location.href = "/login.html";
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/report-comments`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.token}`,
+          },
+          body: JSON.stringify({ id: commentId, reason: String(reason).trim() }),
+        });
+        const payload = await response.json().catch(function () {
+          return {};
+        });
+        if (!response.ok) {
+          throw new Error(payload.error || "Gagal menghapus komentar.");
+        }
+        await loadComments(report.id);
+      } catch (error) {
+        window.alert(error.message || "Gagal menghapus komentar.");
+      }
+    });
   }
 }
 

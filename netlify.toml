@@ -46,3 +46,8 @@
   from = "/report-feedback"
   to = "/.netlify/functions/report-feedback"
   status = 200
+
+[[redirects]]
+  from = "/report-status-history"
+  to = "/.netlify/functions/report-status-history"
+  status = 200

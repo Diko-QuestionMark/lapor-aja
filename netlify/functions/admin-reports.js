@@ -107,7 +107,25 @@ exports.handler = async function handler(event) {
         return json(404, { error: "Laporan tidak ditemukan" });
       }
 
-      return json(200, { status: "ok", report: result.rows[0] });
+      const updated = result.rows[0];
+      await pool.query(
+        `
+          INSERT INTO report_status_history
+            (report_id, status, admin_note, admin_evidence_url, updated_at, updated_by)
+          VALUES
+            ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          Number(updated.id),
+          updated.status,
+          updated.admin_note,
+          updated.admin_evidence_url,
+          updated.admin_updated_at,
+          updated.admin_updated_by,
+        ],
+      );
+
+      return json(200, { status: "ok", report: updated });
     }
 
     return json(405, { error: "Method tidak didukung" });

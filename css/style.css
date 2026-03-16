@@ -272,6 +272,15 @@ body.has-fixed-navbar {
   display: block;
 }
 
+.img-lazy {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.img-lazy.is-loaded {
+  opacity: 1;
+}
+
 .report-cover-empty {
   display: flex;
   align-items: center;

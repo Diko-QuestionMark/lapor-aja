@@ -9,7 +9,7 @@ function json(statusCode, payload) {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+      "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type,Authorization",
     },
     body: JSON.stringify(payload),
@@ -39,6 +39,10 @@ exports.handler = async function handler(event) {
             c.user_name,
             c.user_avatar_url,
             c.comment,
+            c.is_deleted,
+            c.deleted_at,
+            c.deleted_by,
+            c.delete_reason,
             c.created_at
           FROM report_comments c
           WHERE c.report_id = $1
@@ -103,6 +107,49 @@ exports.handler = async function handler(event) {
       );
 
       return json(201, { status: "ok", comment: inserted.rows[0] });
+    }
+
+    if (event.httpMethod === "DELETE") {
+      const token = getBearerToken(event);
+      const authUser = verifyToken(token);
+      if (!authUser || !authUser.sub || !authUser.email) {
+        return json(401, { error: "Login dibutuhkan untuk menghapus komentar" });
+      }
+      if (String(authUser.role || "").toLowerCase() !== "admin") {
+        return json(403, { error: "Hanya admin yang bisa menghapus komentar" });
+      }
+
+      const idFromQuery = event.queryStringParameters
+        ? Number(event.queryStringParameters.id)
+        : NaN;
+      const body = event.body ? JSON.parse(event.body) : {};
+      const idFromBody = Number(body.id);
+      const commentId = !Number.isNaN(idFromQuery) && idFromQuery > 0 ? idFromQuery : idFromBody;
+      const reason = String(body.reason || "").trim();
+
+      if (!commentId || Number.isNaN(commentId)) {
+        return json(400, { error: "ID komentar tidak valid" });
+      }
+      if (reason.length < 3) {
+        return json(400, { error: "Alasan penghapusan minimal 3 karakter" });
+      }
+
+      const result = await pool.query(
+        `
+          UPDATE report_comments
+          SET is_deleted = TRUE,
+              deleted_at = CURRENT_TIMESTAMP,
+              deleted_by = $1,
+              delete_reason = $2
+          WHERE id = $3
+          RETURNING id, report_id
+        `,
+        [String(authUser.name || authUser.email || "Admin"), reason, commentId],
+      );
+      if (result.rowCount === 0) {
+        return json(404, { error: "Komentar tidak ditemukan" });
+      }
+      return json(200, { status: "ok", deleted_id: commentId });
     }
 
     return json(405, { error: "Method tidak didukung" });

@@ -68,6 +68,10 @@ function initDatabase() {
           user_name TEXT NOT NULL,
           user_avatar_url TEXT,
           comment TEXT NOT NULL,
+          is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+          deleted_at TIMESTAMP,
+          deleted_by TEXT,
+          delete_reason TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -92,8 +96,22 @@ function initDatabase() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS report_status_history (
+          id SERIAL PRIMARY KEY,
+          report_id INTEGER NOT NULL,
+          status VARCHAR(30) NOT NULL,
+          admin_note TEXT,
+          admin_evidence_url TEXT,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_by TEXT
+        )
+      `);
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_report_media_report_id ON report_media(report_id)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_report_status_history_report_id ON report_status_history(report_id)",
       );
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS title TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
@@ -116,7 +134,25 @@ function initDatabase() {
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS user_avatar_url TEXT");
+      await pool.query(
+        "ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+      );
+      await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
+      await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS deleted_by TEXT");
+      await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS delete_reason TEXT");
       await pool.query("ALTER TABLE report_media ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0");
+      await pool.query(
+        "ALTER TABLE report_status_history ADD COLUMN IF NOT EXISTS admin_note TEXT",
+      );
+      await pool.query(
+        "ALTER TABLE report_status_history ADD COLUMN IF NOT EXISTS admin_evidence_url TEXT",
+      );
+      await pool.query(
+        "ALTER TABLE report_status_history ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+      );
+      await pool.query(
+        "ALTER TABLE report_status_history ADD COLUMN IF NOT EXISTS updated_by TEXT",
+      );
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_report_feedback_report_id ON report_response_feedback(report_id)",
       );

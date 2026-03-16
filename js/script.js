@@ -850,8 +850,11 @@ function renderReports() {
       coverImage !== ""
         ? `<img
             src="${escapeHtml(coverImage)}"
-            class="img-fluid report-cover"
+            class="img-fluid report-cover img-lazy"
             alt="Foto laporan"
+            loading="lazy"
+            decoding="async"
+            onload="this.classList.add('is-loaded')"
           />`
         : '<div class="report-cover report-cover-empty">Foto tidak tersedia</div>';
     const authorBlock = hasReporterProfile
