@@ -118,6 +118,7 @@ exports.handler = async function handler(event) {
       if (String(authUser.role || "").toLowerCase() !== "admin") {
         return json(403, { error: "Hanya admin yang bisa menghapus komentar" });
       }
+      const adminAgency = String(authUser.agency || "").trim();
 
       const idFromQuery = event.queryStringParameters
         ? Number(event.queryStringParameters.id)
@@ -132,6 +133,26 @@ exports.handler = async function handler(event) {
       }
       if (reason.length < 3) {
         return json(400, { error: "Alasan penghapusan minimal 3 karakter" });
+      }
+
+      if (adminAgency && adminAgency !== "all") {
+        const accessCheck = await pool.query(
+          `
+            SELECT r.agency
+            FROM report_comments c
+            JOIN reports r ON r.id = c.report_id
+            WHERE c.id = $1
+            LIMIT 1
+          `,
+          [commentId],
+        );
+        if (accessCheck.rowCount === 0) {
+          return json(404, { error: "Komentar tidak ditemukan" });
+        }
+        const reportAgency = String(accessCheck.rows[0].agency || "").trim();
+        if (reportAgency !== adminAgency && reportAgency !== "Umum") {
+          return json(403, { error: "Tidak punya akses ke komentar ini" });
+        }
       }
 
       const result = await pool.query(

@@ -33,6 +33,7 @@ exports.handler = async function handler(event) {
     const token = getBearerToken(event);
     const authUser = verifyToken(token);
     const isAdmin = Boolean(authUser && String(authUser.role || "").toLowerCase() === "admin");
+    const adminAgency = String((authUser && authUser.agency) || "").trim();
 
     if (!isAdmin) {
       const reportResult = await pool.query(
@@ -44,6 +45,18 @@ exports.handler = async function handler(event) {
       }
       const ownerId = Number(reportResult.rows[0].reporter_user_id || 0);
       if (!authUser || Number(authUser.sub) !== ownerId) {
+        return json(403, { error: "Tidak punya akses ke histori laporan ini" });
+      }
+    } else if (adminAgency && adminAgency !== "all") {
+      const reportResult = await pool.query(
+        "SELECT agency FROM reports WHERE id = $1 LIMIT 1",
+        [reportId],
+      );
+      if (reportResult.rowCount === 0) {
+        return json(404, { error: "Laporan tidak ditemukan" });
+      }
+      const reportAgency = String(reportResult.rows[0].agency || "").trim();
+      if (reportAgency !== adminAgency && reportAgency !== "Umum") {
         return json(403, { error: "Tidak punya akses ke histori laporan ini" });
       }
     }

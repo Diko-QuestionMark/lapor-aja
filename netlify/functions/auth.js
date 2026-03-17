@@ -1,5 +1,6 @@
 const { pool, initDatabase } = require("./_db");
 const { hashPassword, verifyPassword, signToken } = require("./_auth");
+const { getAdminAgencyByEmail, normalizeEmail } = require("./_admin-config");
 
 function json(statusCode, payload) {
   return {
@@ -12,10 +13,6 @@ function json(statusCode, payload) {
     },
     body: JSON.stringify(payload),
   };
-}
-
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
 }
 
 exports.handler = async function handler(event) {
@@ -38,6 +35,8 @@ exports.handler = async function handler(event) {
       const name = String(body.name || "").trim();
       const email = normalizeEmail(body.email);
       const password = String(body.password || "");
+      const adminAgency = getAdminAgencyByEmail(email);
+      const nextRole = adminAgency ? "admin" : "user";
 
       if (name.length < 2) {
         return json(400, { error: "Nama minimal 2 karakter" });
@@ -53,8 +52,8 @@ exports.handler = async function handler(event) {
       let created;
       try {
         created = await pool.query(
-          "INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, 'user') RETURNING id, name, email, role, profile_image_url, created_at",
-          [name, email, passwordHash],
+          "INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, $4) RETURNING id, name, email, role, profile_image_url, created_at",
+          [name, email, passwordHash, nextRole],
         );
       } catch (error) {
         if (error.code === "23505") {
@@ -64,11 +63,14 @@ exports.handler = async function handler(event) {
       }
 
       const user = created.rows[0];
+      user.role = nextRole;
+      user.agency = adminAgency || "";
       const token = signToken({
         sub: user.id,
         name: user.name,
         email: user.email,
         role: user.role || "user",
+        agency: user.agency || "",
       });
 
       return json(201, { status: "ok", token, user });
@@ -95,11 +97,14 @@ exports.handler = async function handler(event) {
         return json(401, { error: "Email atau password salah" });
       }
 
+      const adminAgency = getAdminAgencyByEmail(row.email);
+      const role = adminAgency ? "admin" : row.role || "user";
       const user = {
         id: row.id,
         name: row.name,
         email: row.email,
-        role: row.role || "user",
+        role: role,
+        agency: adminAgency || "",
         profile_image_url: row.profile_image_url || "",
       };
       const token = signToken({
@@ -107,6 +112,7 @@ exports.handler = async function handler(event) {
         name: user.name,
         email: user.email,
         role: user.role,
+        agency: user.agency || "",
       });
       return json(200, { status: "ok", token, user });
     }

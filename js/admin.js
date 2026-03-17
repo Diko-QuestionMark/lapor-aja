@@ -8,10 +8,11 @@ const SESSION_KEY = "laporaja_session_v1";
 const ADMIN_READ_KEY = "laporaja_admin_read_reports_v1";
 
 let adminReports = [];
+let sessionAgency = "";
 
 function getAgencyFilter() {
   const el = document.getElementById("agencyFilter");
-  return el ? String(el.value || "all") : "all";
+  return el ? String(el.value || "") : "";
 }
 
 function getSearchQuery() {
@@ -83,6 +84,25 @@ function requireAdminSession() {
     return null;
   }
   return session;
+}
+
+function setupAgencyFilter(session) {
+  const agency = String((session && session.agency) || "").trim();
+  const agencyFilterEl = document.getElementById("agencyFilter");
+  if (!agencyFilterEl) {
+    return;
+  }
+
+  agencyFilterEl.innerHTML = "";
+  const baseOption = document.createElement("option");
+  baseOption.value = "agency";
+  baseOption.textContent = agency || "Instansi";
+  const generalOption = document.createElement("option");
+  generalOption.value = "agency_general";
+  generalOption.textContent = agency ? `${agency} + Umum` : "Instansi + Umum";
+  agencyFilterEl.appendChild(baseOption);
+  agencyFilterEl.appendChild(generalOption);
+  agencyFilterEl.value = "agency";
 }
 
 function authHeaders() {
@@ -209,8 +229,11 @@ function renderAdminReports() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
   const filteredReports = adminReports.filter(function (report) {
+    const reportAgency = String(report.agency || "Umum");
     const agencyMatch =
-      agencyFilter === "all" || String(report.agency || "Umum") === agencyFilter;
+      agencyFilter === "agency_general"
+        ? reportAgency === sessionAgency || reportAgency === "Umum"
+        : reportAgency === sessionAgency;
     if (!agencyMatch) {
       return false;
     }
@@ -282,10 +305,11 @@ function renderAdminReports() {
         month: "Bulan Ini",
       };
       const timeLabel = timeLabels[timeMode] || "Semua Waktu";
-      topTitle.textContent =
-        agencyFilter === "all"
-          ? `Laporan Warga • ${timeLabel}`
-          : `Laporan ke Instansi: ${agencyFilter} • ${timeLabel}`;
+      const agencyTitle =
+        agencyFilter === "agency_general"
+          ? `${sessionAgency} + Umum`
+          : sessionAgency;
+      topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} • ${timeLabel}`;
     }
     list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
     return;
@@ -299,10 +323,11 @@ function renderAdminReports() {
       month: "Bulan Ini",
     };
     const timeLabel = timeLabels[timeMode] || "Semua Waktu";
-    topTitle.textContent =
-      agencyFilter === "all"
-        ? `Laporan Warga • ${timeLabel}`
-        : `Laporan ke Instansi: ${agencyFilter} • ${timeLabel}`;
+    const agencyTitle =
+      agencyFilter === "agency_general"
+        ? `${sessionAgency} + Umum`
+        : sessionAgency;
+    topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} • ${timeLabel}`;
   }
 
   list.innerHTML = "";
@@ -413,7 +438,7 @@ function wireEvents() {
       const sortFilter = document.getElementById("adminSortFilter");
       const timeFilter = document.getElementById("adminTimeFilter");
       if (agencyFilter) {
-        agencyFilter.value = "all";
+        agencyFilter.value = "agency";
       }
       if (searchInput) {
         searchInput.value = "";
@@ -441,6 +466,8 @@ function init() {
   if (!session) {
     return;
   }
+  sessionAgency = String(session.agency || "").trim();
+  setupAgencyFilter(session);
   wireEvents();
   loadAdminReports();
 }

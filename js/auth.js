@@ -45,6 +45,7 @@ function setSession(token, user) {
       name: user.name,
       email: user.email,
       role: user.role || "user",
+      agency: user.agency || "",
       profile_image_url: user.profile_image_url || "",
       loginAt: Date.now(),
     }),

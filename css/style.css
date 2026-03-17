@@ -664,6 +664,21 @@ body.has-fixed-navbar {
   padding: 12px;
 }
 
+.response-panel-menunggu {
+  border-left: 3px solid #111827;
+  background: #f3f4f6;
+}
+
+.response-panel-diproses {
+  border-left: 3px solid #1d4ed8;
+  background: #eff6ff;
+}
+
+.response-panel-selesai {
+  border-left: 3px solid #16a34a;
+  background: #ecfdf3;
+}
+
 .response-panel-meta {
   padding-top: 4px;
   border-top: 1px solid #e6e9ef;

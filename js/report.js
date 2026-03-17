@@ -156,6 +156,17 @@ function getStatusMeta(status) {
   return { label: "Menunggu", className: "status-menunggu" };
 }
 
+function getResponsePanelClass(status) {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "diproses") {
+    return "response-panel-diproses";
+  }
+  if (normalized === "selesai") {
+    return "response-panel-selesai";
+  }
+  return "response-panel-menunggu";
+}
+
 function getReportId() {
   const params = new URLSearchParams(window.location.search);
   return Number(params.get("id"));
@@ -384,6 +395,7 @@ function wireCommentForm(reportId) {
 function renderDetail(report) {
   const voted = hasUpvoted(report.id);
   const statusMeta = getStatusMeta(report.status);
+  const responsePanelClass = getResponsePanelClass(report.status);
   const imageUrls = Array.isArray(report.image_urls)
     ? report.image_urls
         .map(function (url) {
@@ -413,6 +425,7 @@ function renderDetail(report) {
   const adminNote = String(report.admin_note || "").trim();
   const adminEvidence = String(report.admin_evidence_url || "").trim();
   const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
+  const agencyLabel = String(report.agency || "Umum");
   const container = document.getElementById("detailContainer");
   const galleryId = `reportGallery${Number(report.id)}`;
   const galleryBlock =
@@ -447,7 +460,9 @@ function renderDetail(report) {
     <div class="mb-3">
       <h2 class="h5 mb-1">${escapeHtml(report.title || "Tanpa Judul")}</h2>
       <div class="small text-secondary mb-1">Laporan #${report.id}</div>
-      <div class="meta-item mb-1"><i class="bi bi-building"></i>${escapeHtml(report.agency || "Umum")}</div>
+      <div class="meta-item mb-1">
+        <i class="bi bi-building"></i>${escapeHtml(agencyLabel)}
+      </div>
       <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
     </div>
     ${galleryBlock}
@@ -478,7 +493,7 @@ function renderDetail(report) {
       ${
         hasAdminResponse
           ? `
-            <div class="response-panel">
+            <div class="response-panel ${responsePanelClass}">
               <p class="mb-2">${escapeHtml(adminNote || "Instansi sudah memberi update.")}</p>
               ${
                 adminEvidence

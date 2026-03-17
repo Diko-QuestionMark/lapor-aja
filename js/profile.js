@@ -443,6 +443,7 @@ async function loadProfile() {
       name: currentUser.name,
       email: currentUser.email,
       role: currentUser.role || currentSession.role || "user",
+      agency: currentUser.agency || currentSession.agency || "",
       profile_image_url: currentUser.profile_image_url || "",
     };
     writeSession(nextSession);
@@ -505,6 +506,7 @@ async function handleSaveProfile(event) {
       name: currentUser.name,
       email: currentUser.email,
       role: currentUser.role || currentSession.role || "user",
+      agency: currentUser.agency || currentSession.agency || "",
       profile_image_url: currentUser.profile_image_url || "",
     };
     writeSession(nextSession);

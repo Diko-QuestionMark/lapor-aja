@@ -186,6 +186,17 @@ function getStatusMeta(status) {
   return { label: "Menunggu", className: "status-menunggu" };
 }
 
+function getResponsePanelClass(status) {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "diproses") {
+    return "response-panel-diproses";
+  }
+  if (normalized === "selesai") {
+    return "response-panel-selesai";
+  }
+  return "response-panel-menunggu";
+}
+
 function formatLocation(report) {
   const hasLocation = report.lat !== null && report.lat !== undefined;
   return hasLocation
@@ -268,6 +279,7 @@ function fillForm(report) {
 function renderDetail(report) {
   const root = document.getElementById("adminReportDetail");
   const statusMeta = getStatusMeta(report.status);
+  const responsePanelClass = getResponsePanelClass(report.status);
   const imageUrls = Array.isArray(report.image_urls)
     ? report.image_urls
         .map(function (url) {
@@ -296,26 +308,43 @@ function renderDetail(report) {
     : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</span>`;
   const adminNote = String(report.admin_note || "").trim();
   const adminEvidence = String(report.admin_evidence_url || "").trim();
+  const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
+  const agencyLabel = String(report.agency || "Umum");
+  const handleTitle = document.getElementById("adminHandleTitle");
+  if (handleTitle) {
+    handleTitle.textContent = hasAdminResponse
+      ? "Edit Tindak Lanjut Instansi"
+      : "Tindak Lanjut Instansi";
+  }
   const galleryBlock =
     imageUrls.length === 0
       ? '<div class="detail-image rounded border mb-3 d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
       : imageUrls.length === 1
       ? `
-        <img
-          src="${escapeHtml(imageUrls[0] || "")}"
-          alt="Foto laporan"
-          class="img-fluid rounded border mb-3 detail-image"
-        />
+        <a href="${escapeHtml(imageUrls[0] || "")}" target="_blank" rel="noopener noreferrer">
+          <img
+            src="${escapeHtml(imageUrls[0] || "")}"
+            alt="Foto laporan"
+            class="img-fluid rounded border mb-3 detail-image"
+          />
+        </a>
       `
       : `
         <div class="mb-3">
           <div class="rounded border p-2 bg-light">
-            <img
-              id="adminReportGalleryMain"
-              src="${escapeHtml(imageUrls[0])}"
-              class="d-block w-100 detail-image rounded"
-              alt="Foto laporan 1"
-            />
+            <a
+              id="adminReportGalleryLink"
+              href="${escapeHtml(imageUrls[0])}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                id="adminReportGalleryMain"
+                src="${escapeHtml(imageUrls[0])}"
+                class="d-block w-100 detail-image rounded"
+                alt="Foto laporan 1"
+              />
+            </a>
           </div>
           <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
             <button id="adminReportGalleryPrev" class="btn btn-sm btn-outline-primary" type="button">Prev</button>
@@ -330,7 +359,9 @@ function renderDetail(report) {
     <div class="mb-3">
       <h2 class="h5 mb-1">${escapeHtml(report.title || "Tanpa Judul")}</h2>
       <div class="small text-secondary mb-1">Laporan #${report.id}</div>
-      <div class="meta-item mb-1"><i class="bi bi-building"></i>${escapeHtml(report.agency || "Umum")}</div>
+      <div class="meta-item mb-1">
+        <i class="bi bi-building"></i>${escapeHtml(agencyLabel)}
+      </div>
       <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
     </div>
     ${galleryBlock}
@@ -353,7 +384,7 @@ function renderDetail(report) {
     <hr class="my-4" />
     <section class="mb-3">
       <h3 class="h6 mb-2">Respons Saat Ini</h3>
-      <div class="border rounded p-3 bg-light">
+      <div class="response-panel ${responsePanelClass}">
         <p class="mb-2">${escapeHtml(adminNote || "Belum ada respons.")}</p>
         ${
           adminEvidence
@@ -389,6 +420,7 @@ function renderDetail(report) {
   if (imageUrls.length > 1) {
     let activeIndex = 0;
     const main = document.getElementById("adminReportGalleryMain");
+    const link = document.getElementById("adminReportGalleryLink");
     const indexEl = document.getElementById("adminReportGalleryIndex");
     const prevBtn = document.getElementById("adminReportGalleryPrev");
     const nextBtn = document.getElementById("adminReportGalleryNext");
@@ -399,6 +431,9 @@ function renderDetail(report) {
       if (main) {
         main.src = imageUrls[activeIndex];
         main.alt = `Foto laporan ${activeIndex + 1}`;
+      }
+      if (link) {
+        link.href = imageUrls[activeIndex];
       }
       if (indexEl) {
         indexEl.textContent = String(activeIndex + 1);

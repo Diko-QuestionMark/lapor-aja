@@ -17,13 +17,21 @@ function json(statusCode, payload) {
   };
 }
 
-function isAuthorized(event) {
+function getAdminContext(event) {
   const token = getBearerToken(event);
   const authUser = verifyToken(token);
   if (!authUser || !authUser.sub) {
-    return false;
+    return null;
   }
-  return String(authUser.role || "").toLowerCase() === "admin";
+  const role = String(authUser.role || "").toLowerCase();
+  if (role !== "admin") {
+    return null;
+  }
+  const agency = String(authUser.agency || "").trim();
+  if (!agency) {
+    return null;
+  }
+  return { authUser, agency };
 }
 
 exports.handler = async function handler(event) {
@@ -31,7 +39,8 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true });
   }
 
-  if (!isAuthorized(event)) {
+  const adminContext = getAdminContext(event);
+  if (!adminContext) {
     return json(401, { error: "Admin key tidak valid" });
   }
 
@@ -39,6 +48,7 @@ exports.handler = async function handler(event) {
     await initDatabase();
 
     if (event.httpMethod === "GET") {
+      const agencyFilter = adminContext.agency;
       const result = await pool.query(
         `
           SELECT
@@ -72,8 +82,10 @@ exports.handler = async function handler(event) {
             FROM report_media
             WHERE report_id = r.id
           ) rm ON TRUE
+          WHERE ($1 = 'all' OR r.agency = $1 OR r.agency = 'Umum')
           ORDER BY r.created_at DESC
         `,
+        [agencyFilter],
       );
       return json(200, result.rows);
     }
@@ -96,6 +108,20 @@ exports.handler = async function handler(event) {
       }
       if (evidenceUrl && !/^https?:\/\//i.test(evidenceUrl)) {
         return json(400, { error: "URL bukti tidak valid" });
+      }
+
+      if (adminContext.agency !== "all") {
+        const agencyCheck = await pool.query(
+          "SELECT agency FROM reports WHERE id = $1 LIMIT 1",
+          [id],
+        );
+        if (agencyCheck.rowCount === 0) {
+          return json(404, { error: "Laporan tidak ditemukan" });
+        }
+        const reportAgency = String(agencyCheck.rows[0].agency || "").trim();
+        if (reportAgency !== adminContext.agency && reportAgency !== "Umum") {
+          return json(403, { error: "Tidak punya akses ke laporan ini" });
+        }
       }
 
       const result = await pool.query(

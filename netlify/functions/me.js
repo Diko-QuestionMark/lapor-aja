@@ -1,5 +1,6 @@
 const { pool, initDatabase } = require("./_db");
 const { getBearerToken, verifyToken, signToken } = require("./_auth");
+const { getAdminAgencyByEmail } = require("./_admin-config");
 
 function json(statusCode, payload) {
   return {
@@ -44,6 +45,14 @@ exports.handler = async function handler(event) {
       const user = await getUserById(userId);
       if (!user) {
         return json(404, { error: "User tidak ditemukan" });
+      }
+      const adminAgency = getAdminAgencyByEmail(user.email);
+      if (adminAgency) {
+        user.role = "admin";
+        user.agency = adminAgency;
+      } else {
+        user.role = user.role || "user";
+        user.agency = "";
       }
       return json(200, { status: "ok", user });
     }
@@ -98,11 +107,20 @@ exports.handler = async function handler(event) {
       }
 
       const user = updated.rows[0];
+      const adminAgency = getAdminAgencyByEmail(user.email);
+      if (adminAgency) {
+        user.role = "admin";
+        user.agency = adminAgency;
+      } else {
+        user.role = user.role || "user";
+        user.agency = "";
+      }
       const nextToken = signToken({
         sub: user.id,
         name: user.name,
         email: user.email,
         role: user.role || "user",
+        agency: user.agency || "",
       });
 
       return json(200, { status: "ok", user, token: nextToken });
