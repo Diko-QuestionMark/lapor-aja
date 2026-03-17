@@ -158,7 +158,19 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="agency" class="form-label">Tujuan Instansi</label>
+                  <div class="d-flex align-items-center justify-content-between gap-2">
+                    <label for="agency" class="form-label mb-0">Tujuan Instansi</label>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#agencyGuidePanel"
+                      aria-expanded="false"
+                      aria-controls="agencyGuidePanel"
+                    >
+                      Panduan Instansi
+                    </button>
+                  </div>
                   <select id="agency" class="form-select">
                     <option value="Umum">Umum</option>
                     <option value="Dinas PU">Dinas PU (PU)</option>
@@ -170,6 +182,21 @@
                     <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>
                     <option value="Satpol PP">Satpol PP</option>
                   </select>
+                  <div class="collapse mt-2" id="agencyGuidePanel">
+                    <div class="border rounded p-2 bg-light small">
+                      <p class="mb-2">Kalau ragu, pilih <strong>Umum</strong>. Admin akan membantu meneruskan.</p>
+                      <ul class="mb-0">
+                        <li><strong>Dinas PU</strong>: jalan rusak, jembatan, drainase.</li>
+                        <li><strong>Dinas Perhubungan</strong>: lampu lalu lintas, rambu, parkir liar.</li>
+                        <li><strong>Dinas Kebersihan</strong>: sampah menumpuk, TPS penuh.</li>
+                        <li><strong>Dinas Lingkungan Hidup</strong>: pencemaran, pohon tumbang, ruang hijau.</li>
+                        <li><strong>PDAM</strong>: air mati, pipa bocor.</li>
+                        <li><strong>PLN</strong>: listrik padam, kabel berbahaya.</li>
+                        <li><strong>Makan Bergizi Gratis (MBG)</strong>: distribusi/layanan MBG.</li>
+                        <li><strong>Satpol PP</strong>: ketertiban umum, PKL liar, reklame ilegal.</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mb-3">
@@ -230,6 +257,7 @@
         </div>
       </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/navbar-component.js"></script>
