@@ -627,7 +627,10 @@ function toggleLocation(checkbox) {
 
 function renderLoadingSkeleton() {
   const list = document.getElementById("reportList");
-  document.getElementById("reportCount").textContent = "...";
+  const countBadge = document.getElementById("reportCount");
+  if (countBadge) {
+    countBadge.textContent = "...";
+  }
   list.innerHTML = `
     <div class="report-list">
       <div class="skeleton-item"></div>
