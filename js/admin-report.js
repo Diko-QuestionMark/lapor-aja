@@ -198,6 +198,21 @@ function setNotice(message, type) {
   root.textContent = message;
 }
 
+function setHandleLoading(isLoading) {
+  const loading = document.getElementById("handleLoading");
+  const form = document.getElementById("adminHandleForm");
+  const saveBtn = document.getElementById("saveHandleBtn");
+  if (loading) {
+    loading.classList.toggle("d-none", !isLoading);
+  }
+  if (form) {
+    form.classList.toggle("d-none", isLoading);
+  }
+  if (saveBtn) {
+    saveBtn.disabled = isLoading;
+  }
+}
+
 function validateEvidenceFile(file) {
   if (!file) {
     return "";
@@ -397,6 +412,7 @@ async function loadReport() {
     return;
   }
 
+  setHandleLoading(true);
   const response = await fetch(API_BASE + "/admin/reports", {
     headers: authHeaders(),
   });
@@ -418,6 +434,7 @@ async function loadReport() {
   renderDetail(report);
   fillForm(report);
   loadAdminComments(report.id);
+  setHandleLoading(false);
 }
 
 async function saveResponse(event) {
@@ -537,6 +554,7 @@ function init() {
     setNotice(error.message || "Gagal memuat data.", "danger");
     document.getElementById("adminReportDetail").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa memuat laporan.</p>';
+    setHandleLoading(false);
   });
 }
 
