@@ -20,7 +20,7 @@
 
     <main class="container py-4 pengecilan">
       <section class="d-flex justify-content-between align-items-center mb-3">
-        <h2 id="reportSectionTitle" class="h5 mb-0">Laporan Warga</h2>
+        <h2 id="reportSectionTitle" class="h5 mb-0">Laporan Warga Terbaru</h2>
         <button
           id="createReportBtn"
           class="btn btn-primary"
@@ -66,6 +66,7 @@
                 <div class="col-12 col-md-6">
                   <label for="sortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
                   <select id="sortFilter" class="form-select form-select-sm">
+                    <option value="smart">Rekomendasi</option>
                     <option value="newest">Terbaru</option>
                     <option value="oldest">Terlama</option>
                     <option value="upvotes">Dukungan Terbanyak</option>
@@ -87,10 +88,10 @@
                   <select id="agencyFilterUser" class="form-select form-select-sm flex-grow-1">
                     <option value="all">Semua Instansi</option>
                     <option value="Umum">Umum</option>
-                    <option value="Dinas PU">Dinas PU</option>
-                    <option value="Dinas Perhubungan">Dinas Perhubungan</option>
-                    <option value="Dinas Kebersihan">Dinas Kebersihan</option>
-                    <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+                      <option value="Dinas PU">Dinas PU (PU)</option>
+                      <option value="Dinas Perhubungan">Dinas Perhubungan (Dishub)</option>
+                      <option value="Dinas Kebersihan">Dinas Kebersihan (DK)</option>
+                      <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup (DLH)</option>
                     <option value="PDAM">PDAM</option>
                     <option value="PLN">PLN</option>
                     <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>
@@ -103,7 +104,7 @@
                     type="button"
                     class="btn btn-sm btn-outline-secondary"
                   >
-                    Reset
+                    Tanpa Filter
                   </button>
                 </div>
               </div>
@@ -160,10 +161,10 @@
                   <label for="agency" class="form-label">Tujuan Instansi</label>
                   <select id="agency" class="form-select">
                     <option value="Umum">Umum</option>
-                    <option value="Dinas PU">Dinas PU</option>
-                    <option value="Dinas Perhubungan">Dinas Perhubungan</option>
-                    <option value="Dinas Kebersihan">Dinas Kebersihan</option>
-                    <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+                    <option value="Dinas PU">Dinas PU (PU)</option>
+                    <option value="Dinas Perhubungan">Dinas Perhubungan (Dishub)</option>
+                    <option value="Dinas Kebersihan">Dinas Kebersihan (DK)</option>
+                    <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup (DLH)</option>
                     <option value="PDAM">PDAM</option>
                     <option value="PLN">PLN</option>
                     <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>

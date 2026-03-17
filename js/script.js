@@ -28,6 +28,23 @@ const AGENCY_OPTIONS = new Set([
   "Satpol PP",
 ]);
 
+const AGENCY_ABBREV = {
+  "Dinas PU": "PU",
+  "Dinas Perhubungan": "Dishub",
+  "Dinas Kebersihan": "DK",
+  "Dinas Lingkungan Hidup": "DLH",
+  "Makan Bergizi Gratis (MBG)": "MBG",
+  "Satpol PP": "Satpol PP",
+  PDAM: "PDAM",
+  PLN: "PLN",
+  Umum: "Umum",
+};
+
+function getAgencyShortLabel(value) {
+  const key = String(value || "Umum");
+  return AGENCY_ABBREV[key] || key;
+}
+
 let reports = [];
 let latitude = null;
 let longitude = null;
@@ -195,6 +212,56 @@ function escapeHtml(text) {
       }[char] || char
     );
   });
+}
+
+function formatTimeAgo(value) {
+  if (!value) {
+    return "";
+  }
+  let raw = value;
+  const now = Date.now();
+  if (typeof raw === "string") {
+    const hasTz = /[zZ]$/.test(raw) || /[+-]\d{2}:\d{2}$/.test(raw);
+    if (!hasTz) {
+      const localRaw = raw.replace(" ", "T");
+      const utcRaw = `${localRaw}Z`;
+      const localTs = new Date(localRaw).getTime();
+      const utcTs = new Date(utcRaw).getTime();
+      const localDiff = Math.abs(now - localTs);
+      const utcDiff = Math.abs(now - utcTs);
+      const bestTs = utcDiff < localDiff ? utcTs : localTs;
+      raw = new Date(bestTs).toISOString();
+    } else {
+      raw = raw.replace(" ", "T");
+    }
+  }
+  const ts = new Date(raw).getTime();
+  if (!ts) {
+    return "";
+  }
+  const diffMs = Date.now() - ts;
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSec < 60) {
+    return diffSec <= 5 ? "baru saja" : `${diffSec} detik yang lalu`;
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin} menit yang lalu`;
+  }
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) {
+    return `${diffHour} jam yang lalu`;
+  }
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) {
+    return `${diffDay} hari yang lalu`;
+  }
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) {
+    return `${diffMonth} bulan yang lalu`;
+  }
+  const diffYear = Math.floor(diffMonth / 12);
+  return `${diffYear} tahun yang lalu`;
 }
 
 function getStatusMeta(status) {
@@ -694,7 +761,7 @@ async function submitReport() {
 
     resetForm();
     reportModal.hide();
-    showToast("Laporan berhasil dikirim.", "success");
+    showToast("Laporan berhasil dikirim. Terima kasih sudah peduli!", "success");
     await loadReports();
   } catch (error) {
     showToast("Laporan gagal dikirim. Cek backend/database.", "error");
@@ -762,6 +829,15 @@ function getSortedReports() {
   });
 
   const sorted = filtered.slice();
+  function smartScore(item) {
+    const upvotes = Number(item.upvotes || 0);
+    const createdAt = new Date(item.created_at || 0).getTime();
+    const ageHours = Math.max(1, (Date.now() - createdAt) / (1000 * 60 * 60));
+    const recencyBonus = Math.max(0, 24 - ageHours); // max bonus for 24 jam terakhir
+    const noise = Math.random() * 0.75; // random kecil setiap reload
+    return upvotes * 5 + recencyBonus + noise;
+  }
+
   sorted.sort(function (a, b) {
     const aStatus = String(a.status || "Menunggu").toLowerCase();
     const bStatus = String(b.status || "Menunggu").toLowerCase();
@@ -769,6 +845,9 @@ function getSortedReports() {
     const bUpvotes = Number(b.upvotes || 0);
     const aDate = new Date(a.created_at || 0).getTime();
     const bDate = new Date(b.created_at || 0).getTime();
+    if (mode === "smart") {
+      return smartScore(b) - smartScore(a) || bDate - aDate;
+    }
     if (mode === "oldest") {
       return aDate - bDate;
     }
@@ -798,11 +877,23 @@ function updateSectionTitle() {
   const agencyMode = String(
     (document.getElementById("agencyFilterUser") || { value: "all" }).value || "all",
   );
+  const timeMode = String(
+    (document.getElementById("timeFilter") || { value: "all" }).value || "all",
+  );
+
+  const timeLabels = {
+    all: "Semua Waktu",
+    today: "Hari Ini",
+    week: "Minggu Ini",
+    month: "Bulan Ini",
+  };
+  const timeLabel = timeLabels[timeMode] || "Semua Waktu";
+
   if (agencyMode === "all") {
-    titleEl.textContent = "Laporan Warga";
+    titleEl.textContent = `Laporan Warga • ${timeLabel}`;
     return;
   }
-  titleEl.textContent = `Laporan Instansi: ${agencyMode}`;
+  titleEl.textContent = `Laporan ke Instansi: ${agencyMode} • ${timeLabel}`;
 }
 
 function renderReports() {
@@ -844,6 +935,7 @@ function renderReports() {
     );
     const titleText = String(r.title || "Laporan Warga");
     const agencyText = String(r.agency || "Umum");
+    const agencyShort = getAgencyShortLabel(agencyText);
     const imageCandidates = Array.isArray(r.image_urls) ? r.image_urls : [];
     const coverImage = String(imageCandidates[0] || r.image_url || "").trim();
     const imageBlock =
@@ -874,7 +966,7 @@ function renderReports() {
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
               <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
-                r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+                r.created_at ? formatTimeAgo(r.created_at) : ""
               }</small>
             </div>
           </a>
@@ -890,7 +982,7 @@ function renderReports() {
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
               <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
-                r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""
+                r.created_at ? formatTimeAgo(r.created_at) : ""
               }</small>
             </div>
           </div>
@@ -903,7 +995,7 @@ function renderReports() {
         </div>
         ${imageBlock}
         <div class="report-feed-body">
-          <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
+          <h4 class="report-title text-truncate-1">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
             <span class="meta-main">
               <button
@@ -911,7 +1003,7 @@ function renderReports() {
                 class="meta-item meta-action-link meta-action-btn"
                 data-agency-filter="${escapeHtml(agencyText)}"
                 aria-label="Filter laporan instansi ${escapeHtml(agencyText)}"
-              ><i class="bi bi-building"></i>${escapeHtml(agencyText)}</button>
+              ><i class="bi bi-building"></i>${escapeHtml(agencyShort)}</button>
               <span class="meta-sep" aria-hidden="true">&bull;</span>
               ${
                 hasLocation
@@ -1017,7 +1109,7 @@ function initUi() {
       const timeFilterInner = document.getElementById("timeFilter");
       const agencyFilterInner = document.getElementById("agencyFilterUser");
       if (sortFilter) {
-        sortFilter.value = "newest";
+        sortFilter.value = "smart";
       }
       if (timeFilterInner) {
         timeFilterInner.value = "all";
@@ -1079,7 +1171,13 @@ function initUi() {
             const curr = Number(target.upvotes || 0);
             target.upvotes = isLiked ? Math.max(curr - 1, 0) : curr + 1;
           }
-          renderReports();
+          const nextLiked = !isLiked;
+          const nextCount = target ? Number(target.upvotes || 0) : Number(likeBtn.textContent || 0);
+          likeBtn.classList.toggle("is-active", nextLiked);
+          likeBtn.setAttribute("aria-label", nextLiked ? "Tarik dukungan" : "Dukung laporan");
+          likeBtn.innerHTML = `<i class="bi ${
+            nextLiked ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"
+          }"></i>${nextCount}`;
         })
         .catch(function () {
           showToast("Gagal memperbarui dukungan.", "error");

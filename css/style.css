@@ -311,6 +311,12 @@ body.has-fixed-navbar {
   overflow: hidden;
 }
 
+.text-truncate-1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .report-meta {
   font-size: 0.8rem;
   color: #6b7785;
