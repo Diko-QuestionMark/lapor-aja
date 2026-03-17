@@ -6,6 +6,22 @@ const API_BASE =
 const SESSION_KEY = "laporaja_session_v1";
 const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 
+function buildAuthUrl(action) {
+  const safeAction = encodeURIComponent(String(action || "").trim());
+  if (window.LAPORAJA_API_BASE || window.location.protocol === "file:") {
+    return `${API_BASE}/auth/${safeAction}`;
+  }
+  return `${API_BASE}/.netlify/functions/auth?action=${safeAction}`;
+}
+
+function resolveAuthUrl(path) {
+  if (!path.startsWith("/auth/")) {
+    return `${API_BASE}${path}`;
+  }
+  const action = path.slice("/auth/".length).split("?")[0];
+  return buildAuthUrl(action);
+}
+
 function getPostLoginPath(user) {
   const role = String((user && user.role) || "").toLowerCase();
   return role === "admin" ? "/admin.html" : "/index.html";
@@ -64,7 +80,7 @@ function setFormLoading(formId, isLoading, loadingText) {
 }
 
 async function requestAuth(path, payload) {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(resolveAuthUrl(path), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
