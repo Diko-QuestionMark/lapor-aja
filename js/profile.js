@@ -431,6 +431,10 @@ async function loadProfile() {
     syncPreviewAvatar(currentUser.profile_image_url || DEFAULT_AVATAR_URL);
     renderProfileInfo(currentUser, currentSession);
     renderAdminAccess(currentSession, currentUser);
+    const editBtn = document.getElementById("editProfileBtn");
+    if (editBtn) {
+      editBtn.classList.remove("d-none");
+    }
     document.getElementById("profileName").value = currentUser.name || "";
 
     const nextSession = {

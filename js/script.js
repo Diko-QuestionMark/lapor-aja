@@ -266,6 +266,24 @@ function formatTimeAgo(value) {
   return `${diffYear} tahun yang lalu`;
 }
 
+function parseReportTimestamp(value) {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const hasTz = /[zZ]$/.test(trimmed) || /[+-]\d{2}:\d{2}$/.test(trimmed);
+    const normalized = trimmed.replace(" ", "T");
+    const iso = hasTz ? normalized : `${normalized}Z`;
+    const parsed = new Date(iso);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+}
+
 function getStatusMeta(status) {
   const label = String(status || "Menunggu").trim();
   const normalized = label.toLowerCase();
@@ -799,7 +817,8 @@ function getSortedReports() {
       return false;
     }
 
-    const itemTime = new Date(item.created_at || 0).getTime();
+    const parsedTime = parseReportTimestamp(item.created_at);
+    const itemTime = parsedTime ? parsedTime.getTime() : 0;
     if (timeMode === "today" && itemTime < startOfDay) {
       return false;
     }
@@ -829,6 +848,34 @@ function getSortedReports() {
       .join(" ");
     return haystack.includes(keyword);
   });
+
+  const session = readSession();
+  const sessionUserId = session && session.id ? Number(session.id) : 0;
+  const sessionEmail = session && session.email ? String(session.email).toLowerCase() : "";
+  const nowMs = Date.now();
+  const priorityReports =
+    sessionUserId > 0
+      ? filtered
+          .filter(function (item) {
+            const parsed = parseReportTimestamp(item.created_at);
+            const createdAt = parsed ? parsed.getTime() : 0;
+            if (!createdAt) {
+              return false;
+            }
+            const ownerId = Number(item.reporter_user_id || 0);
+            const ownerEmail = String(item.reporter_email || "").toLowerCase();
+            const isOwner =
+              ownerId === sessionUserId ||
+              (sessionEmail && ownerEmail === sessionEmail);
+            return isOwner && nowMs - createdAt < 24 * 60 * 60 * 1000;
+          })
+          .sort(function (a, b) {
+            const aTime = parseReportTimestamp(a.created_at);
+            const bTime = parseReportTimestamp(b.created_at);
+            return (bTime ? bTime.getTime() : 0) - (aTime ? aTime.getTime() : 0);
+          })
+          .slice(0, 2)
+      : [];
 
   const sorted = filtered.slice();
   function smartScore(item) {
@@ -868,7 +915,20 @@ function getSortedReports() {
     }
     return bDate - aDate;
   });
-  return sorted;
+
+  if (priorityReports.length === 0) {
+    return sorted;
+  }
+
+  const priorityIds = new Set(
+    priorityReports.map(function (item) {
+      return Number(item.id);
+    }),
+  );
+  const rest = sorted.filter(function (item) {
+    return !priorityIds.has(Number(item.id));
+  });
+  return priorityReports.concat(rest);
 }
 
 function updateSectionTitle() {
