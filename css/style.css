@@ -199,6 +199,7 @@ body.nav-side-open .nav-side-panel {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #0f172a;
+  border-radius: 999px;
 }
 
 .nav-search-input::placeholder {
@@ -220,11 +221,34 @@ body.nav-side-open .nav-side-panel {
   border-radius: 8px;
 }
 
+.nav-search-back {
+  display: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.nav-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+
 .nav-notif-toggle {
   width: 32px;
   height: 32px;
   padding: 0;
   border-radius: 8px;
+}
+
+.nav-filter-toggle {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  display: none;
 }
 
 .nav-create-btn {
@@ -262,6 +286,50 @@ body.nav-side-open .nav-side-panel {
   }
 }
 
+body.nav-search-active .nav-brand-link,
+body.nav-search-active .nav-menu-toggle,
+body.nav-search-active .nav-notif-toggle,
+body.nav-search-active .nav-create-btn,
+body.nav-search-active #authActionBtn {
+  display: none !important;
+}
+
+body.nav-search-active .nav-search-toggle {
+  display: none !important;
+}
+
+body.nav-search-active .nav-search-back {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+
+body.nav-search-active .nav-search-input {
+  display: block !important;
+  width: 100%;
+  max-width: none;
+  flex: 1 1 auto;
+}
+
+body.nav-search-active .nav-right-wrap {
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+body.nav-search-active .nav-filter-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+body.nav-search-active .nav-search-wrap {
+  width: 100%;
+  flex: 1 1 auto;
+}
+
 
 body.has-fixed-navbar {
   padding-top: var(--site-navbar-height, 68px);
@@ -275,8 +343,13 @@ body.has-fixed-navbar {
   z-index: 1030;
   transition: transform 0.24s ease, box-shadow 0.24s ease;
   will-change: transform;
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
+  padding: 0.4rem;
+}
+
+.site-navbar .container {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .site-navbar:not(.nav-hidden) {
@@ -386,15 +459,17 @@ body.has-fixed-navbar {
   width: 100%;
   margin: 0;
   overflow: hidden;
+  padding: 0 12px;
 }
 
 .report-card-clickable {
   cursor: pointer;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: 12px;
 }
 
 .report-card-clickable:hover {
-  box-shadow: none;
+  background: #e6ebf2;
   transform: none;
 }
 
@@ -894,6 +969,12 @@ body.has-fixed-navbar {
 }
 
 @media (max-width: 560px) {
+  body.nav-auth-logged-in .nav-auth-text {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
   body.nav-auth-logged-in .nav-auth-text {
     display: none;
   }

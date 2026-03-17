@@ -52,6 +52,14 @@
           <i class="bi bi-search"></i>
         </button>
         <button
+          id="navSearchBack"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-search-back"
+          aria-label="Tutup pencarian"
+        >
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <button
           id="createReportBtn"
           type="button"
           class="btn btn-sm btn-primary nav-create-btn"
@@ -60,13 +68,27 @@
           <i class="bi bi-plus-lg"></i>
           <span>Buat</span>
         </button>
-        <input
-          id="searchInput"
-          type="search"
-          class="form-control form-control-sm nav-search-input"
-          placeholder="Cari laporan..."
-          autocomplete="off"
-        />
+        <div class="nav-search-wrap">
+          <input
+            id="searchInput"
+            type="search"
+            class="form-control form-control-sm nav-search-input"
+            placeholder="Cari laporan..."
+            autocomplete="off"
+          />
+        </div>
+        <button
+          id="navFilterToggle"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-filter-toggle"
+          aria-label="Filter laporan"
+          data-bs-toggle="collapse"
+          data-bs-target="#filterPanel"
+          aria-expanded="false"
+          aria-controls="filterPanel"
+        >
+          <i class="bi bi-funnel"></i>
+        </button>
         <button
           id="navNotifToggle"
           type="button"
@@ -267,6 +289,7 @@
 
     const sideAuthLink = document.getElementById("navSideAuthLink");
     if (!session || !session.email || !session.token) {
+      document.body.classList.remove("nav-auth-logged-in");
       actionBtn.href = "/login.html";
       actionText.textContent = "Login";
       avatarWrap.classList.add("d-none");
@@ -278,6 +301,7 @@
       return;
     }
 
+    document.body.classList.add("nav-auth-logged-in");
     actionText.textContent = `Halo, ${session.name || session.email}`;
     actionBtn.href = "/profile.html";
     avatar.src = session.profile_image_url || "/img/defaultAvatar.jpg";
@@ -295,10 +319,12 @@
   document.addEventListener("navbar:ready", initAuthNav);
   document.addEventListener("navbar:ready", function () {
     const toggleBtn = document.getElementById("navSearchToggle");
+    const backBtn = document.getElementById("navSearchBack");
     const searchInput = document.getElementById("searchInput");
-    if (!toggleBtn || !searchInput) {
+    if (!toggleBtn || !searchInput || !backBtn) {
       return;
     }
+    const pageKey = getPageKey();
 
     function openSearch() {
       document.body.classList.add("nav-search-active");
@@ -317,13 +343,24 @@
       }
       openSearch();
     });
+    backBtn.addEventListener("click", function () {
+      closeSearch();
+    });
 
     searchInput.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
         event.preventDefault();
         closeSearch();
       }
+      if (event.key === "Enter") {
+        const value = String(searchInput.value || "").trim();
+        if (pageKey !== "index") {
+          const target = value ? `/index.html?q=${encodeURIComponent(value)}` : "/index.html";
+          window.location.href = target;
+        }
+      }
     });
+
 
     searchInput.addEventListener("blur", function () {
       if (window.matchMedia("(max-width: 640px)").matches) {
@@ -375,6 +412,28 @@
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape") {
         closeSide();
+      }
+    });
+  });
+  document.addEventListener("navbar:ready", function () {
+    const filterBtn = document.getElementById("navFilterToggle");
+    if (!filterBtn) {
+      return;
+    }
+    const pageKey = getPageKey();
+    filterBtn.addEventListener("click", function (event) {
+      if (pageKey !== "index") {
+        event.preventDefault();
+        const target = "/index.html?filter=1";
+        window.location.href = target;
+        return;
+      }
+      if (window.bootstrap && window.bootstrap.Collapse) {
+        const panel = document.getElementById("filterPanel");
+        if (panel) {
+          const instance = window.bootstrap.Collapse.getOrCreateInstance(panel);
+          instance.toggle();
+        }
       }
     });
   });

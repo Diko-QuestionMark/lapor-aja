@@ -967,7 +967,9 @@ function renderReports() {
   const keyword = String(
     (document.getElementById("searchInput") || { value: "" }).value || "",
   ).trim();
-  countBadge.textContent = String(sortedReports.length);
+  if (countBadge) {
+    countBadge.textContent = String(sortedReports.length);
+  }
 
   if (sortedReports.length === 0) {
     list.innerHTML = `
@@ -1141,8 +1143,12 @@ function initUi() {
   }
   document.getElementById("title").addEventListener("input", updateTitleState);
   document.getElementById("agency").addEventListener("change", updateSubmitState);
-  const createReportBtn = document.getElementById("createReportBtn");
-  if (createReportBtn) {
+  function bindCreateReportBtn() {
+    const createReportBtn = document.getElementById("createReportBtn");
+    if (!createReportBtn || createReportBtn.dataset.bound === "1") {
+      return;
+    }
+    createReportBtn.dataset.bound = "1";
     createReportBtn.addEventListener("click", function (event) {
       const session = readSession();
       if (!session || !session.email || !session.token) {
@@ -1156,6 +1162,8 @@ function initUi() {
       }
     });
   }
+  bindCreateReportBtn();
+  document.addEventListener("navbar:ready", bindCreateReportBtn);
   document.getElementById("sortFilter").addEventListener("change", renderReports);
   const timeFilter = document.getElementById("timeFilter");
   if (timeFilter) {
@@ -1190,10 +1198,16 @@ function initUi() {
       renderReports();
     });
   }
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
+  function bindSearchInput() {
+    const searchInput = document.getElementById("searchInput");
+    if (!searchInput || searchInput.dataset.bound === "1") {
+      return;
+    }
+    searchInput.dataset.bound = "1";
     searchInput.addEventListener("input", renderReports);
   }
+  bindSearchInput();
+  document.addEventListener("navbar:ready", bindSearchInput);
   document.getElementById("reportList").addEventListener("click", function (event) {
     const agencyBtn = event.target.closest("[data-agency-filter]");
     if (agencyBtn) {
@@ -1287,3 +1301,26 @@ document.addEventListener("navbar:ready", renderAuthNav);
 renderAuthNav();
 resetForm();
 loadReports();
+
+document.addEventListener("navbar:ready", function () {
+  const searchInput = document.getElementById("searchInput");
+  if (!searchInput) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const q = String(params.get("q") || "").trim();
+  if (q) {
+    searchInput.value = q;
+    renderReports();
+  }
+  const openFilter = params.get("filter") === "1";
+  if (openFilter && window.bootstrap && window.bootstrap.Collapse) {
+    const panel = document.getElementById("filterPanel");
+    if (panel) {
+      const instance = window.bootstrap.Collapse.getOrCreateInstance(panel, {
+        toggle: false,
+      });
+      instance.show();
+    }
+  }
+});
