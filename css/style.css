@@ -80,6 +80,11 @@
   box-shadow: none;
 }
 
+.nav-auth-text {
+  white-space: nowrap;
+}
+
+
 body.has-fixed-navbar {
   padding-top: var(--site-navbar-height, 68px);
 }
@@ -674,6 +679,10 @@ body.has-fixed-navbar {
 @media (max-width: 560px) {
   .report-cover {
     height: 300px;
+  }
+
+  body.nav-auth-logged-in .nav-auth-text {
+    display: none;
   }
 }
 

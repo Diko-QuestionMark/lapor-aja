@@ -39,7 +39,7 @@
             class="btn btn-sm d-inline-flex align-items-center gap-2 nav-plain-btn"
           >
             <img id="authUserAvatar" class="nav-avatar d-none" alt="Avatar user" />
-            <span id="authActionText">Login</span>
+            <span id="authActionText" class="nav-auth-text">Login</span>
             <span id="navNotifBadge" class="badge text-bg-danger ms-1 d-none">0</span>
           </a>
         `,
@@ -48,7 +48,8 @@
         navClass: "navbar-dark bg-primary",
         brandText: "LaporAja",
         subtitle: "Portal Masuk",
-        rightHtml: "",
+        rightHtml:
+          '<a href="/index.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
       profile: {
         navClass: "navbar-dark bg-primary",

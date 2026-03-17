@@ -167,6 +167,7 @@ function renderAuthNav() {
   if (!session || !session.email || !session.token) {
     updateCreateReportAccess(null);
     updateNotificationBadge(0);
+    document.body.classList.remove("nav-auth-logged-in");
     actionBtn.href = "/login.html";
     actionText.textContent = "Login";
     avatar.classList.add("d-none");
@@ -175,6 +176,7 @@ function renderAuthNav() {
   }
 
   updateCreateReportAccess(session);
+  document.body.classList.add("nav-auth-logged-in");
   actionText.textContent = `Halo, ${session.name || session.email}`;
   actionBtn.href = "/profile.html";
   avatar.src = session.profile_image_url || DEFAULT_AVATAR_URL;
