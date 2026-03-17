@@ -18,10 +18,18 @@
     <div id="navbarMount"></div>
 
     <main class="container py-4 pengecilan">
+      <section class="d-flex justify-content-between align-items-center mb-3">
+        <h2 id="adminSectionTitle" class="h5 mb-0">Laporan Warga • Semua Waktu</h2>
+        <span id="adminReportCount" class="badge text-bg-light border">0</span>
+      </section>
+
       <section class="card shadow-sm">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <h2 class="h5 mb-0">Daftar Laporan</h2>
+            <div class="d-flex align-items-center gap-2">
+              <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
+              <span id="adminListCount" class="badge text-bg-light border">0</span>
+            </div>
             <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
               <input
                 id="adminSearchInput"
@@ -86,7 +94,7 @@
                     type="button"
                     class="btn btn-sm btn-outline-secondary"
                   >
-                    Reset
+                    Tanpa Filter
                   </button>
                 </div>
               </div>

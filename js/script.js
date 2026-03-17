@@ -1092,6 +1092,10 @@ function initUi() {
         event.preventDefault();
         event.stopPropagation();
         window.location.href = "/login.html";
+        return;
+      }
+      if (reportModal) {
+        reportModal.show();
       }
     });
   }
@@ -1118,6 +1122,13 @@ function initUi() {
       }
       if (agencyFilterInner) {
         agencyFilterInner.value = "all";
+      }
+      const filterPanel = document.getElementById("filterPanel");
+      if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
+        const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
+          toggle: false,
+        });
+        collapse.hide();
       }
       renderReports();
     });

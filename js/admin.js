@@ -181,6 +181,9 @@ async function loadAdminReports() {
 
 function renderAdminReports() {
   const list = document.getElementById("adminList");
+  const topTitle = document.getElementById("adminSectionTitle");
+  const topCount = document.getElementById("adminReportCount");
+  const listCount = document.getElementById("adminListCount");
   const agencyFilter = getAgencyFilter();
   const searchQuery = getSearchQuery();
   const sortMode = getSortMode();
@@ -258,8 +261,47 @@ function renderAdminReports() {
   });
 
   if (visibleReports.length === 0) {
+    if (topCount) {
+      topCount.textContent = "0";
+    }
+    if (listCount) {
+      listCount.textContent = "0";
+    }
+    if (topTitle) {
+      const timeLabels = {
+        all: "Semua Waktu",
+        today: "Hari Ini",
+        week: "Minggu Ini",
+        month: "Bulan Ini",
+      };
+      const timeLabel = timeLabels[timeMode] || "Semua Waktu";
+      topTitle.textContent =
+        agencyFilter === "all"
+          ? `Laporan Warga • ${timeLabel}`
+          : `Laporan ke Instansi: ${agencyFilter} • ${timeLabel}`;
+    }
     list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
     return;
+  }
+
+  if (topCount) {
+    topCount.textContent = String(visibleReports.length);
+  }
+  if (listCount) {
+    listCount.textContent = String(visibleReports.length);
+  }
+  if (topTitle) {
+    const timeLabels = {
+      all: "Semua Waktu",
+      today: "Hari Ini",
+      week: "Minggu Ini",
+      month: "Bulan Ini",
+    };
+    const timeLabel = timeLabels[timeMode] || "Semua Waktu";
+    topTitle.textContent =
+      agencyFilter === "all"
+        ? `Laporan Warga • ${timeLabel}`
+        : `Laporan ke Instansi: ${agencyFilter} • ${timeLabel}`;
   }
 
   list.innerHTML = "";
@@ -376,6 +418,13 @@ function wireEvents() {
       }
       if (timeFilter) {
         timeFilter.value = "all";
+      }
+      const filterPanel = document.getElementById("adminFilterPanel");
+      if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
+        const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
+          toggle: false,
+        });
+        collapse.hide();
       }
       renderAdminReports();
     });
