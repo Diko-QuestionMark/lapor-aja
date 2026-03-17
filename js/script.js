@@ -158,8 +158,9 @@ function updateCreateReportAccess(session) {
 function renderAuthNav() {
   const actionBtn = document.getElementById("authActionBtn");
   const avatar = document.getElementById("authUserAvatar");
+  const avatarWrap = document.getElementById("navAvatarWrap");
   const actionText = document.getElementById("authActionText");
-  if (!actionBtn || !actionText || !avatar) {
+  if (!actionBtn || !actionText || !avatar || !avatarWrap) {
     return;
   }
 
@@ -170,7 +171,7 @@ function renderAuthNav() {
     document.body.classList.remove("nav-auth-logged-in");
     actionBtn.href = "/login.html";
     actionText.textContent = "Login";
-    avatar.classList.add("d-none");
+    avatarWrap.classList.add("d-none");
     avatar.removeAttribute("src");
     return;
   }
@@ -180,7 +181,7 @@ function renderAuthNav() {
   actionText.textContent = `Halo, ${session.name || session.email}`;
   actionBtn.href = "/profile.html";
   avatar.src = session.profile_image_url || DEFAULT_AVATAR_URL;
-  avatar.classList.remove("d-none");
+  avatarWrap.classList.remove("d-none");
   avatar.onerror = function () {
     avatar.src = DEFAULT_AVATAR_URL;
   };

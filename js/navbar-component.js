@@ -39,9 +39,11 @@
             href="/login.html"
             class="btn btn-sm d-inline-flex align-items-center gap-2 nav-plain-btn"
           >
-            <img id="authUserAvatar" class="nav-avatar d-none" alt="Avatar user" />
+            <span id="navAvatarWrap" class="nav-avatar-wrap d-none">
+              <img id="authUserAvatar" class="nav-avatar" alt="Avatar user" />
+              <span id="navNotifBadge" class="nav-avatar-badge d-none">0</span>
+            </span>
             <span id="authActionText" class="nav-auth-text">Login</span>
-            <span id="navNotifBadge" class="badge text-bg-danger ms-1 d-none">0</span>
           </a>
         `,
       },
