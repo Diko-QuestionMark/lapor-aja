@@ -965,7 +965,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${
+              <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
                 r.created_at ? formatTimeAgo(r.created_at) : ""
               }</small>
             </div>
@@ -981,7 +981,7 @@ function renderReports() {
             />
             <div>
               <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${
+              <small class="report-meta"><i class="bi bi-clock me-1 report-time-icon"></i>${
                 r.created_at ? formatTimeAgo(r.created_at) : ""
               }</small>
             </div>
