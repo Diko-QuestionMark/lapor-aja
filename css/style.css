@@ -23,12 +23,12 @@
 }
 
 .nav-avatar {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: #f1f5f9;
 }
 
 .nav-avatar-wrap {
@@ -57,7 +57,7 @@
 }
 
 .nav-plain-btn {
-  color: #fff;
+  color: #0f172a;
   border: 0;
   box-shadow: none;
   padding: 0;
@@ -68,13 +68,16 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  --nav-item-height: 32px;
+  height: var(--nav-item-height);
 }
 
 .nav-brand-logo {
-  width: 40px;
-  height: 40px;
+  width: var(--nav-item-height);
+  height: var(--nav-item-height);
   object-fit: contain;
   display: block;
+  filter: invert(1);
 }
 
 .nav-brand-text {
@@ -87,19 +90,15 @@
 .nav-brand-title {
   font-size: 1.4rem;
   font-weight: 600;
-  color: #fff;
-}
-
-.nav-brand-subtitle {
-  font-size: 0.86rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-weight: 400;
+  color: #0f172a;
+  line-height: 1;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 .nav-plain-btn:hover,
 .nav-plain-btn:focus,
 .nav-plain-btn:active {
-  color: rgba(255, 255, 255, 0.85);
+  color: #0f172a;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -107,6 +106,82 @@
 
 .nav-auth-text {
   white-space: nowrap;
+}
+
+.nav-right-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-search-input {
+  width: 220px;
+  height: 32px;
+  max-width: 38vw;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.nav-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.nav-search-input:focus {
+  color: #0f172a;
+  background: #fff;
+  border-color: #94a3b8;
+  box-shadow: none;
+}
+
+.nav-search-toggle {
+  display: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.nav-notif-toggle {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.nav-create-btn {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .nav-search-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-search-input {
+    display: none;
+    width: min(70vw, 320px);
+  }
+
+  body.nav-search-active .nav-search-input {
+    display: block;
+  }
+
+  body.nav-search-active .nav-brand-link {
+    display: none;
+  }
+
+  body.nav-search-active .nav-search-toggle {
+    display: none;
+  }
 }
 
 

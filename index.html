@@ -12,6 +12,10 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/style.css">
   </head>
 
@@ -21,95 +25,79 @@
     <main class="container py-4 pengecilan">
       <section class="d-flex justify-content-between align-items-center mb-3">
         <h2 id="reportSectionTitle" class="h5 mb-0">Laporan Warga Terbaru</h2>
-        <button
-          id="createReportBtn"
-          class="btn btn-primary"
-          type="button"
-        >
-          Buat Laporan
-        </button>
       </section>
 
-      <section class="card shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <div class="d-flex align-items-center gap-2">
-              <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
-              <span id="reportCount" class="badge text-bg-light border">0</span>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
-              <input
-                id="searchInput"
-                type="search"
-                class="form-control form-control-sm search-input search-inline-input"
-                placeholder="Cari laporan..."
-                autocomplete="off"
-              />
-              <button
-                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#filterPanel"
-                aria-expanded="false"
-                aria-controls="filterPanel"
-              >
-                <i class="bi bi-funnel"></i>
-                <span>Filter</span>
-              </button>
-            </div>
+      <section>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
+            <span id="reportCount" class="badge text-bg-light border">0</span>
           </div>
-          <div class="collapse mb-3" id="filterPanel">
-            <div class="border rounded p-2">
-              <div class="row g-2">
-                <div class="col-12 col-md-6">
-                  <label for="sortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
-                  <select id="sortFilter" class="form-select form-select-sm">
-                    <option value="smart">Rekomendasi</option>
-                    <option value="newest">Terbaru</option>
-                    <option value="oldest">Terlama</option>
-                    <option value="upvotes">Dukungan Terbanyak</option>
-                    <option value="status_waiting">Menunggu Dulu</option>
-                    <option value="status_done">Selesai Dulu</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label for="timeFilter" class="form-label form-label-sm mb-1 small text-secondary">Rentang Waktu</label>
-                  <select id="timeFilter" class="form-select form-select-sm">
-                    <option value="all">Semua Waktu</option>
-                    <option value="today">Hari Ini</option>
-                    <option value="week">Minggu Ini</option>
-                    <option value="month">Bulan Ini</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label for="agencyFilterUser" class="form-label form-label-sm mb-1 small text-secondary">Instansi</label>
-                  <select id="agencyFilterUser" class="form-select form-select-sm flex-grow-1">
-                    <option value="all">Semua Instansi</option>
-                    <option value="Umum">Umum</option>
-                      <option value="Dinas PU">Dinas PU (PU)</option>
-                      <option value="Dinas Perhubungan">Dinas Perhubungan (Dishub)</option>
-                      <option value="Dinas Kebersihan">Dinas Kebersihan (DK)</option>
-                      <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup (DLH)</option>
-                    <option value="PDAM">PDAM</option>
-                    <option value="PLN">PLN</option>
-                    <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>
-                    <option value="Satpol PP">Satpol PP</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-6 d-flex align-items-end justify-content-md-end">
-                  <button
-                    id="resetFilterBtn"
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary"
-                  >
-                    Tanpa Filter
-                  </button>
-                </div>
+          <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
+            <button
+              class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#filterPanel"
+              aria-expanded="false"
+              aria-controls="filterPanel"
+            >
+              <i class="bi bi-funnel"></i>
+              <span>Filter</span>
+            </button>
+          </div>
+        </div>
+        <div class="collapse mb-3" id="filterPanel">
+          <div class="border rounded p-2 bg-white">
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label for="sortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
+                <select id="sortFilter" class="form-select form-select-sm">
+                  <option value="smart">Rekomendasi</option>
+                  <option value="newest">Terbaru</option>
+                  <option value="oldest">Terlama</option>
+                  <option value="upvotes">Dukungan Terbanyak</option>
+                  <option value="status_waiting">Menunggu Dulu</option>
+                  <option value="status_done">Selesai Dulu</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="timeFilter" class="form-label form-label-sm mb-1 small text-secondary">Rentang Waktu</label>
+                <select id="timeFilter" class="form-select form-select-sm">
+                  <option value="all">Semua Waktu</option>
+                  <option value="today">Hari Ini</option>
+                  <option value="week">Minggu Ini</option>
+                  <option value="month">Bulan Ini</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="agencyFilterUser" class="form-label form-label-sm mb-1 small text-secondary">Instansi</label>
+                <select id="agencyFilterUser" class="form-select form-select-sm flex-grow-1">
+                  <option value="all">Semua Instansi</option>
+                  <option value="Umum">Umum</option>
+                    <option value="Dinas PU">Dinas PU (PU)</option>
+                    <option value="Dinas Perhubungan">Dinas Perhubungan (Dishub)</option>
+                    <option value="Dinas Kebersihan">Dinas Kebersihan (DK)</option>
+                    <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup (DLH)</option>
+                  <option value="PDAM">PDAM</option>
+                  <option value="PLN">PLN</option>
+                  <option value="Makan Bergizi Gratis (MBG)">Makan Bergizi Gratis (MBG)</option>
+                  <option value="Satpol PP">Satpol PP</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 d-flex align-items-end justify-content-md-end">
+                <button
+                  id="resetFilterBtn"
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                >
+                  Tanpa Filter
+                </button>
               </div>
             </div>
           </div>
-          <div id="reportList"></div>
         </div>
+        <div id="reportList"></div>
       </section>
     </main>
 
