@@ -1,5 +1,5 @@
 const { pool, initDatabase } = require("./_db");
-const { getBearerToken, verifyToken, signToken, decodeTokenPayload } = require("./_auth");
+const { getBearerToken, verifyToken, signToken } = require("./_auth");
 
 function json(statusCode, payload) {
   return {
@@ -30,14 +30,7 @@ exports.handler = async function handler(event) {
   const token = getBearerToken(event);
   const authUser = verifyToken(token);
   if (!authUser || !authUser.sub) {
-    const debug =
-      process.env.DEBUG_AUTH === "true"
-        ? {
-            server_time: new Date().toISOString(),
-            token_payload: decodeTokenPayload(token),
-          }
-        : undefined;
-    return json(401, { error: "Tidak terautentikasi", debug });
+    return json(401, { error: "Tidak terautentikasi" });
   }
 
   try {

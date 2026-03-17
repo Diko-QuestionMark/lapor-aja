@@ -1,5 +1,5 @@
 const { pool, initDatabase } = require("./_db");
-const { getBearerToken, verifyToken, decodeTokenPayload } = require("./_auth");
+const { getBearerToken, verifyToken } = require("./_auth");
 
 const ALLOWED_STATUS = new Set(["Menunggu", "Diproses", "Selesai"]);
 const ADMIN_DISPLAY_NAME = process.env.ADMIN_DISPLAY_NAME || "Admin";
@@ -26,24 +26,13 @@ function isAuthorized(event) {
   return String(authUser.role || "").toLowerCase() === "admin";
 }
 
-function getAuthDebug(event) {
-  if (process.env.DEBUG_AUTH !== "true") {
-    return undefined;
-  }
-  const token = getBearerToken(event);
-  return {
-    server_time: new Date().toISOString(),
-    token_payload: decodeTokenPayload(token),
-  };
-}
-
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return json(200, { ok: true });
   }
 
   if (!isAuthorized(event)) {
-    return json(401, { error: "Admin key tidak valid", debug: getAuthDebug(event) });
+    return json(401, { error: "Admin key tidak valid" });
   }
 
   try {

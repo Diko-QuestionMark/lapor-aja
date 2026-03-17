@@ -77,22 +77,6 @@ function verifyToken(token) {
   }
 }
 
-function decodeTokenPayload(token) {
-  if (!token || typeof token !== "string") {
-    return null;
-  }
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    return null;
-  }
-  const encodedPayload = parts[1];
-  try {
-    return JSON.parse(base64urlDecode(encodedPayload));
-  } catch (_) {
-    return null;
-  }
-}
-
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
@@ -125,7 +109,6 @@ function getBearerToken(event) {
 module.exports = {
   signToken,
   verifyToken,
-  decodeTokenPayload,
   hashPassword,
   verifyPassword,
   getBearerToken,
