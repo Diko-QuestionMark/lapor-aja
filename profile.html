@@ -22,24 +22,11 @@
             <div class="flex-grow-1">
               <h2 class="h5 mb-3">Informasi Akun</h2>
               <div id="profileInfo" class="text-secondary mb-3">Memuat profil...</div>
-              <form id="profileForm" class="row g-2">
-                <div class="col-12 col-md-6">
-                  <label for="profileName" class="form-label">Nama Tampilan</label>
-                  <input id="profileName" type="text" class="form-control" minlength="2" required />
-                </div>
-                <div class="col-12 col-md-6">
-                  <label for="profilePhoto" class="form-label">Foto Profil</label>
-                  <input id="profilePhoto" type="file" accept="image/*" class="form-control" />
-                  <div class="form-text">Opsional, maksimal 2MB.</div>
-                </div>
-                <div class="col-12">
-                  <div class="d-flex flex-wrap gap-2">
-                    <button id="saveProfileBtn" type="submit" class="btn btn-primary btn-sm">Simpan Perubahan Profil</button>
-                    <a id="adminDashboardBtn" href="/admin.html" class="btn btn-dark btn-sm d-none">Dashboard Admin</a>
-                    <button id="logoutBtn" type="button" class="btn btn-outline-danger btn-sm">Keluar Akun</button>
-                  </div>
-                </div>
-              </form>
+              <div class="d-flex flex-wrap gap-2">
+                <button id="editProfileBtn" type="button" class="btn btn-primary btn-sm">Edit Profil</button>
+                <a id="adminDashboardBtn" href="/admin.html" class="btn btn-dark btn-sm d-none">Dashboard Admin</a>
+                <button id="logoutBtn" type="button" class="btn btn-outline-danger btn-sm">Keluar Akun</button>
+              </div>
             </div>
           </div>
         </div>
@@ -79,6 +66,46 @@
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
             <button id="confirmLogoutBtn" type="button" class="btn btn-danger">Ya, Keluar</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-6">Edit Profil</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="profileForm">
+            <div class="modal-body">
+              <div class="d-flex justify-content-center mb-3">
+                <img id="profilePhotoPreview" class="profile-avatar preview-avatar" alt="Preview foto profil" />
+              </div>
+              <div class="mb-3">
+                <label for="profileName" class="form-label">Nama Tampilan</label>
+                <input id="profileName" type="text" class="form-control" minlength="2" required />
+              </div>
+              <div class="mb-3">
+                <label for="profilePhoto" class="form-label">Foto Profil</label>
+                <input id="profilePhoto" type="file" accept="image/*" class="form-control" />
+                <div class="form-text">Opsional, maksimal 2MB.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+              <button id="saveProfileBtn" type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="position-fixed bottom-0 end-0 p-3 toast-wrap">
+      <div id="profileToast" class="toast align-items-center border-0 text-bg-success" role="status" aria-live="polite" aria-atomic="true">
+        <div class="d-flex">
+          <div id="profileToastBody" class="toast-body">Sukses</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
       </div>
     </div>

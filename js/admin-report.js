@@ -5,6 +5,7 @@ const API_BASE =
     : window.location.origin);
 
 const SESSION_KEY = "laporaja_session_v1";
+const ADMIN_READ_KEY = "laporaja_admin_read_reports_v1";
 const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_EVIDENCE_SIZE_MB = 5;
@@ -196,6 +197,20 @@ function setNotice(message, type) {
   const root = document.getElementById("handleNotice");
   root.className = `small mt-2 text-${type}`;
   root.textContent = message;
+}
+
+function markReportRead(reportId) {
+  try {
+    const raw = localStorage.getItem(ADMIN_READ_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    const ids = Array.isArray(parsed) ? parsed : [];
+    if (!ids.includes(reportId)) {
+      ids.push(reportId);
+      localStorage.setItem(ADMIN_READ_KEY, JSON.stringify(ids));
+    }
+  } catch (_) {
+    // Ignore storage errors silently.
+  }
 }
 
 function setHandleLoading(isLoading) {
@@ -431,6 +446,7 @@ async function loadReport() {
   }
 
   activeReport = report;
+  markReportRead(Number(report.id));
   renderDetail(report);
   fillForm(report);
   loadAdminComments(report.id);

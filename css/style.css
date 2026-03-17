@@ -118,6 +118,13 @@ body.has-fixed-navbar {
   background: #f3f6fa;
 }
 
+.preview-avatar {
+  width: 104px;
+  height: 104px;
+  border: 2px solid #d9e2ef;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
 .profile-report-thumb {
   width: 72px;
   height: 72px;
@@ -439,6 +446,12 @@ body.has-fixed-navbar {
   border: 1px solid #86efac;
 }
 
+.status-ditolak {
+  color: #991b1b;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+}
+
 .report-empty {
   border: 1px dashed #d6dce3;
   border-radius: 10px;
@@ -506,6 +519,15 @@ body.has-fixed-navbar {
 .admin-card-chevron {
   color: #212529;
   opacity: 0.5;
+}
+
+.admin-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+  display: inline-block;
 }
 
 .admin-card-title {
@@ -708,5 +730,55 @@ body.has-fixed-navbar {
 
   .report-cover {
     height: 300px;
+  }
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .site-navbar,
+  #navbarMount,
+  #printRekapBtn,
+  .btn,
+  .toast-wrap {
+    display: none !important;
+  }
+
+  .card,
+  .border,
+  .shadow-sm {
+    box-shadow: none !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .pengecilan {
+    max-width: 100% !important;
+  }
+
+  h2,
+  h3,
+  h4 {
+    color: #111827 !important;
+  }
+
+  .table {
+    border-collapse: collapse !important;
+  }
+
+  .table th,
+  .table td {
+    border: 1px solid #e5e7eb !important;
+    padding: 6px 8px !important;
+  }
+
+  .table thead th {
+    background: #f3f4f6 !important;
   }
 }

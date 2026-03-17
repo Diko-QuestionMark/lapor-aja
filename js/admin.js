@@ -5,6 +5,7 @@ const API_BASE =
     : window.location.origin);
 
 const SESSION_KEY = "laporaja_session_v1";
+const ADMIN_READ_KEY = "laporaja_admin_read_reports_v1";
 
 let adminReports = [];
 
@@ -38,6 +39,20 @@ function getStatusMeta(status) {
     return { label: "Selesai", className: "status-selesai" };
   }
   return { label: "Menunggu", className: "status-menunggu" };
+}
+
+function getReadReportIds() {
+  try {
+    const raw = localStorage.getItem(ADMIN_READ_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function hasReadReport(reportId) {
+  return getReadReportIds().includes(reportId);
 }
 
 function getResponseToneClass(status) {
@@ -182,8 +197,6 @@ async function loadAdminReports() {
 function renderAdminReports() {
   const list = document.getElementById("adminList");
   const topTitle = document.getElementById("adminSectionTitle");
-  const topCount = document.getElementById("adminReportCount");
-  const listCount = document.getElementById("adminListCount");
   const agencyFilter = getAgencyFilter();
   const searchQuery = getSearchQuery();
   const sortMode = getSortMode();
@@ -261,12 +274,6 @@ function renderAdminReports() {
   });
 
   if (visibleReports.length === 0) {
-    if (topCount) {
-      topCount.textContent = "0";
-    }
-    if (listCount) {
-      listCount.textContent = "0";
-    }
     if (topTitle) {
       const timeLabels = {
         all: "Semua Waktu",
@@ -284,12 +291,6 @@ function renderAdminReports() {
     return;
   }
 
-  if (topCount) {
-    topCount.textContent = String(visibleReports.length);
-  }
-  if (listCount) {
-    listCount.textContent = String(visibleReports.length);
-  }
   if (topTitle) {
     const timeLabels = {
       all: "Semua Waktu",
@@ -314,6 +315,7 @@ function renderAdminReports() {
     const reporterName = String(report.reporter_name || "Anonim");
     const reporterEmail = String(report.reporter_email || "-");
     const createdAtLabel = formatTimeAgo(report.created_at);
+    const isRead = hasReadReport(Number(report.id));
     const responseSummary = String(report.admin_note || "").trim()
       ? report.admin_note
       : "Belum ada respons instansi.";
@@ -340,7 +342,10 @@ function renderAdminReports() {
               <span class="admin-card-id">#${report.id}</span>
               <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
             </div>
-            <span class="admin-card-chevron" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+            <span class="admin-card-chevron d-flex align-items-center gap-2" aria-hidden="true">
+              ${isRead ? "" : '<span class="admin-unread-dot" title="Belum dibaca"></span>'}
+              <i class="bi bi-chevron-right"></i>
+            </span>
           </div>
           <h3 class="admin-card-title mb-2">${escapeHtml(reportTitle)}</h3>
           <div class="admin-card-meta-row mb-2">

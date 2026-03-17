@@ -22,6 +22,7 @@
     if (path.endsWith("/admin-report.html")) return "admin-report";
     if (path.endsWith("/user.html")) return "user";
     if (path.endsWith("/admin.html")) return "admin";
+    if (path.endsWith("/rekap.html")) return "rekap";
     return "index";
   }
 
@@ -76,12 +77,19 @@
         navClass: "navbar-dark bg-dark",
         brandText: "Admin LaporAja",
         subtitle: "Kelola status laporan warga",
-        rightHtml: '<a href="/index.html" class="btn btn-sm nav-plain-btn">Ke Halaman User</a>',
+        rightHtml:
+          '<a href="/index.html" class="btn btn-sm nav-plain-btn" data-confirm-user-dashboard="1">Ke Halaman User</a>',
       },
       "admin-report": {
         navClass: "navbar-dark bg-dark",
         brandText: "Admin LaporAja",
         subtitle: "Detail penanganan laporan",
+        rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+      },
+      rekap: {
+        navClass: "navbar-dark bg-dark",
+        brandText: "Admin LaporAja",
+        subtitle: "Rekap laporan warga",
         rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
     };
@@ -135,6 +143,17 @@
           return;
         }
         window.location.href = "/index.html";
+      });
+    }
+    const userDashBtn = mount.querySelector("[data-confirm-user-dashboard='1']");
+    if (userDashBtn) {
+      userDashBtn.addEventListener("click", function (event) {
+        const ok = window.confirm(
+          "Kembali ke dashboard user? Perubahan yang belum disimpan bisa hilang.",
+        );
+        if (!ok) {
+          event.preventDefault();
+        }
       });
     }
     document.dispatchEvent(new CustomEvent("navbar:ready"));

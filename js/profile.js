@@ -16,6 +16,8 @@ const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
 let currentSession = null;
 let currentUser = null;
 let logoutConfirmModal = null;
+let toastInstance = null;
+let editProfileModal = null;
 
 function readSession() {
   try {
@@ -31,11 +33,24 @@ function writeSession(session) {
 }
 
 function showAlert(message, type) {
+  if (type === "success") {
+    showToast(message || "Sukses");
+    return;
+  }
   const box = document.getElementById("profileAlert");
   box.textContent = message;
   box.className = `alert py-2 mb-3 alert-${type}`;
 }
 
+function showToast(message) {
+  const toastEl = document.getElementById("profileToast");
+  const toastBody = document.getElementById("profileToastBody");
+  if (!toastEl || !toastBody || !toastInstance) {
+    return;
+  }
+  toastBody.textContent = message;
+  toastInstance.show();
+}
 function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, function (char) {
     return (
@@ -83,6 +98,7 @@ function renderProfileInfo(user, session) {
     ? new Date(user.created_at).toLocaleString("id-ID")
     : "-";
   el.innerHTML = `
+    <div class="small"><strong>Nama:</strong> ${escapeHtml(user.name || "-")}</div>
     <div class="small"><strong>Email:</strong> ${escapeHtml(user.email || "-")}</div>
     <div class="small"><strong>Bergabung:</strong> ${createdAt}</div>
     <div class="small"><strong>Login terakhir:</strong> ${loginAt}</div>
@@ -94,6 +110,17 @@ function renderAvatar(user) {
   avatar.src = user.profile_image_url || DEFAULT_AVATAR_URL;
   avatar.onerror = function () {
     avatar.src = DEFAULT_AVATAR_URL;
+  };
+}
+
+function syncPreviewAvatar(url) {
+  const preview = document.getElementById("profilePhotoPreview");
+  if (!preview) {
+    return;
+  }
+  preview.src = url || DEFAULT_AVATAR_URL;
+  preview.onerror = function () {
+    preview.src = DEFAULT_AVATAR_URL;
   };
 }
 
@@ -401,6 +428,7 @@ async function loadProfile() {
     const data = await apiFetch("/me");
     currentUser = data.user;
     renderAvatar(currentUser);
+    syncPreviewAvatar(currentUser.profile_image_url || DEFAULT_AVATAR_URL);
     renderProfileInfo(currentUser, currentSession);
     renderAdminAccess(currentSession, currentUser);
     document.getElementById("profileName").value = currentUser.name || "";
@@ -479,11 +507,15 @@ async function handleSaveProfile(event) {
     currentSession = nextSession;
 
     renderAvatar(currentUser);
+    syncPreviewAvatar(currentUser.profile_image_url || DEFAULT_AVATAR_URL);
     renderProfileInfo(currentUser, currentSession);
     renderAdminAccess(currentSession, currentUser);
     document.getElementById("profilePhoto").value = "";
     showAlert("Profil berhasil diperbarui.", "success");
     await loadReportsForUser(currentUser);
+    if (editProfileModal) {
+      editProfileModal.hide();
+    }
   } catch (error) {
     showAlert(error.message || "Gagal menyimpan profil.", "danger");
   } finally {
@@ -492,9 +524,40 @@ async function handleSaveProfile(event) {
 }
 
 function init() {
+  const toastEl = document.getElementById("profileToast");
+  if (toastEl) {
+    toastInstance = new bootstrap.Toast(toastEl, { delay: 2600 });
+  }
+  const editModalEl = document.getElementById("editProfileModal");
+  if (editModalEl) {
+    editProfileModal = bootstrap.Modal.getOrCreateInstance(editModalEl);
+  }
   const form = document.getElementById("profileForm");
   if (form) {
     form.addEventListener("submit", handleSaveProfile);
+  }
+  const photoInput = document.getElementById("profilePhoto");
+  if (photoInput) {
+    photoInput.addEventListener("change", function () {
+      const file = photoInput.files ? photoInput.files[0] : null;
+      if (!file) {
+        syncPreviewAvatar(currentUser ? currentUser.profile_image_url : "");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      syncPreviewAvatar(url);
+    });
+  }
+  const editBtn = document.getElementById("editProfileBtn");
+  if (editBtn) {
+    editBtn.addEventListener("click", function () {
+      if (editProfileModal) {
+        editProfileModal.show();
+      }
+    });
   }
   logoutConfirmModal = bootstrap.Modal.getOrCreateInstance(
     document.getElementById("logoutConfirmModal"),
