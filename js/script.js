@@ -1054,7 +1054,7 @@ function renderReports() {
         </div>
         ${imageBlock}
         <div class="report-feed-body">
-          <h4 class="report-title text-truncate-1">${escapeHtml(titleText)}</h4>
+          <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
           <div class="report-meta-row">
             <span class="meta-main">
               <button

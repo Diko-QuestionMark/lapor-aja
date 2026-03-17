@@ -41,7 +41,7 @@
         <span id="authActionText" class="nav-auth-text">Login</span>
       </a>
     `;
-    const indexRightHtml = `
+    const userRightHtml = `
       <div class="d-flex align-items-center gap-2 nav-right-wrap">
         <button
           id="navSearchToggle"
@@ -50,14 +50,6 @@
           aria-label="Cari laporan"
         >
           <i class="bi bi-search"></i>
-        </button>
-        <button
-          id="navNotifToggle"
-          type="button"
-          class="btn btn-sm nav-plain-btn nav-notif-toggle"
-          aria-label="Notifikasi"
-        >
-          <i class="bi bi-bell"></i>
         </button>
         <button
           id="createReportBtn"
@@ -75,44 +67,62 @@
           placeholder="Cari laporan..."
           autocomplete="off"
         />
+        <button
+          id="navNotifToggle"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-notif-toggle"
+          aria-label="Notifikasi"
+        >
+          <i class="bi bi-bell"></i>
+        </button>
         ${authRightHtml}
       </div>
+    `;
+    const leftHamburger = `
+      <button
+        id="navMenuToggle"
+        type="button"
+        class="btn btn-sm nav-plain-btn nav-menu-toggle"
+        aria-label="Buka menu"
+      >
+        <i class="bi bi-list"></i>
+      </button>
     `;
     const byPage = {
       index: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Laporkan masalah kota dengan cepat",
-        leftHtml: "",
-        rightHtml: indexRightHtml,
+        leftHtml: leftHamburger,
+        rightHtml: userRightHtml,
       },
       login: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Portal Masuk",
-        leftHtml: "",
-        rightHtml: authRightHtml,
+        leftHtml: leftHamburger,
+        rightHtml: userRightHtml,
       },
       profile: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Profil Akun",
-        leftHtml: "",
-        rightHtml: authRightHtml,
+        leftHtml: leftHamburger,
+        rightHtml: userRightHtml,
       },
       report: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Detail laporan warga",
-        leftHtml: "",
-        rightHtml: authRightHtml,
+        leftHtml: leftHamburger,
+        rightHtml: userRightHtml,
       },
       user: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Profil Pelapor",
-        leftHtml: "",
-        rightHtml: authRightHtml,
+        leftHtml: leftHamburger,
+        rightHtml: userRightHtml,
       },
       admin: {
         navClass: "navbar-dark bg-dark",
@@ -180,6 +190,25 @@
       .replace("__RIGHT_SLOT__", config.rightHtml || "");
 
     mount.innerHTML = html;
+    if (!document.getElementById("navSidePanel")) {
+      const sideHtml = `
+        <div id="navSideOverlay" class="nav-side-overlay"></div>
+        <aside id="navSidePanel" class="nav-side-panel" aria-hidden="true">
+          <div class="nav-side-header">
+            <strong class="nav-side-title">Menu</strong>
+            <button id="navSideClose" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <nav class="nav-side-links">
+            <a href="/index.html">Beranda</a>
+            <a href="/profile.html">Profil</a>
+            <a id="navSideAuthLink" href="/login.html">Login</a>
+          </nav>
+        </aside>
+      `;
+      mount.insertAdjacentHTML("beforeend", sideHtml);
+    }
     const backBtn = mount.querySelector("[data-nav-back='1']");
     if (backBtn) {
       backBtn.addEventListener("click", function () {
@@ -236,11 +265,16 @@
     const notifRaw = localStorage.getItem("laporaja_notification_unread_v1");
     updateNotificationBadge(notifRaw ? Number(notifRaw) : 0);
 
+    const sideAuthLink = document.getElementById("navSideAuthLink");
     if (!session || !session.email || !session.token) {
       actionBtn.href = "/login.html";
       actionText.textContent = "Login";
       avatarWrap.classList.add("d-none");
       avatar.removeAttribute("src");
+      if (sideAuthLink) {
+        sideAuthLink.href = "/login.html";
+        sideAuthLink.textContent = "Login";
+      }
       return;
     }
 
@@ -251,6 +285,10 @@
     avatar.onerror = function () {
       avatar.src = "/img/defaultAvatar.jpg";
     };
+    if (sideAuthLink) {
+      sideAuthLink.href = "/profile.html";
+      sideAuthLink.textContent = "Profil";
+    }
   }
 
   renderNavbar();
@@ -290,6 +328,53 @@
     searchInput.addEventListener("blur", function () {
       if (window.matchMedia("(max-width: 640px)").matches) {
         closeSearch();
+      }
+    });
+  });
+  document.addEventListener("navbar:ready", function () {
+    const createBtn = document.getElementById("createReportBtn");
+    if (!createBtn) {
+      return;
+    }
+    const pageKey = getPageKey();
+    if (pageKey === "index") {
+      return;
+    }
+    createBtn.addEventListener("click", function () {
+      window.location.href = "/index.html";
+    });
+  });
+  document.addEventListener("navbar:ready", function () {
+    const menuBtn = document.getElementById("navMenuToggle");
+    const overlay = document.getElementById("navSideOverlay");
+    const panel = document.getElementById("navSidePanel");
+    const closeBtn = document.getElementById("navSideClose");
+    if (!menuBtn || !overlay || !panel || !closeBtn) {
+      return;
+    }
+
+    function openSide() {
+      document.body.classList.add("nav-side-open");
+      panel.setAttribute("aria-hidden", "false");
+    }
+
+    function closeSide() {
+      document.body.classList.remove("nav-side-open");
+      panel.setAttribute("aria-hidden", "true");
+    }
+
+    menuBtn.addEventListener("click", function () {
+      if (document.body.classList.contains("nav-side-open")) {
+        closeSide();
+        return;
+      }
+      openSide();
+    });
+    overlay.addEventListener("click", closeSide);
+    closeBtn.addEventListener("click", closeSide);
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeSide();
       }
     });
   });
