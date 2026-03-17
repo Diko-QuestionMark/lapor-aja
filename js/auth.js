@@ -102,7 +102,7 @@ async function handleRegister(event) {
   }
 
   try {
-    const data = await requestAuth("/auth/register", { name, email, password });
+    const data = await requestAuth("/auth?action=register", { name, email, password });
     setSession(data.token, data.user);
     const nextPath = getPostLoginPath(data.user);
     const isAdmin = nextPath === "/admin.html";
@@ -128,7 +128,7 @@ async function handleLogin(event) {
   const password = document.getElementById("loginPassword").value;
 
   try {
-    const data = await requestAuth("/auth/login", { email, password });
+    const data = await requestAuth("/auth?action=login", { email, password });
     setSession(data.token, data.user);
     const nextPath = getPostLoginPath(data.user);
     const isAdmin = nextPath === "/admin.html";
