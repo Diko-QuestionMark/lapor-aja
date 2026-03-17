@@ -550,6 +550,21 @@ body.has-fixed-navbar {
   padding: 8px 10px;
 }
 
+.admin-response-menunggu {
+  border-left-color: #111827;
+  background: #f3f4f6;
+}
+
+.admin-response-diproses {
+  border-left-color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.admin-response-selesai {
+  border-left-color: #16a34a;
+  background: #ecfdf3;
+}
+
 .admin-card-response-label {
   font-size: 0.76rem;
   font-weight: 700;

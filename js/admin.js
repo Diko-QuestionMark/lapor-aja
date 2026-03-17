@@ -40,6 +40,17 @@ function getStatusMeta(status) {
   return { label: "Menunggu", className: "status-menunggu" };
 }
 
+function getResponseToneClass(status) {
+  const normalized = String(status || "menunggu").trim().toLowerCase();
+  if (normalized === "selesai") {
+    return "admin-response-selesai";
+  }
+  if (normalized === "diproses") {
+    return "admin-response-diproses";
+  }
+  return "admin-response-menunggu";
+}
+
 function readSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -85,6 +96,56 @@ function formatDateTime(value) {
     return "-";
   }
   return new Date(value).toLocaleString("id-ID");
+}
+
+function formatTimeAgo(value) {
+  if (!value) {
+    return "-";
+  }
+  let raw = value;
+  const now = Date.now();
+  if (typeof raw === "string") {
+    const hasTz = /[zZ]$/.test(raw) || /[+-]\d{2}:\d{2}$/.test(raw);
+    if (!hasTz) {
+      const localRaw = raw.replace(" ", "T");
+      const utcRaw = `${localRaw}Z`;
+      const localTs = new Date(localRaw).getTime();
+      const utcTs = new Date(utcRaw).getTime();
+      const localDiff = Math.abs(now - localTs);
+      const utcDiff = Math.abs(now - utcTs);
+      const bestTs = utcDiff < localDiff ? utcTs : localTs;
+      raw = new Date(bestTs).toISOString();
+    } else {
+      raw = raw.replace(" ", "T");
+    }
+  }
+  const ts = new Date(raw).getTime();
+  if (!ts) {
+    return "-";
+  }
+  const diffMs = Date.now() - ts;
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSec < 60) {
+    return diffSec <= 5 ? "baru saja" : `${diffSec} detik yang lalu`;
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin} menit yang lalu`;
+  }
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) {
+    return `${diffHour} jam yang lalu`;
+  }
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) {
+    return `${diffDay} hari yang lalu`;
+  }
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) {
+    return `${diffMonth} bulan yang lalu`;
+  }
+  const diffYear = Math.floor(diffMonth / 12);
+  return `${diffYear} tahun yang lalu`;
 }
 
 function showError(message) {
@@ -204,12 +265,13 @@ function renderAdminReports() {
   list.innerHTML = "";
   visibleReports.forEach(function (report) {
     const statusMeta = getStatusMeta(report.status);
+    const responseToneClass = getResponseToneClass(report.status);
     const agencyLabel = String(report.agency || "Umum");
     const imageUrl = String(report.image_url || "").trim();
     const reportTitle = String(report.title || "Tanpa Judul");
     const reporterName = String(report.reporter_name || "Anonim");
     const reporterEmail = String(report.reporter_email || "-");
-    const createdAtLabel = formatDateTime(report.created_at);
+    const createdAtLabel = formatTimeAgo(report.created_at);
     const responseSummary = String(report.admin_note || "").trim()
       ? report.admin_note
       : "Belum ada respons instansi.";
@@ -249,7 +311,7 @@ function renderAdminReports() {
             <i class="bi bi-card-text"></i>
             <span>${escapeHtml(report.desc || "Tidak ada deskripsi")}</span>
           </p>
-          <div class="admin-card-response">
+          <div class="admin-card-response ${responseToneClass}">
             <p class="admin-card-response-label mb-1">Ringkasan respons</p>
             <p class="admin-card-response-text mb-0">${escapeHtml(responseSummary)}</p>
           </div>
