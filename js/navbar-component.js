@@ -217,15 +217,25 @@
         <div id="navSideOverlay" class="nav-side-overlay"></div>
         <aside id="navSidePanel" class="nav-side-panel" aria-hidden="true">
           <div class="nav-side-header">
-            <strong class="nav-side-title">Menu</strong>
-            <button id="navSideClose" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
-              <i class="bi bi-x-lg"></i>
-            </button>
+            <div class="nav-side-brand">
+              <button id="navSideClose" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
+                <i class="bi bi-list"></i>
+              </button>
+              <a href="/index.html" class="nav-brand-link nav-side-brand-link">
+                <img src="/img/icon.png" alt="Logo" class="nav-brand-logo" />
+                <span class="nav-brand-text">
+                  <span class="nav-brand-title">LaporAja</span>
+                </span>
+              </a>
+            </div>
           </div>
           <nav class="nav-side-links">
-            <a href="/index.html">Beranda</a>
-            <a href="/profile.html">Profil</a>
-            <a id="navSideAuthLink" href="/login.html">Login</a>
+            <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
+            <a href="/profile.html" data-nav-notif-link="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
+            <a id="navSideAuthLink" href="/login.html">
+              <i class="bi bi-box-arrow-in-right" id="navSideAuthIcon"></i>
+              <span id="navSideAuthLabel">Login</span>
+            </a>
           </nav>
         </aside>
       `;
@@ -288,6 +298,8 @@
     updateNotificationBadge(notifRaw ? Number(notifRaw) : 0);
 
     const sideAuthLink = document.getElementById("navSideAuthLink");
+    const sideAuthLabel = document.getElementById("navSideAuthLabel");
+    const sideAuthIcon = document.getElementById("navSideAuthIcon");
     if (!session || !session.email || !session.token) {
       document.body.classList.remove("nav-auth-logged-in");
       actionBtn.href = "/login.html";
@@ -296,7 +308,12 @@
       avatar.removeAttribute("src");
       if (sideAuthLink) {
         sideAuthLink.href = "/login.html";
-        sideAuthLink.textContent = "Login";
+        if (sideAuthLabel) {
+          sideAuthLabel.textContent = "Login";
+        }
+        if (sideAuthIcon) {
+          sideAuthIcon.className = "bi bi-box-arrow-in-right";
+        }
       }
       return;
     }
@@ -311,7 +328,12 @@
     };
     if (sideAuthLink) {
       sideAuthLink.href = "/profile.html";
-      sideAuthLink.textContent = "Profil";
+      if (sideAuthLabel) {
+        sideAuthLabel.textContent = "Profil";
+      }
+      if (sideAuthIcon) {
+        sideAuthIcon.className = "bi bi-person-circle";
+      }
     }
   }
 
