@@ -432,20 +432,29 @@ function renderDetail(report) {
     imageUrls.length === 0
       ? '<div class="detail-image rounded border mb-3 d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
       : imageUrls.length === 1
-      ? `<img
-          src="${escapeHtml(imageUrls[0] || "")}"
-          alt="Foto laporan"
-          class="img-fluid rounded border mb-3 detail-image"
-        />`
+      ? `<a href="${escapeHtml(imageUrls[0] || "")}" target="_blank" rel="noopener noreferrer">
+          <img
+            src="${escapeHtml(imageUrls[0] || "")}"
+            alt="Foto laporan"
+            class="img-fluid rounded border mb-3 detail-image"
+          />
+        </a>`
       : `
         <div class="mb-3">
           <div class="rounded border p-2 bg-light">
-            <img
-              id="${galleryId}Main"
-              src="${escapeHtml(imageUrls[0])}"
-              class="d-block w-100 detail-image rounded"
-              alt="Foto laporan 1"
-            />
+            <a
+              id="${galleryId}Link"
+              href="${escapeHtml(imageUrls[0])}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                id="${galleryId}Main"
+                src="${escapeHtml(imageUrls[0])}"
+                class="d-block w-100 detail-image rounded"
+                alt="Foto laporan 1"
+              />
+            </a>
           </div>
           <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
             <button id="${galleryId}Prev" class="btn btn-sm btn-outline-primary" type="button">Prev</button>
@@ -553,6 +562,7 @@ function renderDetail(report) {
   if (imageUrls.length > 1) {
     let activeIndex = 0;
     const main = document.getElementById(`${galleryId}Main`);
+    const link = document.getElementById(`${galleryId}Link`);
     const indexEl = document.getElementById(`${galleryId}Index`);
     const prevBtn = document.getElementById(`${galleryId}Prev`);
     const nextBtn = document.getElementById(`${galleryId}Next`);
@@ -563,6 +573,9 @@ function renderDetail(report) {
       if (main) {
         main.src = imageUrls[activeIndex];
         main.alt = `Foto laporan ${activeIndex + 1}`;
+      }
+      if (link) {
+        link.href = imageUrls[activeIndex];
       }
       if (indexEl) {
         indexEl.textContent = String(activeIndex + 1);

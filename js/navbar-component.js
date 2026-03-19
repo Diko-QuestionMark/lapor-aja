@@ -59,15 +59,6 @@
         >
           <i class="bi bi-arrow-left"></i>
         </button>
-        <button
-          id="createReportBtn"
-          type="button"
-          class="btn btn-sm btn-primary nav-create-btn"
-          aria-label="Buat laporan"
-        >
-          <i class="bi bi-plus-lg"></i>
-          <span>Buat</span>
-        </button>
         <div class="nav-search-wrap">
           <input
             id="searchInput"
@@ -77,6 +68,15 @@
             autocomplete="off"
           />
         </div>
+        <button
+          id="createReportBtn"
+          type="button"
+          class="btn btn-sm btn-primary nav-create-btn"
+          aria-label="Buat laporan"
+        >
+          <i class="bi bi-plus-lg"></i>
+          <span>Buat</span>
+        </button>
         <button
           id="navFilterToggle"
           type="button"
@@ -278,6 +278,7 @@
     badge.textContent = safeCount > 99 ? "99+" : String(safeCount);
     badge.classList.remove("d-none");
   }
+
 
   function initAuthNav() {
     const actionBtn = document.getElementById("authActionBtn");

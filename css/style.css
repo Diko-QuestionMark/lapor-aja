@@ -121,6 +121,7 @@
   height: 32px;
   padding: 0;
   border-radius: 8px;
+  font-size: 18px;
 }
 
 .nav-side-overlay {
@@ -170,6 +171,7 @@
   height: 32px;
   padding: 0;
   border-radius: 8px;
+  font-size: 18px;
 }
 
 .nav-side-links {
@@ -188,6 +190,12 @@
   font-weight: 600;
   padding: 8px 10px;
   border-radius: 10px;
+}
+
+.nav-side-links i {
+  font-size: 18px;
+  width: 18px;
+  text-align: center;
 }
 
 .nav-side-links a:hover,
@@ -212,7 +220,7 @@ body.nav-side-open .nav-side-panel {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #0f172a;
-  border-radius: 999px;
+  border-radius: 10px;
 }
 
 .nav-search-input::placeholder {
@@ -232,6 +240,7 @@ body.nav-side-open .nav-side-panel {
   height: 32px;
   padding: 0;
   border-radius: 8px;
+  font-size: 18px;
 }
 
 .nav-search-back {
@@ -240,6 +249,7 @@ body.nav-side-open .nav-side-panel {
   height: 32px;
   padding: 0;
   border-radius: 8px;
+  font-size: 18px;
 }
 
 .nav-search-wrap {
@@ -254,7 +264,9 @@ body.nav-side-open .nav-side-panel {
   height: 32px;
   padding: 0;
   border-radius: 8px;
+  font-size: 18px;
 }
+
 
 .nav-filter-toggle {
   width: 32px;
@@ -262,6 +274,7 @@ body.nav-side-open .nav-side-panel {
   padding: 0;
   border-radius: 8px;
   display: none;
+  font-size: 18px;
 }
 
 .nav-create-btn {

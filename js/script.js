@@ -142,6 +142,7 @@ function updateUnreadNotifications(reportsData) {
   }).length;
   localStorage.setItem(NOTIFICATION_COUNT_KEY, String(unreadCount));
   updateNotificationBadge(unreadCount);
+
 }
 
 function updateCreateReportAccess(session) {
