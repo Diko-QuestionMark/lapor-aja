@@ -1195,12 +1195,12 @@ function initUi() {
       if (agencyFilterInner) {
         agencyFilterInner.value = "all";
       }
-      const filterPanel = document.getElementById("filterPanel");
-      if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
-        const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
-          toggle: false,
-        });
-        collapse.hide();
+      if (window.bootstrap && window.bootstrap.Modal) {
+        const filterModal = document.getElementById("filterModal");
+        if (filterModal) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(filterModal);
+          instance.hide();
+        }
       }
       renderReports();
     });
@@ -1224,12 +1224,12 @@ function initUi() {
       const agencyFilterEl = document.getElementById("agencyFilterUser");
       if (agencyFilterEl && agencyValue) {
         agencyFilterEl.value = agencyValue;
-        const filterPanel = document.getElementById("filterPanel");
-        if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
-          const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
-            toggle: false,
-          });
-          collapse.show();
+        if (window.bootstrap && window.bootstrap.Modal) {
+          const filterModal = document.getElementById("filterModal");
+          if (filterModal) {
+            const instance = window.bootstrap.Modal.getOrCreateInstance(filterModal);
+            instance.show();
+          }
         }
         renderReports();
       }
@@ -1321,12 +1321,10 @@ document.addEventListener("navbar:ready", function () {
     renderReports();
   }
   const openFilter = params.get("filter") === "1";
-  if (openFilter && window.bootstrap && window.bootstrap.Collapse) {
-    const panel = document.getElementById("filterPanel");
-    if (panel) {
-      const instance = window.bootstrap.Collapse.getOrCreateInstance(panel, {
-        toggle: false,
-      });
+  if (openFilter && window.bootstrap && window.bootstrap.Modal) {
+    const modalEl = document.getElementById("filterModal");
+    if (modalEl) {
+      const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
       instance.show();
     }
   }

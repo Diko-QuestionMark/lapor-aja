@@ -82,10 +82,6 @@
           type="button"
           class="btn btn-sm nav-plain-btn nav-filter-toggle"
           aria-label="Filter laporan"
-          data-bs-toggle="collapse"
-          data-bs-target="#filterPanel"
-          aria-expanded="false"
-          aria-controls="filterPanel"
         >
           <i class="bi bi-funnel"></i>
         </button>
@@ -419,7 +415,7 @@
       return;
     }
     const pageKey = getPageKey();
-
+    let suppressBlurClose = false;
     function openSearch() {
       document.body.classList.add("nav-search-active");
       searchInput.focus();
@@ -457,10 +453,25 @@
 
 
     searchInput.addEventListener("blur", function () {
+      if (suppressBlurClose) {
+        return;
+      }
       if (window.matchMedia("(max-width: 640px)").matches) {
         closeSearch();
       }
     });
+
+    const filterBtn = document.getElementById("navFilterToggle");
+    if (filterBtn) {
+      const suppress = function () {
+        suppressBlurClose = true;
+        window.setTimeout(function () {
+          suppressBlurClose = false;
+        }, 200);
+      };
+      filterBtn.addEventListener("mousedown", suppress);
+      filterBtn.addEventListener("touchstart", suppress, { passive: true });
+    }
   });
   document.addEventListener("navbar:ready", function () {
     const createBtn = document.getElementById("createReportBtn");
@@ -522,11 +533,11 @@
         window.location.href = target;
         return;
       }
-      if (window.bootstrap && window.bootstrap.Collapse) {
-        const panel = document.getElementById("filterPanel");
-        if (panel) {
-          const instance = window.bootstrap.Collapse.getOrCreateInstance(panel);
-          instance.toggle();
+      if (window.bootstrap && window.bootstrap.Modal) {
+        const modalEl = document.getElementById("filterModal");
+        if (modalEl) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+          instance.show();
         }
       }
     });
