@@ -471,6 +471,98 @@ body.has-fixed-navbar {
   animation: skeleton-wave 1.2s ease-in-out infinite;
 }
 
+.detail-skeleton .skeleton-bar,
+.detail-skeleton .skeleton-pill,
+.detail-skeleton .skeleton-image,
+.detail-skeleton .skeleton-block {
+  background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
+  background-size: 400% 100%;
+  animation: skeleton-wave 1.2s ease-in-out infinite;
+}
+
+.detail-skeleton .skeleton-bar {
+  height: 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.detail-skeleton .skeleton-bar.small {
+  height: 12px;
+}
+
+.detail-skeleton .skeleton-pill {
+  height: 28px;
+  border-radius: 999px;
+  margin: 6px 0 14px;
+}
+
+.detail-skeleton .skeleton-image {
+  height: 280px;
+  border-radius: 12px;
+  margin: 8px 0 16px;
+}
+
+.detail-skeleton .skeleton-meta-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 6px 0 12px;
+}
+
+.detail-skeleton .skeleton-button-row {
+  margin: 6px 0 2px;
+}
+
+.detail-skeleton .skeleton-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 18px 0;
+}
+
+.detail-skeleton .skeleton-block {
+  height: 110px;
+  border-radius: 12px;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notif-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.notif-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.notif-meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.notif-filter-btn {
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+.notif-filter-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f9fafb;
+  margin-bottom: 12px;
+  display: grid;
+  gap: 6px;
+}
+
 .report-list {
   display: grid;
   grid-template-columns: 1fr;

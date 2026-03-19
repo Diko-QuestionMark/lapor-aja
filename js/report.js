@@ -240,6 +240,36 @@ function renderNotFound(message) {
     `<p class="text-danger mb-0">${message}</p>`;
 }
 
+function renderDetailSkeleton() {
+  const container = document.getElementById("detailContainer");
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="detail-skeleton">
+      <div class="skeleton-bar" style="width: 55%"></div>
+      <div class="skeleton-bar small" style="width: 35%"></div>
+      <div class="skeleton-bar small" style="width: 28%"></div>
+      <div class="skeleton-pill" style="width: 38%"></div>
+      <div class="skeleton-image"></div>
+      <div class="skeleton-bar" style="width: 90%"></div>
+      <div class="skeleton-bar" style="width: 82%"></div>
+      <div class="skeleton-bar" style="width: 65%"></div>
+      <div class="skeleton-meta-row">
+        <div class="skeleton-bar small" style="width: 40%"></div>
+        <div class="skeleton-bar small" style="width: 30%"></div>
+      </div>
+      <div class="skeleton-button-row">
+        <div class="skeleton-pill" style="width: 140px"></div>
+      </div>
+      <div class="skeleton-divider"></div>
+      <div class="skeleton-bar" style="width: 40%"></div>
+      <div class="skeleton-block"></div>
+    </div>
+  `;
+}
+
 function formatLocation(report) {
   const hasLocation = report.lat !== null && report.lat !== undefined;
   return hasLocation
@@ -700,6 +730,8 @@ async function init() {
     renderNotFound("ID laporan tidak valid.");
     return;
   }
+
+  renderDetailSkeleton();
 
   try {
     const response = await fetch(API_BASE + "/reports");

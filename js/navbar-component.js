@@ -241,6 +241,77 @@
       `;
       mount.insertAdjacentHTML("beforeend", sideHtml);
     }
+    if (!document.getElementById("navNotifModal")) {
+      const notifHtml = `
+        <div class="modal fade" id="navNotifModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h2 class="modal-title fs-6">Notifikasi</h2>
+                <div class="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm nav-plain-btn notif-filter-btn"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#notifFilterPanel"
+                    aria-expanded="false"
+                    aria-controls="notifFilterPanel"
+                  >
+                    <i class="bi bi-funnel"></i>
+                    <span>Filter</span>
+                  </button>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+              </div>
+              <div class="modal-body">
+                <div id="notifFilterPanel" class="collapse">
+                  <div class="notif-filter-panel">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterAll" checked />
+                      <label class="form-check-label" for="notifFilterAll">Semua notifikasi</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterStatus" />
+                      <label class="form-check-label" for="notifFilterStatus">Update status</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterResponse" />
+                      <label class="form-check-label" for="notifFilterResponse">Respons instansi</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterMentions" />
+                      <label class="form-check-label" for="notifFilterMentions">Laporan saya</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="notif-list">
+                  <div class="notif-item">
+                    <div class="notif-title">Laporan #128 diterima oleh instansi</div>
+                    <div class="notif-meta">2 menit lalu</div>
+                  </div>
+                  <div class="notif-item">
+                    <div class="notif-title">Status laporan #127 berubah jadi Diproses</div>
+                    <div class="notif-meta">15 menit lalu</div>
+                  </div>
+                  <div class="notif-item">
+                    <div class="notif-title">Respons instansi masuk untuk laporan #120</div>
+                    <div class="notif-meta">1 jam lalu</div>
+                  </div>
+                  <div class="notif-item">
+                    <div class="notif-title">Laporan #118 selesai ditangani</div>
+                    <div class="notif-meta">Kemarin</div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      mount.insertAdjacentHTML("beforeend", notifHtml);
+    }
     const backBtn = mount.querySelector("[data-nav-back='1']");
     if (backBtn) {
       backBtn.addEventListener("click", function () {
@@ -458,6 +529,24 @@
           instance.toggle();
         }
       }
+    });
+  });
+
+  document.addEventListener("navbar:ready", function () {
+    const notifBtn = document.getElementById("navNotifToggle");
+    if (!notifBtn) {
+      return;
+    }
+    notifBtn.addEventListener("click", function () {
+      if (!(window.bootstrap && window.bootstrap.Modal)) {
+        return;
+      }
+      const modalEl = document.getElementById("navNotifModal");
+      if (!modalEl) {
+        return;
+      }
+      const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+      instance.show();
     });
   });
 })();
