@@ -51,3 +51,8 @@
   from = "/report-status-history"
   to = "/.netlify/functions/report-status-history"
   status = 200
+
+[[redirects]]
+  from = "/notifications"
+  to = "/.netlify/functions/notifications"
+  status = 200
