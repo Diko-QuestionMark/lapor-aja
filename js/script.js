@@ -637,6 +637,9 @@ function renderLoadingSkeleton() {
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
       <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
+      <div class="skeleton-item"></div>
     </div>
   `;
 }

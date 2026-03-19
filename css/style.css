@@ -464,7 +464,7 @@ body.has-fixed-navbar {
 }
 
 .skeleton-item {
-  height: 86px;
+  height: 400px;
   border-radius: 8px;
   background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
   background-size: 400% 100%;
