@@ -94,7 +94,6 @@
       >
         <span id="nav-avatar-wrap" class="nav-avatar-wrap d-none">
           <img id="auth-user-avatar" class="nav-avatar" alt="Avatar user" />
-          <span id="nav-notif-badge" class="nav-avatar-badge d-none">0</span>
         </span>
         <span id="auth-action-text" class="nav-auth-text">Login</span>
       </a>
@@ -150,6 +149,7 @@
           aria-label="Notifikasi"
         >
           <i class="bi bi-bell"></i>
+          <span id="nav-notif-badge" class="nav-notif-badge d-none">0</span>
         </button>
         ${authRightHtml}
       </div>
@@ -317,9 +317,6 @@
                     <i class="bi bi-funnel me-1"></i>
                     <span>Filter</span>
                   </button>
-                  <button type="button" id="notif-reset-filter" class="btn btn-sm btn-outline-secondary">
-                    Tanpa Filter
-                  </button>
                 </div>
                 <div id="notif-filter-panel" class="collapse">
                   <div class="notif-filter-panel">
@@ -426,6 +423,30 @@
     list.innerHTML = `<p class="small mb-0${className}">${escapeHtml(message)}</p>`;
   }
 
+  function renderNotificationListSkeleton() {
+    const list = getNotifListRoot();
+    if (!list) {
+      return;
+    }
+    list.innerHTML = `
+      <div class="notif-skeleton-item" aria-hidden="true">
+        <div class="notif-skeleton-line w-75"></div>
+        <div class="notif-skeleton-line w-100"></div>
+        <div class="notif-skeleton-line notif-skeleton-line-sm w-50"></div>
+      </div>
+      <div class="notif-skeleton-item" aria-hidden="true">
+        <div class="notif-skeleton-line w-100"></div>
+        <div class="notif-skeleton-line w-75"></div>
+        <div class="notif-skeleton-line notif-skeleton-line-sm w-25"></div>
+      </div>
+      <div class="notif-skeleton-item" aria-hidden="true">
+        <div class="notif-skeleton-line w-75"></div>
+        <div class="notif-skeleton-line w-100"></div>
+        <div class="notif-skeleton-line notif-skeleton-line-sm w-50"></div>
+      </div>
+    `;
+  }
+
   function renderNotificationList() {
     const list = getNotifListRoot();
     if (!list) {
@@ -442,6 +463,8 @@
         const typeLabel = getNotifTypeLabel(item.type);
         const createdAtLabel = formatTimeAgo(item.created_at);
         const unreadClass = item.is_read ? "" : " is-unread";
+        const titleClampClass =
+          String(item.type || "") === NOTIFICATION_TYPE_FILTER.government ? " text-truncate-2" : "";
         return `
           <button
             type="button"
@@ -451,7 +474,7 @@
           >
             <div class="d-flex align-items-start justify-content-between gap-2">
               <div>
-                <div class="notif-title">${escapeHtml(item.message || "Ada update baru.")}</div>
+                <div class="notif-title${titleClampClass}">${escapeHtml(item.message || "Ada update baru.")}</div>
                 <div class="small text-secondary">${escapeHtml(item.title || "Laporan Warga")} (#${reportId})</div>
               </div>
               <span class="notif-type-badge">${escapeHtml(typeLabel)}</span>
@@ -472,7 +495,7 @@
       return;
     }
 
-    renderNotificationListState("Memuat notifikasi...", " text-secondary");
+    renderNotificationListSkeleton();
     const response = await fetch(`${API_BASE}/notifications?limit=50`, {
       method: "GET",
       headers: {
@@ -748,7 +771,6 @@
     if (modalEl && modalEl.dataset.bound !== "1") {
       modalEl.dataset.bound = "1";
       const panelEl = getById("notif-filter-panel");
-      const resetBtn = getById("notif-reset-filter");
       const allRadio = getById("notif-filter-all");
       const radioInputs = modalEl.querySelectorAll("input[name='notifFilter']");
       const list = getNotifListRoot();
@@ -767,9 +789,6 @@
         renderNotificationList();
       }
 
-      if (resetBtn) {
-        resetBtn.addEventListener("click", resetNotifFilterState);
-      }
       radioInputs.forEach(function (input) {
         input.addEventListener("change", function () {
           notifFilterMode = String(input.value || NOTIFICATION_TYPE_FILTER.all);
