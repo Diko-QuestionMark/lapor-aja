@@ -18,6 +18,11 @@ const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
 const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
 const REPORT_BATCH_SIZE = 15;
 const VISIT_SMART_SEED = Math.floor(Math.random() * 1000000000);
+const DEFAULT_REPORT_FILTER = Object.freeze({
+  sort: "smart",
+  time: "all",
+  agency: "all",
+});
 const AGENCY_OPTIONS = new Set([
   "Umum",
   "Dinas PU",
@@ -142,7 +147,35 @@ function resetAndRenderReports() {
   resetVisibleReportCount();
   currentRenderSignature = "";
   renderedReportCount = 0;
+  updateFilterToggleIcon();
   renderReports();
+}
+
+function isUsingDefaultFilter() {
+  const sortMode = String((getById("sort-filter", "sortFilter") || { value: "" }).value || "");
+  const timeMode = String((getById("time-filter", "timeFilter") || { value: "" }).value || "");
+  const agencyMode = String(
+    (getById("agency-filter-user", "agencyFilterUser") || { value: "" }).value || "",
+  );
+  return (
+    sortMode === DEFAULT_REPORT_FILTER.sort &&
+    timeMode === DEFAULT_REPORT_FILTER.time &&
+    agencyMode === DEFAULT_REPORT_FILTER.agency
+  );
+}
+
+function updateFilterToggleIcon() {
+  const filterBtn = getById("nav-filter-toggle", "navFilterToggle");
+  if (!filterBtn) {
+    return;
+  }
+  const icon = filterBtn.querySelector("i");
+  if (!icon) {
+    return;
+  }
+  const isDefault = isUsingDefaultFilter();
+  icon.classList.toggle("bi-funnel", isDefault);
+  icon.classList.toggle("bi-funnel-fill", !isDefault);
 }
 
 function getUpvotedIds() {
@@ -1159,10 +1192,11 @@ function buildReportCardHtml(report) {
                     href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="meta-item meta-action-link"
+                    class="meta-item meta-action-link meta-location-item"
                     data-location-link="1"
-                  ><i class="bi bi-geo-alt"></i>${escapeHtml(locationText)}</a>`
-                : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(locationText)}</span>`
+                    title="${escapeHtml(locationText)}"
+                  ><i class="bi bi-geo-alt"></i><span class="meta-location-text text-truncate-1">${escapeHtml(locationText)}</span></a>`
+                : `<span class="meta-item meta-location-item" title="${escapeHtml(locationText)}"><i class="bi bi-geo-alt"></i><span class="meta-location-text text-truncate-1">${escapeHtml(locationText)}</span></span>`
             }
           </span>
           <button
@@ -1326,6 +1360,7 @@ function initUi() {
   }
   bindCreateReportBtn();
   document.addEventListener("navbar:ready", bindCreateReportBtn);
+  document.addEventListener("navbar:ready", updateFilterToggleIcon);
   getById("sort-filter", "sortFilter").addEventListener("change", resetAndRenderReports);
   const timeFilter = getById("time-filter", "timeFilter");
   if (timeFilter) {
@@ -1476,6 +1511,7 @@ document.addEventListener("navbar:ready", function () {
     searchInput.value = q;
     resetAndRenderReports();
   }
+  updateFilterToggleIcon();
   const openFilter = params.get("filter") === "1";
   if (openFilter && window.bootstrap && window.bootstrap.Modal) {
     const modalEl = getById("filter-modal", "filterModal");
