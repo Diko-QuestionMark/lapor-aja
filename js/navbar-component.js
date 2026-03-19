@@ -13,6 +13,16 @@
     });
   }
 
+  function getById() {
+    for (const id of arguments) {
+      const element = document.getElementById(id);
+      if (element) {
+        return element;
+      }
+    }
+    return null;
+  }
+
   function getPageKey() {
     const path = (window.location.pathname || "/").toLowerCase();
     if (path === "/" || path.endsWith("/index.html")) return "index";
@@ -30,21 +40,21 @@
     const key = getPageKey();
     const authRightHtml = `
       <a
-        id="authActionBtn"
+        id="auth-action-btn"
         href="/login.html"
         class="btn btn-sm d-inline-flex align-items-center gap-2 nav-plain-btn"
       >
-        <span id="navAvatarWrap" class="nav-avatar-wrap d-none">
-          <img id="authUserAvatar" class="nav-avatar" alt="Avatar user" />
-          <span id="navNotifBadge" class="nav-avatar-badge d-none">0</span>
+        <span id="nav-avatar-wrap" class="nav-avatar-wrap d-none">
+          <img id="auth-user-avatar" class="nav-avatar" alt="Avatar user" />
+          <span id="nav-notif-badge" class="nav-avatar-badge d-none">0</span>
         </span>
-        <span id="authActionText" class="nav-auth-text">Login</span>
+        <span id="auth-action-text" class="nav-auth-text">Login</span>
       </a>
     `;
     const userRightHtml = `
       <div class="d-flex align-items-center gap-2 nav-right-wrap">
         <button
-          id="navSearchToggle"
+          id="nav-search-toggle"
           type="button"
           class="btn btn-sm nav-plain-btn nav-search-toggle"
           aria-label="Cari laporan"
@@ -52,7 +62,7 @@
           <i class="bi bi-search"></i>
         </button>
         <button
-          id="navSearchBack"
+          id="nav-search-back"
           type="button"
           class="btn btn-sm nav-plain-btn nav-search-back"
           aria-label="Tutup pencarian"
@@ -61,7 +71,7 @@
         </button>
         <div class="nav-search-wrap">
           <input
-            id="searchInput"
+            id="search-input"
             type="search"
             class="form-control form-control-sm nav-search-input"
             placeholder="Cari laporan..."
@@ -69,7 +79,7 @@
           />
         </div>
         <button
-          id="createReportBtn"
+          id="create-report-btn"
           type="button"
           class="btn btn-sm btn-primary nav-create-btn"
           aria-label="Buat laporan"
@@ -78,7 +88,7 @@
           <span>Buat</span>
         </button>
         <button
-          id="navFilterToggle"
+          id="nav-filter-toggle"
           type="button"
           class="btn btn-sm nav-plain-btn nav-filter-toggle"
           aria-label="Filter laporan"
@@ -86,7 +96,7 @@
           <i class="bi bi-funnel"></i>
         </button>
         <button
-          id="navNotifToggle"
+          id="nav-notif-toggle"
           type="button"
           class="btn btn-sm nav-plain-btn nav-notif-toggle"
           aria-label="Notifikasi"
@@ -98,7 +108,7 @@
     `;
     const leftHamburger = `
       <button
-        id="navMenuToggle"
+        id="nav-menu-toggle"
         type="button"
         class="btn btn-sm nav-plain-btn nav-menu-toggle"
         aria-label="Buka menu"
@@ -195,7 +205,7 @@
   }
 
   async function renderNavbar() {
-    const mount = document.getElementById("navbarMount");
+    const mount = getById("navbar-mount", "navbarMount");
     if (!mount) return;
 
     const config = getNavbarConfig();
@@ -208,13 +218,13 @@
       .replace("__RIGHT_SLOT__", config.rightHtml || "");
 
     mount.innerHTML = html;
-    if (!document.getElementById("navSidePanel")) {
+    if (!getById("nav-side-panel", "navSidePanel")) {
       const sideHtml = `
-        <div id="navSideOverlay" class="nav-side-overlay"></div>
-        <aside id="navSidePanel" class="nav-side-panel" aria-hidden="true">
+        <div id="nav-side-overlay" class="nav-side-overlay"></div>
+        <aside id="nav-side-panel" class="nav-side-panel" aria-hidden="true">
           <div class="nav-side-header">
             <div class="nav-side-brand">
-              <button id="navSideClose" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
+              <button id="nav-side-close" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
                 <i class="bi bi-list"></i>
               </button>
               <a href="/index.html" class="nav-brand-link nav-side-brand-link">
@@ -228,18 +238,18 @@
           <nav class="nav-side-links">
             <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
             <a href="/profile.html" data-nav-notif-link="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
-            <a id="navSideAuthLink" href="/login.html">
-              <i class="bi bi-box-arrow-in-right" id="navSideAuthIcon"></i>
-              <span id="navSideAuthLabel">Login</span>
+            <a id="nav-side-auth-link" href="/login.html">
+              <i class="bi bi-box-arrow-in-right" id="nav-side-auth-icon"></i>
+              <span id="nav-side-auth-label">Login</span>
             </a>
           </nav>
         </aside>
       `;
       mount.insertAdjacentHTML("beforeend", sideHtml);
     }
-    if (!document.getElementById("navNotifModal")) {
+    if (!getById("nav-notif-modal", "navNotifModal")) {
       const notifHtml = `
-        <div class="modal fade" id="navNotifModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="nav-notif-modal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
@@ -249,9 +259,9 @@
                     type="button"
                     class="btn btn-sm nav-plain-btn notif-filter-btn"
                     data-bs-toggle="collapse"
-                    data-bs-target="#notifFilterPanel"
+                    data-bs-target="#notif-filter-panel"
                     aria-expanded="false"
-                    aria-controls="notifFilterPanel"
+                    aria-controls="notif-filter-panel"
                   >
                     <i class="bi bi-funnel"></i>
                     <span>Filter</span>
@@ -260,23 +270,23 @@
                 </div>
               </div>
               <div class="modal-body">
-                <div id="notifFilterPanel" class="collapse">
+                <div id="notif-filter-panel" class="collapse">
                   <div class="notif-filter-panel">
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterAll" checked />
-                      <label class="form-check-label" for="notifFilterAll">Semua notifikasi</label>
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-all" checked />
+                      <label class="form-check-label" for="notif-filter-all">Semua notifikasi</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterStatus" />
-                      <label class="form-check-label" for="notifFilterStatus">Update status</label>
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-status" />
+                      <label class="form-check-label" for="notif-filter-status">Update status</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterResponse" />
-                      <label class="form-check-label" for="notifFilterResponse">Respons instansi</label>
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-response" />
+                      <label class="form-check-label" for="notif-filter-response">Respons instansi</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notifFilterMentions" />
-                      <label class="form-check-label" for="notifFilterMentions">Laporan saya</label>
+                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-mentions" />
+                      <label class="form-check-label" for="notif-filter-mentions">Laporan saya</label>
                     </div>
                   </div>
                 </div>
@@ -333,7 +343,7 @@
   }
 
   function updateNotificationBadge(count) {
-    const badge = document.getElementById("navNotifBadge");
+    const badge = getById("nav-notif-badge", "navNotifBadge");
     if (!badge) {
       return;
     }
@@ -348,10 +358,10 @@
 
 
   function initAuthNav() {
-    const actionBtn = document.getElementById("authActionBtn");
-    const avatar = document.getElementById("authUserAvatar");
-    const avatarWrap = document.getElementById("navAvatarWrap");
-    const actionText = document.getElementById("authActionText");
+    const actionBtn = getById("auth-action-btn", "authActionBtn");
+    const avatar = getById("auth-user-avatar", "authUserAvatar");
+    const avatarWrap = getById("nav-avatar-wrap", "navAvatarWrap");
+    const actionText = getById("auth-action-text", "authActionText");
     if (!actionBtn || !actionText || !avatar || !avatarWrap) {
       return;
     }
@@ -365,9 +375,9 @@
     const notifRaw = localStorage.getItem("laporaja_notification_unread_v1");
     updateNotificationBadge(notifRaw ? Number(notifRaw) : 0);
 
-    const sideAuthLink = document.getElementById("navSideAuthLink");
-    const sideAuthLabel = document.getElementById("navSideAuthLabel");
-    const sideAuthIcon = document.getElementById("navSideAuthIcon");
+    const sideAuthLink = getById("nav-side-auth-link", "navSideAuthLink");
+    const sideAuthLabel = getById("nav-side-auth-label", "navSideAuthLabel");
+    const sideAuthIcon = getById("nav-side-auth-icon", "navSideAuthIcon");
     if (!session || !session.email || !session.token) {
       document.body.classList.remove("nav-auth-logged-in");
       actionBtn.href = "/login.html";
@@ -408,9 +418,9 @@
   renderNavbar();
   document.addEventListener("navbar:ready", initAuthNav);
   document.addEventListener("navbar:ready", function () {
-    const toggleBtn = document.getElementById("navSearchToggle");
-    const backBtn = document.getElementById("navSearchBack");
-    const searchInput = document.getElementById("searchInput");
+    const toggleBtn = getById("nav-search-toggle", "navSearchToggle");
+    const backBtn = getById("nav-search-back", "navSearchBack");
+    const searchInput = getById("search-input", "searchInput");
     if (!toggleBtn || !searchInput || !backBtn) {
       return;
     }
@@ -461,7 +471,7 @@
       }
     });
 
-    const filterBtn = document.getElementById("navFilterToggle");
+    const filterBtn = getById("nav-filter-toggle", "navFilterToggle");
     if (filterBtn) {
       const suppress = function () {
         suppressBlurClose = true;
@@ -474,7 +484,7 @@
     }
   });
   document.addEventListener("navbar:ready", function () {
-    const createBtn = document.getElementById("createReportBtn");
+    const createBtn = getById("create-report-btn", "createReportBtn");
     if (!createBtn) {
       return;
     }
@@ -487,10 +497,10 @@
     });
   });
   document.addEventListener("navbar:ready", function () {
-    const menuBtn = document.getElementById("navMenuToggle");
-    const overlay = document.getElementById("navSideOverlay");
-    const panel = document.getElementById("navSidePanel");
-    const closeBtn = document.getElementById("navSideClose");
+    const menuBtn = getById("nav-menu-toggle", "navMenuToggle");
+    const overlay = getById("nav-side-overlay", "navSideOverlay");
+    const panel = getById("nav-side-panel", "navSidePanel");
+    const closeBtn = getById("nav-side-close", "navSideClose");
     if (!menuBtn || !overlay || !panel || !closeBtn) {
       return;
     }
@@ -521,7 +531,7 @@
     });
   });
   document.addEventListener("navbar:ready", function () {
-    const filterBtn = document.getElementById("navFilterToggle");
+    const filterBtn = getById("nav-filter-toggle", "navFilterToggle");
     if (!filterBtn) {
       return;
     }
@@ -534,7 +544,7 @@
         return;
       }
       if (window.bootstrap && window.bootstrap.Modal) {
-        const modalEl = document.getElementById("filterModal");
+        const modalEl = getById("filter-modal", "filterModal");
         if (modalEl) {
           const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
           instance.show();
@@ -544,7 +554,7 @@
   });
 
   document.addEventListener("navbar:ready", function () {
-    const notifBtn = document.getElementById("navNotifToggle");
+    const notifBtn = getById("nav-notif-toggle", "navNotifToggle");
     if (!notifBtn) {
       return;
     }
@@ -552,7 +562,7 @@
       if (!(window.bootstrap && window.bootstrap.Modal)) {
         return;
       }
-      const modalEl = document.getElementById("navNotifModal");
+      const modalEl = getById("nav-notif-modal", "navNotifModal");
       if (!modalEl) {
         return;
       }
