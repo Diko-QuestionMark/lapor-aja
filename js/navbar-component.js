@@ -1,4 +1,16 @@
 (function () {
+  const API_BASE =
+    window.LAPORAJA_API_BASE ||
+    (window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin);
+  const SESSION_KEY = "laporaja_session_v1";
+  const NOTIFICATION_TYPE_FILTER = Object.freeze({
+    all: "all",
+    government: "government_update",
+    comment: "comment",
+  });
+  let notifItems = [];
+  let notifFilterMode = NOTIFICATION_TYPE_FILTER.all;
+
   function escapeHtml(text) {
     return String(text || "").replace(/[&<>"']/g, function (char) {
       return (
@@ -21,6 +33,42 @@
       }
     }
     return null;
+  }
+
+  function readSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function formatTimeAgo(value) {
+    if (!value) {
+      return "";
+    }
+    const ts = new Date(value).getTime();
+    if (!ts || Number.isNaN(ts)) {
+      return "";
+    }
+    const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (diffSec < 60) {
+      return diffSec <= 5 ? "baru saja" : `${diffSec} detik yang lalu`;
+    }
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) {
+      return `${diffMin} menit yang lalu`;
+    }
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) {
+      return `${diffHour} jam yang lalu`;
+    }
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 30) {
+      return `${diffDay} hari yang lalu`;
+    }
+    return new Date(ts).toLocaleString("id-ID");
   }
 
   function getPageKey() {
@@ -276,40 +324,40 @@
                 <div id="notif-filter-panel" class="collapse">
                   <div class="notif-filter-panel">
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-all" checked />
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="notifFilter"
+                        id="notif-filter-all"
+                        value="all"
+                        checked
+                      />
                       <label class="form-check-label" for="notif-filter-all">Semua notifikasi</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-status" />
-                      <label class="form-check-label" for="notif-filter-status">Update status</label>
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="notifFilter"
+                        id="notif-filter-government"
+                        value="government_update"
+                      />
+                      <label class="form-check-label" for="notif-filter-government">Update Pemerintah</label>
                     </div>
                     <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-response" />
-                      <label class="form-check-label" for="notif-filter-response">Respons instansi</label>
-                    </div>
-                    <div class="form-check">
-                      <input class="form-check-input" type="radio" name="notifFilter" id="notif-filter-mentions" />
-                      <label class="form-check-label" for="notif-filter-mentions">Laporan saya</label>
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="notifFilter"
+                        id="notif-filter-comment"
+                        value="comment"
+                      />
+                      <label class="form-check-label" for="notif-filter-comment">Komentar</label>
                     </div>
                   </div>
                 </div>
-                <div class="notif-list">
-                  <div class="notif-item">
-                    <div class="notif-title">Laporan #128 diterima oleh instansi</div>
-                    <div class="notif-meta">2 menit lalu</div>
-                  </div>
-                  <div class="notif-item">
-                    <div class="notif-title">Status laporan #127 berubah jadi Diproses</div>
-                    <div class="notif-meta">15 menit lalu</div>
-                  </div>
-                  <div class="notif-item">
-                    <div class="notif-title">Respons instansi masuk untuk laporan #120</div>
-                    <div class="notif-meta">1 jam lalu</div>
-                  </div>
-                  <div class="notif-item">
-                    <div class="notif-title">Laporan #118 selesai ditangani</div>
-                    <div class="notif-meta">Kemarin</div>
-                  </div>
+                <div id="nav-notif-list" class="notif-list">
+                  <p class="text-secondary small mb-0">Buka notifikasi untuk memuat data terbaru.</p>
                 </div>
               </div>
               <div class="modal-footer">
@@ -345,6 +393,151 @@
     document.dispatchEvent(new CustomEvent("navbar:ready"));
   }
 
+  function getNotifListRoot() {
+    return getById("nav-notif-list", "navNotifList");
+  }
+
+  function getFilteredNotifItems() {
+    if (notifFilterMode === NOTIFICATION_TYPE_FILTER.all) {
+      return notifItems.slice();
+    }
+    return notifItems.filter(function (item) {
+      return String(item.type || "") === notifFilterMode;
+    });
+  }
+
+  function getNotifTypeLabel(type) {
+    const normalized = String(type || "");
+    if (normalized === NOTIFICATION_TYPE_FILTER.government) {
+      return "Update Pemerintah";
+    }
+    if (normalized === NOTIFICATION_TYPE_FILTER.comment) {
+      return "Komentar";
+    }
+    return "Notifikasi";
+  }
+
+  function renderNotificationListState(message, extraClassName) {
+    const list = getNotifListRoot();
+    if (!list) {
+      return;
+    }
+    const className = extraClassName ? ` ${extraClassName}` : "";
+    list.innerHTML = `<p class="small mb-0${className}">${escapeHtml(message)}</p>`;
+  }
+
+  function renderNotificationList() {
+    const list = getNotifListRoot();
+    if (!list) {
+      return;
+    }
+    const items = getFilteredNotifItems();
+    if (items.length === 0) {
+      renderNotificationListState("Belum ada notifikasi untuk filter ini.", " text-secondary");
+      return;
+    }
+    list.innerHTML = items
+      .map(function (item) {
+        const reportId = Number(item.report_id || 0);
+        const typeLabel = getNotifTypeLabel(item.type);
+        const createdAtLabel = formatTimeAgo(item.created_at);
+        const unreadClass = item.is_read ? "" : " is-unread";
+        return `
+          <button
+            type="button"
+            class="notif-item notif-item-btn${unreadClass}"
+            data-notif-id="${escapeHtml(item.id)}"
+            data-notif-link="${escapeHtml(item.link || "")}"
+          >
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div>
+                <div class="notif-title">${escapeHtml(item.message || "Ada update baru.")}</div>
+                <div class="small text-secondary">${escapeHtml(item.title || "Laporan Warga")} (#${reportId})</div>
+              </div>
+              <span class="notif-type-badge">${escapeHtml(typeLabel)}</span>
+            </div>
+            <div class="notif-meta">${escapeHtml(createdAtLabel)}</div>
+          </button>
+        `;
+      })
+      .join("");
+  }
+
+  async function fetchNotifications() {
+    const session = readSession();
+    if (!session || !session.token) {
+      notifItems = [];
+      updateNotificationBadge(0);
+      renderNotificationListState("Login untuk melihat notifikasi.", " text-secondary");
+      return;
+    }
+
+    renderNotificationListState("Memuat notifikasi...", " text-secondary");
+    const response = await fetch(`${API_BASE}/notifications?limit=50`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+      },
+    });
+    if (response.status === 401) {
+      notifItems = [];
+      updateNotificationBadge(0);
+      renderNotificationListState("Sesi habis. Silakan login ulang.", " text-danger");
+      return;
+    }
+    if (!response.ok) {
+      throw new Error("Gagal memuat notifikasi");
+    }
+    const payload = await response.json();
+    notifItems = Array.isArray(payload.items) ? payload.items : [];
+    updateNotificationBadge(Number(payload.unread_count || 0));
+    renderNotificationList();
+  }
+
+  async function markNotificationRead(notificationId) {
+    const session = readSession();
+    if (!session || !session.token || !notificationId) {
+      return null;
+    }
+    const response = await fetch(`${API_BASE}/notifications`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.token}`,
+      },
+      body: JSON.stringify({ id: notificationId }),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return response.json().catch(function () {
+      return null;
+    });
+  }
+
+  async function refreshNotificationBadge() {
+    const session = readSession();
+    if (!session || !session.token) {
+      updateNotificationBadge(0);
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/notifications?limit=1`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      updateNotificationBadge(Number(payload.unread_count || 0));
+    } catch (_) {
+      // no-op: keep existing badge state
+    }
+  }
+
   function updateNotificationBadge(count) {
     const badge = getById("nav-notif-badge", "navNotifBadge");
     if (!badge) {
@@ -368,15 +561,7 @@
     if (!actionBtn || !actionText || !avatar || !avatarWrap) {
       return;
     }
-    let session = null;
-    try {
-      const raw = localStorage.getItem("laporaja_session_v1");
-      session = raw ? JSON.parse(raw) : null;
-    } catch (_) {
-      session = null;
-    }
-    const notifRaw = localStorage.getItem("laporaja_notification_unread_v1");
-    updateNotificationBadge(notifRaw ? Number(notifRaw) : 0);
+    const session = readSession();
 
     const sideAuthLink = getById("nav-side-auth-link", "navSideAuthLink");
     const sideAuthLabel = getById("nav-side-auth-label", "navSideAuthLabel");
@@ -416,6 +601,7 @@
         sideAuthIcon.className = "bi bi-person-circle";
       }
     }
+    refreshNotificationBadge();
   }
 
   renderNavbar();
@@ -564,8 +750,11 @@
       const panelEl = getById("notif-filter-panel");
       const resetBtn = getById("notif-reset-filter");
       const allRadio = getById("notif-filter-all");
+      const radioInputs = modalEl.querySelectorAll("input[name='notifFilter']");
+      const list = getNotifListRoot();
 
       function resetNotifFilterState() {
+        notifFilterMode = NOTIFICATION_TYPE_FILTER.all;
         if (allRadio) {
           allRadio.checked = true;
         }
@@ -575,11 +764,61 @@
           });
           collapse.hide();
         }
+        renderNotificationList();
       }
 
       if (resetBtn) {
         resetBtn.addEventListener("click", resetNotifFilterState);
       }
+      radioInputs.forEach(function (input) {
+        input.addEventListener("change", function () {
+          notifFilterMode = String(input.value || NOTIFICATION_TYPE_FILTER.all);
+          renderNotificationList();
+        });
+      });
+      if (list) {
+        list.addEventListener("click", function (event) {
+          const btn = event.target.closest("[data-notif-id]");
+          if (!btn) {
+            return;
+          }
+          const notificationId = String(btn.getAttribute("data-notif-id") || "").trim();
+          const targetLink = String(btn.getAttribute("data-notif-link") || "").trim();
+          if (!notificationId || !targetLink) {
+            return;
+          }
+          btn.disabled = true;
+          markNotificationRead(notificationId)
+            .then(function (payload) {
+              const unreadCount = Number(payload && payload.unread_count ? payload.unread_count : NaN);
+              notifItems = notifItems.map(function (item) {
+                if (String(item.id || "") !== notificationId) {
+                  return item;
+                }
+                return { ...item, is_read: true };
+              });
+              if (!Number.isNaN(unreadCount)) {
+                updateNotificationBadge(unreadCount);
+              } else {
+                const fallbackUnread = notifItems.filter(function (item) {
+                  return !item.is_read;
+                }).length;
+                updateNotificationBadge(fallbackUnread);
+              }
+            })
+            .catch(function () {
+              // no-op: fallback navigation still proceeds
+            })
+            .finally(function () {
+              window.location.href = targetLink;
+            });
+        });
+      }
+      modalEl.addEventListener("show.bs.modal", function () {
+        fetchNotifications().catch(function () {
+          renderNotificationListState("Gagal memuat notifikasi.", " text-danger");
+        });
+      });
       modalEl.addEventListener("hidden.bs.modal", resetNotifFilterState);
     }
     if (!notifBtn) {

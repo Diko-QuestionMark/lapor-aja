@@ -108,6 +108,15 @@ function initDatabase() {
           updated_by TEXT
         )
       `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS notification_read_receipts (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          notification_id TEXT NOT NULL,
+          read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, notification_id)
+        )
+      `);
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_report_media_report_id ON report_media(report_id)",
       );
@@ -160,6 +169,12 @@ function initDatabase() {
       );
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_report_feedback_user_id ON report_response_feedback(user_id)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_notification_receipts_user_id ON notification_read_receipts(user_id)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_notification_receipts_notification_id ON notification_read_receipts(notification_id)",
       );
 
       await pool.query(`

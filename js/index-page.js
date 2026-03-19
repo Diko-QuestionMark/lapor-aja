@@ -929,12 +929,10 @@ async function loadReports() {
 
     reports = await response.json();
     resetAndRenderReports();
-    updateUnreadNotifications(reports);
   } catch (error) {
     getById("report-list", "reportList").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa terhubung ke backend/database.</p>';
     console.error(error);
-    updateNotificationBadge(0);
   }
 }
 

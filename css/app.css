@@ -551,6 +551,25 @@ body.has-fixed-navbar {
   background: #fff;
 }
 
+.notif-item-btn {
+  appearance: none;
+  border-width: 1px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notif-item-btn:hover,
+.notif-item-btn:focus-visible {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.notif-item.is-unread {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+}
+
 .notif-title {
   font-weight: 600;
   font-size: 0.95rem;
@@ -565,6 +584,19 @@ body.has-fixed-navbar {
 .notif-filter-btn {
   padding: 6px 10px;
   border-radius: 10px;
+}
+
+.notif-type-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .notif-modal .modal-content {
