@@ -249,27 +249,30 @@
     }
     if (!getById("nav-notif-modal", "navNotifModal")) {
       const notifHtml = `
-        <div class="modal fade" id="nav-notif-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade notif-modal" id="nav-notif-modal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
                 <h2 class="modal-title fs-6">Notifikasi</h2>
-                <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
                   <button
                     type="button"
-                    class="btn btn-sm nav-plain-btn notif-filter-btn"
+                    class="btn btn-sm btn-outline-secondary notif-filter-btn"
                     data-bs-toggle="collapse"
                     data-bs-target="#notif-filter-panel"
                     aria-expanded="false"
                     aria-controls="notif-filter-panel"
                   >
-                    <i class="bi bi-funnel"></i>
+                    <i class="bi bi-funnel me-1"></i>
                     <span>Filter</span>
                   </button>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <button type="button" id="notif-reset-filter" class="btn btn-sm btn-outline-secondary">
+                    Tanpa Filter
+                  </button>
                 </div>
-              </div>
-              <div class="modal-body">
                 <div id="notif-filter-panel" class="collapse">
                   <div class="notif-filter-panel">
                     <div class="form-check">
@@ -310,7 +313,7 @@
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Selesai</button>
               </div>
             </div>
           </div>
@@ -555,6 +558,30 @@
 
   document.addEventListener("navbar:ready", function () {
     const notifBtn = getById("nav-notif-toggle", "navNotifToggle");
+    const modalEl = getById("nav-notif-modal", "navNotifModal");
+    if (modalEl && modalEl.dataset.bound !== "1") {
+      modalEl.dataset.bound = "1";
+      const panelEl = getById("notif-filter-panel");
+      const resetBtn = getById("notif-reset-filter");
+      const allRadio = getById("notif-filter-all");
+
+      function resetNotifFilterState() {
+        if (allRadio) {
+          allRadio.checked = true;
+        }
+        if (panelEl && window.bootstrap && window.bootstrap.Collapse) {
+          const collapse = window.bootstrap.Collapse.getOrCreateInstance(panelEl, {
+            toggle: false,
+          });
+          collapse.hide();
+        }
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", resetNotifFilterState);
+      }
+      modalEl.addEventListener("hidden.bs.modal", resetNotifFilterState);
+    }
     if (!notifBtn) {
       return;
     }
@@ -562,7 +589,6 @@
       if (!(window.bootstrap && window.bootstrap.Modal)) {
         return;
       }
-      const modalEl = getById("nav-notif-modal", "navNotifModal");
       if (!modalEl) {
         return;
       }

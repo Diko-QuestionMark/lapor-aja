@@ -23,6 +23,20 @@ const DEFAULT_REPORT_FILTER = Object.freeze({
   time: "all",
   agency: "all",
 });
+const SORT_FILTER_LABELS = Object.freeze({
+  smart: "Rekomendasi",
+  newest: "Terbaru",
+  oldest: "Terlama",
+  upvotes: "Dukungan Terbanyak",
+  status_waiting: "Menunggu Dulu",
+  status_done: "Selesai Dulu",
+});
+const TIME_FILTER_LABELS = Object.freeze({
+  all: "Semua Waktu",
+  today: "Hari Ini",
+  week: "Minggu Ini",
+  month: "Bulan Ini",
+});
 const AGENCY_OPTIONS = new Set([
   "Umum",
   "Dinas PU",
@@ -176,6 +190,118 @@ function updateFilterToggleIcon() {
   const isDefault = isUsingDefaultFilter();
   icon.classList.toggle("bi-funnel", isDefault);
   icon.classList.toggle("bi-funnel-fill", !isDefault);
+}
+
+function getActiveFilterChips() {
+  const chips = [];
+  const sortMode = String(
+    (getById("sort-filter", "sortFilter") || { value: DEFAULT_REPORT_FILTER.sort }).value ||
+      DEFAULT_REPORT_FILTER.sort,
+  );
+  const timeMode = String(
+    (getById("time-filter", "timeFilter") || { value: DEFAULT_REPORT_FILTER.time }).value ||
+      DEFAULT_REPORT_FILTER.time,
+  );
+  const agencyMode = String(
+    (getById("agency-filter-user", "agencyFilterUser") || { value: DEFAULT_REPORT_FILTER.agency })
+      .value || DEFAULT_REPORT_FILTER.agency,
+  );
+  const keyword = String((getById("search-input", "searchInput") || { value: "" }).value || "").trim();
+
+  if (sortMode !== DEFAULT_REPORT_FILTER.sort) {
+    chips.push({
+      key: "sort",
+      label: `Urut: ${SORT_FILTER_LABELS[sortMode] || sortMode}`,
+    });
+  }
+  if (timeMode !== DEFAULT_REPORT_FILTER.time) {
+    chips.push({
+      key: "time",
+      label: `Waktu: ${TIME_FILTER_LABELS[timeMode] || timeMode}`,
+    });
+  }
+  if (agencyMode !== DEFAULT_REPORT_FILTER.agency) {
+    chips.push({
+      key: "agency",
+      label: `Instansi: ${agencyMode}`,
+    });
+  }
+  if (keyword) {
+    chips.push({
+      key: "search",
+      label: `Cari: "${keyword}"`,
+    });
+  }
+  return chips;
+}
+
+function renderActiveFilterChips() {
+  const wrap = getById("active-filter-chips", "activeFilterChips");
+  if (!wrap) {
+    return;
+  }
+  const chips = getActiveFilterChips();
+  if (chips.length === 0) {
+    wrap.classList.add("d-none");
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.classList.remove("d-none");
+  wrap.innerHTML = chips
+    .map(function (chip) {
+      return `
+        <span class="active-filter-chip">
+          <span class="active-filter-chip-label" title="${escapeHtml(chip.label)}">${escapeHtml(chip.label)}</span>
+          <button
+            type="button"
+            class="active-filter-chip-remove"
+            data-chip-remove="${escapeHtml(chip.key)}"
+            aria-label="Hapus ${escapeHtml(chip.label)}"
+          >
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </span>
+      `;
+    })
+    .join("");
+}
+
+function clearFilterChip(key) {
+  const chipKey = String(key || "").trim();
+  if (!chipKey) {
+    return;
+  }
+  if (chipKey === "sort") {
+    const sortFilter = getById("sort-filter", "sortFilter");
+    if (sortFilter) {
+      sortFilter.value = DEFAULT_REPORT_FILTER.sort;
+    }
+    resetAndRenderReports();
+    return;
+  }
+  if (chipKey === "time") {
+    const timeFilter = getById("time-filter", "timeFilter");
+    if (timeFilter) {
+      timeFilter.value = DEFAULT_REPORT_FILTER.time;
+    }
+    resetAndRenderReports();
+    return;
+  }
+  if (chipKey === "agency") {
+    const agencyFilter = getById("agency-filter-user", "agencyFilterUser");
+    if (agencyFilter) {
+      agencyFilter.value = DEFAULT_REPORT_FILTER.agency;
+    }
+    resetAndRenderReports();
+    return;
+  }
+  if (chipKey === "search") {
+    const searchInput = getById("search-input", "searchInput");
+    if (searchInput) {
+      searchInput.value = "";
+    }
+    resetAndRenderReports();
+  }
 }
 
 function getUpvotedIds() {
@@ -1105,6 +1231,23 @@ function updateSectionTitle() {
   titleEl.textContent = `Laporan ke Instansi: ${agencyMode} • ${timeLabel}`;
 }
 
+function isOwnReport(report) {
+  const session = readSession();
+  if (!session || (!session.id && !session.email)) {
+    return false;
+  }
+  const reportUserId = Number(report && report.reporter_user_id ? report.reporter_user_id : 0);
+  const sessionUserId = Number(session.id || 0);
+  if (reportUserId > 0 && sessionUserId > 0 && reportUserId === sessionUserId) {
+    return true;
+  }
+  const reportEmail = String(report && report.reporter_email ? report.reporter_email : "")
+    .trim()
+    .toLowerCase();
+  const sessionEmail = String(session.email || "").trim().toLowerCase();
+  return Boolean(reportEmail && sessionEmail && reportEmail === sessionEmail);
+}
+
 function buildReportCardHtml(report) {
   const reportId = Number(report.id);
   const reporterUserId = Number(report.reporter_user_id || 0);
@@ -1114,6 +1257,8 @@ function buildReportCardHtml(report) {
   const isUpvoted = hasUpvoted(reportId);
   const statusMeta = getStatusMeta(report.status);
   const reporterName = String(report.reporter_name || "Anonim");
+  const isOwnedByCurrentUser = isOwnReport(report);
+  const reporterNameWithOwnerTag = isOwnedByCurrentUser ? `${reporterName} (Anda)` : reporterName;
   const reporterAvatar = String(
     report.reporter_profile_image_url || DEFAULT_AVATAR_URL,
   );
@@ -1139,7 +1284,7 @@ function buildReportCardHtml(report) {
           href="/user.html?id=${reporterUserId}"
           class="report-author report-author-link"
           data-profile-link="1"
-          aria-label="Lihat profil pelapor ${escapeHtml(reporterName)}"
+          aria-label="Lihat profil pelapor ${escapeHtml(reporterNameWithOwnerTag)}"
         >
           <img
             src="${escapeHtml(reporterAvatar)}"
@@ -1148,7 +1293,7 @@ function buildReportCardHtml(report) {
             onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
           />
           <div>
-            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+            <p class="mb-0 fw-semibold">${escapeHtml(reporterNameWithOwnerTag)}</p>
             <small class="report-meta">${report.created_at ? formatTimeAgo(report.created_at) : ""}</small>
           </div>
         </a>
@@ -1162,7 +1307,7 @@ function buildReportCardHtml(report) {
             onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
           />
           <div>
-            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+            <p class="mb-0 fw-semibold">${escapeHtml(reporterNameWithOwnerTag)}</p>
             <small class="report-meta">${report.created_at ? formatTimeAgo(report.created_at) : ""}</small>
           </div>
         </div>
@@ -1218,6 +1363,7 @@ function buildReportCardHtml(report) {
 
 function renderReports() {
   updateSectionTitle();
+  renderActiveFilterChips();
   const list = getById("report-list", "reportList");
   if (!list) {
     return;
@@ -1405,6 +1551,17 @@ function initUi() {
   }
   bindSearchInput();
   document.addEventListener("navbar:ready", bindSearchInput);
+  const activeFilterChips = getById("active-filter-chips", "activeFilterChips");
+  if (activeFilterChips) {
+    activeFilterChips.addEventListener("click", function (event) {
+      const removeBtn = event.target.closest("[data-chip-remove]");
+      if (!removeBtn) {
+        return;
+      }
+      const key = removeBtn.getAttribute("data-chip-remove");
+      clearFilterChip(key);
+    });
+  }
   getById("report-list", "reportList").addEventListener("click", function (event) {
     const agencyBtn = event.target.closest("[data-agency-filter]");
     if (agencyBtn) {

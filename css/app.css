@@ -567,6 +567,19 @@ body.has-fixed-navbar {
   border-radius: 10px;
 }
 
+.notif-modal .modal-content {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.notif-modal .modal-header {
+  border-bottom-color: #e2e8f0;
+}
+
+.notif-modal .modal-footer {
+  border-top-color: #e2e8f0;
+}
+
 .notif-filter-panel {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -582,6 +595,51 @@ body.has-fixed-navbar {
   grid-template-columns: 1fr;
   gap: 14px;
   padding: 0;
+}
+
+.active-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px solid #dbe2ea;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.active-filter-chip-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(64vw, 280px);
+}
+
+.active-filter-chip-remove {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.active-filter-chip-remove:hover,
+.active-filter-chip-remove:focus-visible {
+  color: #0b5ed7;
 }
 
 .report-card {
