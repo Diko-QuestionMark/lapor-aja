@@ -16,6 +16,8 @@ const AUTH_NOTICE_KEY = "laporaja_auth_notice_v1";
 const UPVOTE_STORAGE_KEY = "laporaja_upvoted_ids";
 const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
 const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
+const REPORT_BATCH_SIZE = 15;
+const VISIT_SMART_SEED = Math.floor(Math.random() * 1000000000);
 const AGENCY_OPTIONS = new Set([
   "Umum",
   "Dinas PU",
@@ -50,6 +52,16 @@ function getById() {
   return null;
 }
 
+function seededUnitNoise(key) {
+  const text = String(key || "");
+  let hash = 2166136261 ^ VISIT_SMART_SEED;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 4294967295;
+}
+
 function getAgencyShortLabel(value) {
   const key = String(value || "Umum");
   return AGENCY_ABBREV[key] || key;
@@ -64,6 +76,62 @@ let toastInstance = null;
 let reportModal = null;
 let imageInspectModal = null;
 let selectedPhotos = [];
+let visibleReportCount = REPORT_BATCH_SIZE;
+let loadMoreObserver = null;
+let currentRenderSignature = "";
+let renderedReportCount = 0;
+
+function resetVisibleReportCount() {
+  visibleReportCount = REPORT_BATCH_SIZE;
+}
+
+function clearLoadMoreObserver() {
+  if (!loadMoreObserver) {
+    return;
+  }
+  loadMoreObserver.disconnect();
+  loadMoreObserver = null;
+}
+
+function setupLoadMoreObserver(totalCount) {
+  clearLoadMoreObserver();
+  if (visibleReportCount >= totalCount) {
+    return;
+  }
+
+  const trigger = getById("report-load-trigger");
+  if (!trigger || typeof window.IntersectionObserver !== "function") {
+    return;
+  }
+
+  loadMoreObserver = new window.IntersectionObserver(
+    function (entries) {
+      const hit = entries.some(function (entry) {
+        return entry.isIntersecting;
+      });
+      if (!hit) {
+        return;
+      }
+      clearLoadMoreObserver();
+      visibleReportCount += REPORT_BATCH_SIZE;
+      renderReports();
+    },
+    {
+      root: null,
+      rootMargin: "220px 0px",
+      threshold: 0.01,
+    },
+  );
+
+  loadMoreObserver.observe(trigger);
+}
+
+function resetAndRenderReports() {
+  resetVisibleReportCount();
+  currentRenderSignature = "";
+  renderedReportCount = 0;
+  renderReports();
+}
 
 function getUpvotedIds() {
   try {
@@ -689,7 +757,7 @@ async function loadReports() {
     }
 
     reports = await response.json();
-    renderReports();
+    resetAndRenderReports();
     updateUnreadNotifications(reports);
   } catch (error) {
     getById("report-list", "reportList").innerHTML =
@@ -897,12 +965,27 @@ function getSortedReports() {
 
   const sorted = filtered.slice();
   function smartScore(item) {
-    const upvotes = Number(item.upvotes || 0);
-    const createdAt = new Date(item.created_at || 0).getTime();
-    const ageHours = Math.max(1, (Date.now() - createdAt) / (1000 * 60 * 60));
-    const recencyBonus = Math.max(0, 24 - ageHours); // max bonus for 24 jam terakhir
-    const noise = Math.random() * 0.75; // random kecil setiap reload
-    return upvotes * 5 + recencyBonus + noise;
+    const upvotes = Math.max(0, Number(item.upvotes || 0));
+    const parsed = parseReportTimestamp(item.created_at);
+    const createdAt = parsed ? parsed.getTime() : 0;
+    const ageHours = createdAt
+      ? Math.max(1, (Date.now() - createdAt) / (1000 * 60 * 60))
+      : 24 * 365;
+    const normalizedStatus = String(item.status || "Menunggu").toLowerCase();
+
+    // Relevansi utama: engagement + freshness + status.
+    const engagementScore = Math.log2(upvotes + 1) * 18;
+    const freshnessScore = 42 / Math.pow(ageHours + 2, 0.62);
+    const statusBoost =
+      normalizedStatus === "menunggu" ? 4.5 : normalizedStatus === "diproses" ? 2 : 0;
+
+    // Eksplorasi per kunjungan: urutan terasa baru tiap masuk web, tapi stabil selama sesi itu.
+    const exploreScore =
+      seededUnitNoise(`${item.id}|${createdAt}|${item.reporter_user_id || 0}`) * 13;
+    const freshExploreBoost =
+      seededUnitNoise(`fresh|${item.id}|${createdAt}`) * Math.max(0, 8 - Math.min(ageHours, 8));
+
+    return engagementScore + freshnessScore + statusBoost + exploreScore + freshExploreBoost;
   }
 
   sorted.sort(function (a, b) {
@@ -976,11 +1059,126 @@ function updateSectionTitle() {
   titleEl.textContent = `Laporan ke Instansi: ${agencyMode} • ${timeLabel}`;
 }
 
+function buildReportCardHtml(report) {
+  const reportId = Number(report.id);
+  const reporterUserId = Number(report.reporter_user_id || 0);
+  const hasReporterProfile = reporterUserId > 0;
+  const hasLocation = report.lat !== null && report.lat !== undefined;
+  const isUpvoted = hasUpvoted(reportId);
+  const statusMeta = getStatusMeta(report.status);
+  const reporterName = String(report.reporter_name || "Anonim");
+  const reporterAvatar = String(
+    report.reporter_profile_image_url || DEFAULT_AVATAR_URL,
+  );
+  const titleText = String(report.title || "Laporan Warga");
+  const agencyText = String(report.agency || "Umum");
+  const agencyShort = getAgencyShortLabel(agencyText);
+  const imageCandidates = Array.isArray(report.image_urls) ? report.image_urls : [];
+  const coverImage = String(imageCandidates[0] || report.image_url || "").trim();
+  const imageBlock =
+    coverImage !== ""
+      ? `<img
+          src="${escapeHtml(coverImage)}"
+          class="img-fluid report-cover img-lazy"
+          alt="Foto laporan"
+          loading="lazy"
+          decoding="async"
+          onload="this.classList.add('is-loaded')"
+        />`
+      : '<div class="report-cover report-cover-empty">Foto tidak tersedia</div>';
+  const authorBlock = hasReporterProfile
+    ? `
+        <a
+          href="/user.html?id=${reporterUserId}"
+          class="report-author report-author-link"
+          data-profile-link="1"
+          aria-label="Lihat profil pelapor ${escapeHtml(reporterName)}"
+        >
+          <img
+            src="${escapeHtml(reporterAvatar)}"
+            class="report-author-avatar"
+            alt="Avatar pelapor"
+            onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+          />
+          <div>
+            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+            <small class="report-meta">${report.created_at ? formatTimeAgo(report.created_at) : ""}</small>
+          </div>
+        </a>
+      `
+    : `
+        <div class="report-author">
+          <img
+            src="${escapeHtml(reporterAvatar)}"
+            class="report-author-avatar"
+            alt="Avatar pelapor"
+            onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+          />
+          <div>
+            <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
+            <small class="report-meta">${report.created_at ? formatTimeAgo(report.created_at) : ""}</small>
+          </div>
+        </div>
+      `;
+
+  return `
+    <article class="report-card report-card-clickable" data-report-id="${reportId}">
+      <div class="report-feed-head">
+        ${authorBlock}
+        <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
+      </div>
+      ${imageBlock}
+      <div class="report-feed-body">
+        <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
+        <div class="report-meta-row">
+          <span class="meta-main">
+            <button
+              type="button"
+              class="meta-item meta-action-link meta-action-btn"
+              data-agency-filter="${escapeHtml(agencyText)}"
+              aria-label="Filter laporan instansi ${escapeHtml(agencyText)}"
+            ><i class="bi bi-building"></i>${escapeHtml(agencyShort)}</button>
+            <span class="meta-sep" aria-hidden="true">&bull;</span>
+            ${
+              hasLocation
+                ? `<a
+                    href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="meta-item meta-action-link"
+                    data-location-link="1"
+                  ><i class="bi bi-geo-alt"></i>${Number(report.lat).toFixed(4)}, ${Number(report.lng).toFixed(4)}</a>`
+                : `<span class="meta-item"><i class="bi bi-geo-alt"></i>Lokasi tidak tersedia</span>`
+            }
+          </span>
+          <button
+            type="button"
+            class="meta-like meta-action-like ${isUpvoted ? "is-active" : ""}"
+            data-like-btn="1"
+            data-report-id="${reportId}"
+            aria-label="${isUpvoted ? "Tarik dukungan" : "Dukung laporan"}"
+          >
+            <i class="bi ${isUpvoted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>${Number(
+              report.upvotes || 0,
+            )}
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function renderReports() {
   updateSectionTitle();
   const list = getById("report-list", "reportList");
+  if (!list) {
+    return;
+  }
+  clearLoadMoreObserver();
+
   const countBadge = document.getElementById("reportCount");
   const sortedReports = getSortedReports();
+  const visibleReports = sortedReports.slice(0, visibleReportCount);
   const keyword = String(
     (getById("search-input", "searchInput") || { value: "" }).value || "",
   ).trim();
@@ -989,6 +1187,8 @@ function renderReports() {
   }
 
   if (sortedReports.length === 0) {
+    currentRenderSignature = "";
+    renderedReportCount = 0;
     list.innerHTML = `
       <div class="report-empty">
         ${
@@ -1001,117 +1201,48 @@ function renderReports() {
     return;
   }
 
-  list.innerHTML = '<div class="report-list" id="report-grid"></div>';
-  const grid = getById("report-grid", "reportGrid");
+  const visibleCount = visibleReports.length;
+  const orderSignature = sortedReports
+    .map(function (item) {
+      return Number(item.id);
+    })
+    .join(",");
+  const shouldResetGrid =
+    currentRenderSignature !== orderSignature || !getById("report-grid", "reportGrid");
 
-  sortedReports.forEach(function (r) {
-    const reportId = Number(r.id);
-    const reporterUserId = Number(r.reporter_user_id || 0);
-    const hasReporterProfile = reporterUserId > 0;
-    const hasLocation = r.lat !== null && r.lat !== undefined;
-    const isUpvoted = hasUpvoted(reportId);
-    const statusMeta = getStatusMeta(r.status);
-    const reporterName = String(r.reporter_name || "Anonim");
-    const reporterAvatar = String(
-      r.reporter_profile_image_url || DEFAULT_AVATAR_URL,
+  if (shouldResetGrid) {
+    list.innerHTML = '<div class="report-list" id="report-grid"></div>';
+    renderedReportCount = 0;
+    currentRenderSignature = orderSignature;
+  }
+
+  const grid = getById("report-grid", "reportGrid");
+  if (renderedReportCount < visibleCount) {
+    const htmlBatch = visibleReports
+      .slice(renderedReportCount, visibleCount)
+      .map(buildReportCardHtml)
+      .join("");
+    grid.insertAdjacentHTML("beforeend", htmlBatch);
+    renderedReportCount = visibleCount;
+  }
+
+  const oldTrigger = getById("report-load-trigger");
+  if (oldTrigger) {
+    oldTrigger.remove();
+  }
+
+  if (renderedReportCount < sortedReports.length) {
+    list.insertAdjacentHTML(
+      "beforeend",
+      `
+        <div id="report-load-trigger" class="report-load-trigger">
+          Menampilkan ${renderedReportCount} dari ${sortedReports.length} laporan...
+        </div>
+      `,
     );
-    const titleText = String(r.title || "Laporan Warga");
-    const agencyText = String(r.agency || "Umum");
-    const agencyShort = getAgencyShortLabel(agencyText);
-    const imageCandidates = Array.isArray(r.image_urls) ? r.image_urls : [];
-    const coverImage = String(imageCandidates[0] || r.image_url || "").trim();
-    const imageBlock =
-      coverImage !== ""
-        ? `<img
-            src="${escapeHtml(coverImage)}"
-            class="img-fluid report-cover img-lazy"
-            alt="Foto laporan"
-            loading="lazy"
-            decoding="async"
-            onload="this.classList.add('is-loaded')"
-          />`
-        : '<div class="report-cover report-cover-empty">Foto tidak tersedia</div>';
-    const authorBlock = hasReporterProfile
-      ? `
-          <a
-            href="/user.html?id=${reporterUserId}"
-            class="report-author report-author-link"
-            data-profile-link="1"
-            aria-label="Lihat profil pelapor ${escapeHtml(reporterName)}"
-          >
-            <img
-              src="${escapeHtml(reporterAvatar)}"
-              class="report-author-avatar"
-              alt="Avatar pelapor"
-              onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
-            />
-            <div>
-              <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${r.created_at ? formatTimeAgo(r.created_at) : ""}</small>
-            </div>
-          </a>
-        `
-      : `
-          <div class="report-author">
-            <img
-              src="${escapeHtml(reporterAvatar)}"
-              class="report-author-avatar"
-              alt="Avatar pelapor"
-              onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
-            />
-            <div>
-              <p class="mb-0 fw-semibold">${escapeHtml(reporterName)}</p>
-              <small class="report-meta">${r.created_at ? formatTimeAgo(r.created_at) : ""}</small>
-            </div>
-          </div>
-        `;
-    const html = `
-      <article class="report-card report-card-clickable" data-report-id="${reportId}">
-        <div class="report-feed-head">
-          ${authorBlock}
-          <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
-        </div>
-        ${imageBlock}
-        <div class="report-feed-body">
-          <h4 class="report-title text-truncate-2">${escapeHtml(titleText)}</h4>
-          <div class="report-meta-row">
-            <span class="meta-main">
-              <button
-                type="button"
-                class="meta-item meta-action-link meta-action-btn"
-                data-agency-filter="${escapeHtml(agencyText)}"
-                aria-label="Filter laporan instansi ${escapeHtml(agencyText)}"
-              ><i class="bi bi-building"></i>${escapeHtml(agencyShort)}</button>
-              <span class="meta-sep" aria-hidden="true">&bull;</span>
-              ${
-                hasLocation
-                  ? `<a
-                      href="https://www.google.com/maps?q=${Number(r.lat)},${Number(r.lng)}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="meta-item meta-action-link"
-                      data-location-link="1"
-                    ><i class="bi bi-geo-alt"></i>${Number(r.lat).toFixed(4)}, ${Number(r.lng).toFixed(4)}</a>`
-                  : `<span class="meta-item"><i class="bi bi-geo-alt"></i>Lokasi tidak tersedia</span>`
-              }
-            </span>
-            <button
-              type="button"
-              class="meta-like meta-action-like ${isUpvoted ? "is-active" : ""}"
-              data-like-btn="1"
-              data-report-id="${reportId}"
-              aria-label="${isUpvoted ? "Tarik dukungan" : "Dukung laporan"}"
-            >
-              <i class="bi ${isUpvoted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>${Number(
-                r.upvotes || 0,
-              )}
-            </button>
-          </div>
-        </div>
-      </article>
-    `;
-    grid.innerHTML += html;
-  });
+  }
+
+  setupLoadMoreObserver(sortedReports.length);
 }
 
 function openImageInspect(src, title) {
@@ -1181,14 +1312,14 @@ function initUi() {
   }
   bindCreateReportBtn();
   document.addEventListener("navbar:ready", bindCreateReportBtn);
-  getById("sort-filter", "sortFilter").addEventListener("change", renderReports);
+  getById("sort-filter", "sortFilter").addEventListener("change", resetAndRenderReports);
   const timeFilter = getById("time-filter", "timeFilter");
   if (timeFilter) {
-    timeFilter.addEventListener("change", renderReports);
+    timeFilter.addEventListener("change", resetAndRenderReports);
   }
   const agencyFilter = getById("agency-filter-user", "agencyFilterUser");
   if (agencyFilter) {
-    agencyFilter.addEventListener("change", renderReports);
+    agencyFilter.addEventListener("change", resetAndRenderReports);
   }
   const resetFilterBtn = getById("reset-filter-btn", "resetFilterBtn");
   if (resetFilterBtn) {
@@ -1212,7 +1343,7 @@ function initUi() {
           instance.hide();
         }
       }
-      renderReports();
+      resetAndRenderReports();
     });
   }
   function bindSearchInput() {
@@ -1221,7 +1352,7 @@ function initUi() {
       return;
     }
     searchInput.dataset.bound = "1";
-    searchInput.addEventListener("input", renderReports);
+    searchInput.addEventListener("input", resetAndRenderReports);
   }
   bindSearchInput();
   document.addEventListener("navbar:ready", bindSearchInput);
@@ -1241,7 +1372,7 @@ function initUi() {
             instance.show();
           }
         }
-        renderReports();
+        resetAndRenderReports();
       }
       return;
     }
@@ -1329,7 +1460,7 @@ document.addEventListener("navbar:ready", function () {
   const q = String(params.get("q") || "").trim();
   if (q) {
     searchInput.value = q;
-    renderReports();
+    resetAndRenderReports();
   }
   const openFilter = params.get("filter") === "1";
   if (openFilter && window.bootstrap && window.bootstrap.Modal) {

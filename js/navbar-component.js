@@ -79,6 +79,14 @@
           />
         </div>
         <button
+          id="nav-filter-toggle"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-filter-toggle"
+          aria-label="Filter laporan"
+        >
+          <i class="bi bi-funnel"></i>
+        </button>
+        <button
           id="create-report-btn"
           type="button"
           class="btn btn-sm btn-primary nav-create-btn"
@@ -86,14 +94,6 @@
         >
           <i class="bi bi-plus-lg"></i>
           <span>Buat</span>
-        </button>
-        <button
-          id="nav-filter-toggle"
-          type="button"
-          class="btn btn-sm nav-plain-btn nav-filter-toggle"
-          aria-label="Filter laporan"
-        >
-          <i class="bi bi-funnel"></i>
         </button>
         <button
           id="nav-notif-toggle"

@@ -38,41 +38,41 @@ exports.handler = async function handler(event) {
     if (event.httpMethod === "GET") {
       const result = await pool.query(
         `
-          SELECT
-            r.id,
-            r.title,
-            r.description AS desc,
-            r.agency,
-            r.lat,
-            r.lng,
-            r.image_url,
-            r.status,
-            r.admin_note,
-            r.admin_evidence_url,
-            r.admin_updated_at,
-            r.admin_updated_by,
-            r.upvotes,
-            r.created_at,
-            r.reporter_user_id,
-            r.reporter_name,
-            r.reporter_email,
-            u.profile_image_url AS reporter_profile_image_url,
-            COALESCE(
-              rm.image_urls,
-              CASE
-                WHEN COALESCE(TRIM(r.image_url), '') <> '' THEN ARRAY[r.image_url]::TEXT[]
-                ELSE ARRAY[]::TEXT[]
-              END
-            ) AS image_urls
-          FROM reports r
-          LEFT JOIN users u ON u.id = r.reporter_user_id
-          LEFT JOIN LATERAL (
-            SELECT ARRAY_AGG(url ORDER BY sort_order ASC, id ASC) AS image_urls
-            FROM report_media
-            WHERE report_id = r.id
-          ) rm ON TRUE
-          ORDER BY r.created_at DESC
-        `,
+        SELECT
+          r.id,
+          r.title,
+          r.description AS desc,
+          r.agency,
+          r.lat,
+          r.lng,
+          r.image_url,
+          r.status,
+          r.admin_note,
+          r.admin_evidence_url,
+          r.admin_updated_at,
+          r.admin_updated_by,
+          r.upvotes,
+          r.created_at,
+          r.reporter_user_id,
+          r.reporter_name,
+          r.reporter_email,
+          u.profile_image_url AS reporter_profile_image_url,
+          COALESCE(
+            rm.image_urls,
+            CASE
+              WHEN COALESCE(TRIM(r.image_url), '') <> '' THEN ARRAY[r.image_url]::TEXT[]
+              ELSE ARRAY[]::TEXT[]
+            END
+          ) AS image_urls
+        FROM reports r
+        LEFT JOIN users u ON u.id = r.reporter_user_id
+        LEFT JOIN LATERAL (
+          SELECT ARRAY_AGG(url ORDER BY sort_order ASC, id ASC) AS image_urls
+          FROM report_media
+          WHERE report_id = r.id
+        ) rm ON TRUE
+        ORDER BY r.created_at DESC
+      `,
       );
       return json(200, result.rows);
     }
