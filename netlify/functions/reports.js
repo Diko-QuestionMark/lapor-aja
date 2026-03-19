@@ -27,6 +27,102 @@ function json(statusCode, payload) {
   };
 }
 
+function toTitleCase(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, function (char) {
+      return char.toUpperCase();
+    });
+}
+
+function compactLocationLabelFromAddress(address) {
+  if (!address || typeof address !== "object") {
+    return "";
+  }
+  const road = address.road || address.pedestrian || address.footway || address.residential;
+  const area =
+    address.suburb ||
+    address.neighbourhood ||
+    address.village ||
+    address.town ||
+    address.city ||
+    address.county;
+  const state = address.state;
+  const parts = [road, area, state]
+    .map(function (part) {
+      return toTitleCase(part);
+    })
+    .filter(Boolean);
+  return parts.slice(0, 3).join(", ");
+}
+
+function compactLocationLabelFromDisplayName(displayName) {
+  const raw = String(displayName || "").trim();
+  if (!raw) {
+    return "";
+  }
+  const parts = raw
+    .split(",")
+    .map(function (part) {
+      return toTitleCase(part);
+    })
+    .filter(Boolean);
+  return parts.slice(0, 3).join(", ");
+}
+
+async function reverseGeocodeLabel(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(function () {
+    controller.abort();
+  }, 3000);
+
+  try {
+    const params = new URLSearchParams({
+      format: "jsonv2",
+      lat: String(lat),
+      lon: String(lng),
+      zoom: "16",
+      addressdetails: "1",
+      "accept-language": "id",
+    });
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "User-Agent": "LaporAja/1.0 (reverse-geocoding)",
+        },
+        signal: controller.signal,
+      },
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const payload = await response.json().catch(function () {
+      return null;
+    });
+    if (!payload) {
+      return null;
+    }
+    const compact =
+      compactLocationLabelFromAddress(payload.address) ||
+      compactLocationLabelFromDisplayName(payload.display_name);
+    if (!compact) {
+      return null;
+    }
+    return compact.slice(0, 140);
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return json(200, { ok: true });
@@ -42,10 +138,11 @@ exports.handler = async function handler(event) {
           r.id,
           r.title,
           r.description AS desc,
-          r.agency,
-          r.lat,
-          r.lng,
-          r.image_url,
+            r.agency,
+            r.lat,
+            r.lng,
+            r.location_label,
+            r.image_url,
           r.status,
           r.admin_note,
           r.admin_evidence_url,
@@ -112,6 +209,10 @@ exports.handler = async function handler(event) {
       ) {
         return json(400, { error: "Format lokasi tidak valid" });
       }
+      const locationLabel =
+        parsedLat !== null && parsedLng !== null
+          ? await reverseGeocodeLabel(parsedLat, parsedLng)
+          : null;
 
       if (imageUrls.length === 0) {
         return json(400, { error: "Minimal 1 foto wajib diisi" });
@@ -141,13 +242,14 @@ exports.handler = async function handler(event) {
         await client.query("BEGIN");
 
         const insertedReport = await client.query(
-          "INSERT INTO reports(title, description, agency, lat, lng, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, title, agency, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email, image_url",
+          "INSERT INTO reports(title, description, agency, lat, lng, location_label, image_url, reporter_user_id, reporter_name, reporter_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, title, agency, status, upvotes, created_at, reporter_user_id, reporter_name, reporter_email, image_url, location_label",
           [
             safeTitle,
             desc || "",
             safeAgency,
             parsedLat,
             parsedLng,
+            locationLabel,
             imageUrls[0],
             Number(authUser.sub),
             safeReporterName,

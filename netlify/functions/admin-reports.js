@@ -58,6 +58,7 @@ exports.handler = async function handler(event) {
             r.agency,
             r.lat,
             r.lng,
+            r.location_label,
             r.image_url,
             r.status,
             r.admin_note,

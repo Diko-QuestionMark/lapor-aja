@@ -271,6 +271,10 @@ function renderDetailSkeleton() {
 }
 
 function formatLocation(report) {
+  const label = String(report.location_label || "").trim();
+  if (label) {
+    return label;
+  }
   const hasLocation = report.lat !== null && report.lat !== undefined;
   return hasLocation
     ? `${Number(report.lat).toFixed(5)}, ${Number(report.lng).toFixed(5)}`

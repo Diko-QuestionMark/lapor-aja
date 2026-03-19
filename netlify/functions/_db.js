@@ -46,6 +46,7 @@ function initDatabase() {
           agency TEXT NOT NULL DEFAULT 'Umum',
           lat FLOAT,
           lng FLOAT,
+          location_label TEXT,
           image_url TEXT,
           status VARCHAR(30) NOT NULL DEFAULT 'Menunggu',
           admin_note TEXT,
@@ -115,6 +116,7 @@ function initDatabase() {
       );
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS title TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS image_url TEXT");
+      await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS location_label TEXT");
       await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS agency TEXT NOT NULL DEFAULT 'Umum'",
       );

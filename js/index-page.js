@@ -67,6 +67,18 @@ function getAgencyShortLabel(value) {
   return AGENCY_ABBREV[key] || key;
 }
 
+function getReadableLocation(report) {
+  const label = String(report && report.location_label ? report.location_label : "").trim();
+  if (label) {
+    return label;
+  }
+  const hasLocation = report && report.lat !== null && report.lat !== undefined;
+  if (!hasLocation) {
+    return "Lokasi tidak tersedia";
+  }
+  return `${Number(report.lat).toFixed(4)}, ${Number(report.lng).toFixed(4)}`;
+}
+
 let reports = [];
 let latitude = null;
 let longitude = null;
@@ -925,6 +937,7 @@ function getSortedReports() {
       item.reporter_email,
       item.status,
       item.agency,
+      item.location_label,
       item.lat !== null && item.lat !== undefined ? `${item.lat}, ${item.lng}` : "",
     ];
     const haystack = parts
@@ -1064,6 +1077,7 @@ function buildReportCardHtml(report) {
   const reporterUserId = Number(report.reporter_user_id || 0);
   const hasReporterProfile = reporterUserId > 0;
   const hasLocation = report.lat !== null && report.lat !== undefined;
+  const locationText = getReadableLocation(report);
   const isUpvoted = hasUpvoted(reportId);
   const statusMeta = getStatusMeta(report.status);
   const reporterName = String(report.reporter_name || "Anonim");
@@ -1147,8 +1161,8 @@ function buildReportCardHtml(report) {
                     rel="noopener noreferrer"
                     class="meta-item meta-action-link"
                     data-location-link="1"
-                  ><i class="bi bi-geo-alt"></i>${Number(report.lat).toFixed(4)}, ${Number(report.lng).toFixed(4)}</a>`
-                : `<span class="meta-item"><i class="bi bi-geo-alt"></i>Lokasi tidak tersedia</span>`
+                  ><i class="bi bi-geo-alt"></i>${escapeHtml(locationText)}</a>`
+                : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(locationText)}</span>`
             }
           </span>
           <button
