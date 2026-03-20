@@ -111,6 +111,26 @@
   white-space: nowrap;
 }
 
+body:not(.nav-auth-logged-in) #auth-action-btn,
+body:not(.nav-auth-logged-in) #authActionBtn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+body:not(.nav-auth-logged-in) #auth-action-btn:hover,
+body:not(.nav-auth-logged-in) #auth-action-btn:focus-visible,
+body:not(.nav-auth-logged-in) #authActionBtn:hover,
+body:not(.nav-auth-logged-in) #authActionBtn:focus-visible {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
 .nav-right-wrap {
   display: inline-flex;
   align-items: center;

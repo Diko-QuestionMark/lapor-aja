@@ -176,8 +176,8 @@
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
         subtitle: "Portal Masuk",
-        leftHtml: leftHamburger,
-        rightHtml: userRightHtml,
+        leftHtml: "",
+        rightHtml: "",
       },
       profile: {
         navClass: "navbar-light bg-white",
@@ -609,6 +609,7 @@
     const avatar = getById("auth-user-avatar", "authUserAvatar");
     const avatarWrap = getById("nav-avatar-wrap", "navAvatarWrap");
     const actionText = getById("auth-action-text", "authActionText");
+    const notifBtn = getById("nav-notif-toggle", "navNotifToggle");
     if (!actionBtn || !actionText || !avatar || !avatarWrap) {
       return;
     }
@@ -635,6 +636,9 @@
       actionText.textContent = "Login";
       avatarWrap.classList.add("d-none");
       avatar.removeAttribute("src");
+      if (notifBtn) {
+        notifBtn.classList.add("d-none");
+      }
       if (sideProfileLink) sideProfileLink.classList.add("d-none");
       if (sideLogoutLink) sideLogoutLink.classList.add("d-none");
       if (sideLoginLink) sideLoginLink.classList.remove("d-none");
@@ -650,6 +654,9 @@
     actionBtn.href = "/profile.html";
     avatar.src = session.profile_image_url || "/img/defaultAvatar.jpg";
     avatarWrap.classList.remove("d-none");
+    if (notifBtn) {
+      notifBtn.classList.remove("d-none");
+    }
     avatar.onerror = function () {
       avatar.src = "/img/defaultAvatar.jpg";
     };
