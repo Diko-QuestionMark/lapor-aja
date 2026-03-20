@@ -121,7 +121,7 @@ async function loadStatusHistory(reportId) {
         const note = String(item.admin_note || "").trim();
         const evidence = String(item.admin_evidence_url || "").trim();
         return `
-          <article class="border rounded p-2 mb-2">
+          <article class="status-history-item">
             <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
               <span class="badge status-badge ${getStatusMeta(item.status).className}">${item.status}</span>
               <span class="small text-secondary">${
@@ -305,7 +305,7 @@ function renderComments(comments, isAdmin) {
           ? `<button type="button" class="btn btn-sm btn-outline-danger" data-comment-delete="${Number(item.id)}">Hapus</button>`
           : "";
       return `
-        <article class="border rounded p-2 mb-2">
+        <article class="report-comment-card">
           <div class="d-flex align-items-start gap-2">
             <img
               src="${escapeHtml(avatar)}"
@@ -446,35 +446,36 @@ function renderDetail(report) {
   const hasLocation = report.lat !== null && report.lat !== undefined;
   const reporterBlock =
     reporterUserId > 0
-      ? `<span class="meta-item"><i class="bi bi-person"></i>${reporterName} (<a href="/user.html?id=${reporterUserId}" class="meta-action-link">${reporterEmail}</a>)</span>`
-      : `<span class="meta-item"><i class="bi bi-person"></i>${reporterName} (${reporterEmail})</span>`;
+      ? `${reporterName} (<a href="/user.html?id=${reporterUserId}" class="meta-action-link">${reporterEmail}</a>)`
+      : `${reporterName} (${reporterEmail})`;
   const locationBlock = hasLocation
     ? `<a
         href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
         target="_blank"
         rel="noopener noreferrer"
-        class="meta-item meta-action-link"
-      ><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</a>`
-    : `<span class="meta-item"><i class="bi bi-geo-alt"></i>${escapeHtml(formatLocation(report))}</span>`;
+        class="meta-action-link"
+      >${escapeHtml(formatLocation(report))}</a>`
+    : escapeHtml(formatLocation(report));
   const adminNote = String(report.admin_note || "").trim();
   const adminEvidence = String(report.admin_evidence_url || "").trim();
   const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
   const agencyLabel = String(report.agency || "Umum");
+  const createdAtLabel = report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-";
   const container = document.getElementById("detailContainer");
   const galleryId = `reportGallery${Number(report.id)}`;
   const galleryBlock =
     imageUrls.length === 0
-      ? '<div class="detail-image rounded border mb-3 d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
+      ? '<div class="detail-image report-detail-image-placeholder rounded border d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
       : imageUrls.length === 1
       ? `<a href="${escapeHtml(imageUrls[0] || "")}" target="_blank" rel="noopener noreferrer">
           <img
             src="${escapeHtml(imageUrls[0] || "")}"
             alt="Foto laporan"
-            class="img-fluid rounded border mb-3 detail-image"
+            class="img-fluid rounded border detail-image report-detail-main-image"
           />
         </a>`
       : `
-        <div class="mb-3">
+        <div class="report-detail-gallery">
           <div class="rounded border p-2 bg-light">
             <a
               id="${galleryId}Link"
@@ -485,113 +486,144 @@ function renderDetail(report) {
               <img
                 id="${galleryId}Main"
                 src="${escapeHtml(imageUrls[0])}"
-                class="d-block w-100 detail-image rounded"
+                class="d-block w-100 detail-image rounded report-detail-main-image"
                 alt="Foto laporan 1"
               />
             </a>
           </div>
           <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
-            <button id="${galleryId}Prev" class="btn btn-sm btn-outline-primary" type="button">Prev</button>
+            <button id="${galleryId}Prev" class="btn btn-sm btn-outline-primary report-gallery-nav-btn" type="button">Prev</button>
             <div class="small text-secondary">
               <span id="${galleryId}Index">1</span> / ${imageUrls.length} foto
             </div>
-            <button id="${galleryId}Next" class="btn btn-sm btn-outline-primary" type="button">Next</button>
+            <button id="${galleryId}Next" class="btn btn-sm btn-outline-primary report-gallery-nav-btn" type="button">Next</button>
           </div>
         </div>
       `;
   container.innerHTML = `
-    <div class="mb-3">
-      <h2 class="h5 mb-1">${escapeHtml(report.title || "Tanpa Judul")}</h2>
-      <div class="small text-secondary mb-1">Laporan #${report.id}</div>
-      <div class="meta-item mb-1">
-        <i class="bi bi-building"></i>${escapeHtml(agencyLabel)}
-      </div>
-      <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
-    </div>
-    ${galleryBlock}
-    <p class="mb-3">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
-    <div class="report-meta-row mb-3">
-      <span class="meta-main">
-        ${reporterBlock}
-        <span class="meta-sep" aria-hidden="true">&bull;</span>
-        <span class="meta-item"><i class="bi bi-clock"></i>${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</span>
-        <span class="meta-sep" aria-hidden="true">&bull;</span>
-        ${locationBlock}
-      </span>
-    </div>
-    <div class="mb-3">
-      <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
-      <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
-      <span>${voted ? "Didukung" : "Dukung"}</span>
-      <span class="support-count">${Number(report.upvotes || 0)}</span>
-      </button>
-      <p id="detailVoteState" class="small text-secondary mt-1 mb-0">
-        ${voted ? "Kamu sudah mendukung laporan ini." : "Kamu belum mendukung laporan ini."}
-      </p>
-    </div>
+    <div class="report-detail-layout">
+      <section class="report-detail-block report-detail-header-block">
+        <a href="/index.html" class="report-detail-back-link">
+          <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
+          Kembali ke Daftar Laporan
+        </a>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
+          <span class="badge text-bg-light border">Instansi: ${escapeHtml(agencyLabel)}</span>
+        </div>
+        <h2 class="report-detail-title mb-2">${escapeHtml(report.title || "Tanpa Judul")}</h2>
+        <p class="report-detail-subtitle mb-0">Laporan #${report.id} - ${createdAtLabel}</p>
+      </section>
 
-    <hr class="my-4" />
-    <section class="mb-3 report-response-section">
-      <h3 class="h6 mb-2">Respons Instansi</h3>
-      ${
-        hasAdminResponse
-          ? `
-            <div class="response-panel ${responsePanelClass}">
-              <p class="mb-2">${escapeHtml(adminNote || "Instansi sudah memberi update.")}</p>
-              ${
-                adminEvidence
-                  ? `
-                    <div class="evidence-preview">
-                      <img
-                        src="${escapeHtml(adminEvidence)}"
-                        alt="Bukti tindak lanjut instansi"
-                        class="evidence-thumb"
-                        loading="lazy"
-                      />
-                      <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer" class="small">
-                        Lihat ukuran penuh
-                      </a>
-                    </div>
-                  `
-                  : ""
-              }
-              <p class="small text-secondary mb-0 response-panel-meta">
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Foto Laporan</h3>
+        ${galleryBlock}
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Deskripsi</h3>
+        <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Informasi Laporan</h3>
+        <div class="report-detail-meta-grid">
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterBlock}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
+            <span class="report-detail-meta-value">${createdAtLabel}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+            <span class="report-detail-meta-value">${locationBlock}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Dukungan Warga</h3>
+        <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+          <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+          <span>${voted ? "Didukung" : "Dukung"}</span>
+          <span class="support-count">${Number(report.upvotes || 0)}</span>
+        </button>
+        <p id="detailVoteState" class="small text-secondary mt-2 mb-0">
+          ${voted ? "Kamu sudah mendukung laporan ini." : "Kamu belum mendukung laporan ini."}
+        </p>
+      </section>
+
+      <section class="report-detail-block report-response-section">
+        <h3 class="report-detail-section-title">Respons Instansi</h3>
+        ${
+          hasAdminResponse
+            ? `
+              <div class="response-panel ${responsePanelClass}">
+                <p class="mb-2">${escapeHtml(adminNote || "Instansi sudah memberi update.")}</p>
                 ${
-                  report.admin_updated_at
-                    ? `Diperbarui ${new Date(report.admin_updated_at).toLocaleString("id-ID")}`
-                    : "Belum ada waktu update"
+                  adminEvidence
+                    ? `
+                      <div class="evidence-preview">
+                        <img
+                          src="${escapeHtml(adminEvidence)}"
+                          alt="Bukti tindak lanjut instansi"
+                          class="evidence-thumb"
+                          loading="lazy"
+                        />
+                        <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer" class="small">
+                          Lihat ukuran penuh
+                        </a>
+                      </div>
+                    `
+                    : ""
                 }
-                ${report.admin_updated_by ? ` oleh ${escapeHtml(report.admin_updated_by)}` : ""}
-              </p>
-            </div>
-            <div id="responseFeedbackWrap" class="mt-2"></div>
-          `
-          : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
-      }
-    </section>
+                <p class="small text-secondary mb-0 response-panel-meta">
+                  ${
+                    report.admin_updated_at
+                      ? `Diperbarui ${new Date(report.admin_updated_at).toLocaleString("id-ID")}`
+                      : "Belum ada waktu update"
+                  }
+                  ${report.admin_updated_by ? ` oleh ${escapeHtml(report.admin_updated_by)}` : ""}
+                </p>
+              </div>
+              <div id="responseFeedbackWrap" class="mt-2"></div>
+            `
+            : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
+        }
+      </section>
 
-    <section>
-      <h3 class="h6 mb-3">Komentar</h3>
-      <form id="commentForm" class="mb-3">
-        <div class="mb-2">
-          <textarea
-            id="commentInput"
-            class="form-control"
-            rows="3"
-            maxlength="${COMMENT_MAX_LENGTH}"
-            placeholder="Tulis komentar..."
-          ></textarea>
-        </div>
-        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-          <small id="commentHelp" class="text-secondary">Maksimal ${COMMENT_MAX_LENGTH} karakter.</small>
-          <button id="commentSubmitBtn" class="btn btn-sm btn-primary" type="submit">
-            Kirim Komentar
-          </button>
-        </div>
-      </form>
-      <div id="commentList"></div>
-    </section>
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Histori Status</h3>
+        <div id="statusHistoryList"></div>
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Komentar</h3>
+        <form id="commentForm" class="mb-3">
+          <div class="mb-2">
+            <textarea
+              id="commentInput"
+              class="form-control"
+              rows="3"
+              maxlength="${COMMENT_MAX_LENGTH}"
+              placeholder="Tulis komentar..."
+            ></textarea>
+          </div>
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <small id="commentHelp" class="text-secondary">Maksimal ${COMMENT_MAX_LENGTH} karakter.</small>
+            <button id="commentSubmitBtn" class="btn btn-sm btn-primary" type="submit">
+              Kirim Komentar
+            </button>
+          </div>
+        </form>
+        <div id="commentList"></div>
+      </section>
+    </div>
   `;
+
+  loadStatusHistory(report.id);
 
   if (imageUrls.length > 1) {
     let activeIndex = 0;
