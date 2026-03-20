@@ -289,12 +289,39 @@
             <a href="/index.html" data-nav-open-notif="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
             <a href="/index.html" data-nav-create-report="1"><i class="bi bi-plus-square"></i><span>Buat Laporan</span></a>
             <a href="/index.html" data-nav-open-filter="1"><i class="bi bi-funnel"></i><span>Filter Laporan</span></a>
+            <a href="/index.html" data-nav-open-help="1"><i class="bi bi-question-circle"></i><span>Bantuan</span></a>
             <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
             <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>
           </nav>
         </aside>
       `;
       mount.insertAdjacentHTML("beforeend", sideHtml);
+    }
+    if (!getById("nav-help-modal", "navHelpModal")) {
+      const helpHtml = `
+        <div class="modal fade" id="nav-help-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h2 class="modal-title fs-6">Bantuan</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="mb-2">Panduan cepat:</p>
+                <ul class="small mb-0 ps-3">
+                  <li>Gunakan tombol <strong>Buat</strong> untuk kirim laporan baru.</li>
+                  <li>Pakai <strong>Filter</strong> untuk menyaring laporan sesuai kebutuhan.</li>
+                  <li>Buka <strong>Notifikasi</strong> untuk melihat update status laporanmu.</li>
+                </ul>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Selesai</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      mount.insertAdjacentHTML("beforeend", helpHtml);
     }
     if (!getById("nav-notif-modal", "navNotifModal")) {
       const notifHtml = `
@@ -599,6 +626,9 @@
     const sideFilterLink = getById("nav-side-panel", "navSidePanel")
       ? document.querySelector("[data-nav-open-filter='1']")
       : null;
+    const sideHelpLink = getById("nav-side-panel", "navSidePanel")
+      ? document.querySelector("[data-nav-open-help='1']")
+      : null;
     if (!session || !session.email || !session.token) {
       document.body.classList.remove("nav-auth-logged-in");
       actionBtn.href = "/login.html";
@@ -611,6 +641,7 @@
       if (sideNotifLink) sideNotifLink.classList.add("d-none");
       if (sideCreateLink) sideCreateLink.classList.add("d-none");
       if (sideFilterLink) sideFilterLink.classList.add("d-none");
+      if (sideHelpLink) sideHelpLink.classList.remove("d-none");
       return;
     }
 
@@ -628,6 +659,7 @@
     if (sideNotifLink) sideNotifLink.classList.remove("d-none");
     if (sideCreateLink) sideCreateLink.classList.remove("d-none");
     if (sideFilterLink) sideFilterLink.classList.remove("d-none");
+    if (sideHelpLink) sideHelpLink.classList.remove("d-none");
     refreshNotificationBadge();
   }
 
@@ -865,9 +897,11 @@
     const sideNotifLink = document.querySelector("[data-nav-open-notif='1']");
     const sideCreateLink = document.querySelector("[data-nav-create-report='1']");
     const sideFilterLink = document.querySelector("[data-nav-open-filter='1']");
+    const sideHelpLink = document.querySelector("[data-nav-open-help='1']");
     const reportModalEl = getById("report-modal", "reportModal");
     const filterModalEl = getById("filter-modal", "filterModal");
     const notifModalEl = getById("nav-notif-modal", "navNotifModal");
+    const helpModalEl = getById("nav-help-modal", "navHelpModal");
 
     function closeSidePanel() {
       document.body.classList.remove("nav-side-open");
@@ -933,6 +967,20 @@
           return;
         }
         window.location.href = "/index.html?filter=1";
+      });
+    }
+
+    if (sideHelpLink && sideHelpLink.dataset.bound !== "1") {
+      sideHelpLink.dataset.bound = "1";
+      sideHelpLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        closeSidePanel();
+        if (window.bootstrap && window.bootstrap.Modal && helpModalEl) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(helpModalEl);
+          instance.show();
+          return;
+        }
+        window.alert("Bantuan: Gunakan Buat, Filter, dan Notifikasi untuk memulai.");
       });
     }
   });
