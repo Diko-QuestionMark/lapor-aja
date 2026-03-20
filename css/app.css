@@ -1328,30 +1328,31 @@ body.has-fixed-navbar {
 }
 
 .report-detail-page .report-detail-layout {
-  border: 1px solid #e6ebf1;
-  border-radius: 18px;
-  background: #fff;
-  padding: clamp(14px, 2vw, 24px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   display: grid;
-  gap: 0;
+  gap: 12px;
 }
 
 .report-detail-page .report-detail-block {
-  padding: 0 0 18px;
-  margin-bottom: 18px;
-  border: 0;
-  border-bottom: 1px solid #edf1f5;
-  background: transparent;
+  padding: 14px;
+  margin-bottom: 0;
+  border: 1px solid #e3e9f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .report-detail-page .report-detail-block:last-child {
-  border-bottom: 0;
   margin-bottom: 0;
-  padding-bottom: 0;
 }
 
 .report-detail-page .report-detail-header-block {
-  padding-bottom: 14px;
+  background: linear-gradient(180deg, #f9fbfe 0%, #ffffff 62%);
+  border-color: #dbe5f0;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
 }
 
 .report-detail-page .report-detail-back-link {
@@ -1518,35 +1519,32 @@ body.has-fixed-navbar {
 }
 
 .report-detail-page .report-comment-card {
-  border: 0;
-  border-bottom: 1px solid #edf1f5;
-  border-radius: 0;
-  padding: 10px 0;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  padding: 10px;
   margin-bottom: 0;
-  background: transparent;
+  background: #fcfdff;
 }
 
 .report-detail-page .report-comment-card:last-child {
-  border-bottom: 0;
+  margin-bottom: 0;
 }
 
 .report-detail-page .status-history-item {
-  border: 0;
-  border-bottom: 1px solid #edf1f5;
-  border-radius: 0;
-  padding: 10px 0;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  padding: 10px;
   margin-bottom: 0;
-  background: transparent;
+  background: #fbfcfe;
 }
 
 .report-detail-page .status-history-item:last-child {
-  border-bottom: 0;
+  margin-bottom: 0;
 }
 
 @media (max-width: 768px) {
   .report-detail-page .report-detail-layout {
-    border-radius: 14px;
-    padding: 14px;
+    padding: 0;
   }
 
   .report-detail-page .report-detail-meta-grid {
