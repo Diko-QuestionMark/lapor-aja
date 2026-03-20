@@ -24,8 +24,8 @@
 }
 
 .nav-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   object-fit: cover;
   border: 1px solid rgba(15, 23, 42, 0.18);
@@ -71,7 +71,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  --nav-item-height: 32px;
+  --nav-item-height: 36px;
   height: var(--nav-item-height);
 }
 
@@ -123,8 +123,8 @@
 }
 
 .nav-menu-toggle {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 18px;
@@ -173,8 +173,8 @@
 }
 
 .nav-side-close {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 18px;
@@ -221,7 +221,7 @@ body.nav-side-open .nav-side-panel {
 
 .nav-search-input {
   width: 220px;
-  height: 32px;
+  height: 36px;
   max-width: 38vw;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -242,8 +242,8 @@ body.nav-side-open .nav-side-panel {
 
 .nav-search-toggle {
   display: none;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 18px;
@@ -251,8 +251,8 @@ body.nav-side-open .nav-side-panel {
 
 .nav-search-back {
   display: none;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 18px;
@@ -267,8 +267,8 @@ body.nav-side-open .nav-side-panel {
 
 .nav-notif-toggle {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   font-size: 18px;
@@ -294,8 +294,8 @@ body.nav-side-open .nav-side-panel {
 
 
 .nav-filter-toggle {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 8px;
   display: inline-flex;
@@ -305,7 +305,7 @@ body.nav-side-open .nav-side-panel {
 }
 
 .nav-create-btn {
-  height: 32px;
+  height: 36px;
   padding: 0 10px;
   border-radius: 10px;
   font-weight: 600;
