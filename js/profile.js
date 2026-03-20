@@ -10,6 +10,8 @@ const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_FILE_SIZE_MB = 2;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
 
 let currentSession = null;
 let currentUser = null;
@@ -95,12 +97,35 @@ function renderProfileInfo(user) {
   `;
 }
 
+function renderProfileInfoSkeleton() {
+  const el = document.getElementById("profileInfo");
+  if (!el) {
+    return;
+  }
+  el.innerHTML = `
+    <div class="profile-skeleton-line profile-skeleton-line-name"></div>
+    <div class="profile-skeleton-line profile-skeleton-line-email"></div>
+  `;
+}
+
 function renderAvatar(user) {
   const avatar = document.getElementById("profileAvatar");
+  avatar.classList.remove("is-skeleton");
   avatar.src = user.profile_image_url || DEFAULT_AVATAR_URL;
   avatar.onerror = function () {
+    avatar.classList.remove("is-skeleton");
     avatar.src = DEFAULT_AVATAR_URL;
   };
+}
+
+function renderProfileAvatarSkeleton() {
+  const avatar = document.getElementById("profileAvatar");
+  if (!avatar) {
+    return;
+  }
+  avatar.classList.add("is-skeleton");
+  avatar.src = TRANSPARENT_PIXEL;
+  avatar.onerror = null;
 }
 
 function syncPreviewAvatar(url) {
@@ -231,6 +256,27 @@ function renderStats(myReports) {
     .join("");
 }
 
+function renderStatsSkeleton() {
+  const root = document.getElementById("profileStats");
+  if (!root) {
+    return;
+  }
+  root.innerHTML = `
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100 profile-stat-skeleton-card"><div class="card-body py-3"><div class="profile-skeleton-line profile-skeleton-line-sm"></div><div class="profile-skeleton-line profile-skeleton-line-md"></div></div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100 profile-stat-skeleton-card"><div class="card-body py-3"><div class="profile-skeleton-line profile-skeleton-line-sm"></div><div class="profile-skeleton-line profile-skeleton-line-md"></div></div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100 profile-stat-skeleton-card"><div class="card-body py-3"><div class="profile-skeleton-line profile-skeleton-line-sm"></div><div class="profile-skeleton-line profile-skeleton-line-md"></div></div></div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100 profile-stat-skeleton-card"><div class="card-body py-3"><div class="profile-skeleton-line profile-skeleton-line-sm"></div><div class="profile-skeleton-line profile-skeleton-line-md"></div></div></div>
+    </div>
+  `;
+}
+
 function getReportPreviewUrl(report) {
   if (Array.isArray(report.image_urls) && report.image_urls.length > 0) {
     return String(report.image_urls[0] || "").trim();
@@ -285,6 +331,62 @@ function renderMyReports(myReports) {
     .join("");
 }
 
+function renderReportsSkeleton() {
+  const root = document.getElementById("profileReports");
+  if (!root) {
+    return;
+  }
+  root.innerHTML = `
+    <article class="profile-report-skeleton mb-2" aria-hidden="true">
+      <div class="profile-report-skeleton-thumb"></div>
+      <div class="profile-report-skeleton-main">
+        <div class="profile-skeleton-line profile-skeleton-line-md"></div>
+        <div class="profile-skeleton-line"></div>
+        <div class="profile-skeleton-line profile-skeleton-line-sm"></div>
+      </div>
+      <div class="profile-report-skeleton-side">
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+      </div>
+    </article>
+    <article class="profile-report-skeleton mb-2" aria-hidden="true">
+      <div class="profile-report-skeleton-thumb"></div>
+      <div class="profile-report-skeleton-main">
+        <div class="profile-skeleton-line profile-skeleton-line-md"></div>
+        <div class="profile-skeleton-line"></div>
+        <div class="profile-skeleton-line profile-skeleton-line-sm"></div>
+      </div>
+      <div class="profile-report-skeleton-side">
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+      </div>
+    </article>
+    <article class="profile-report-skeleton mb-2" aria-hidden="true">
+      <div class="profile-report-skeleton-thumb"></div>
+      <div class="profile-report-skeleton-main">
+        <div class="profile-skeleton-line profile-skeleton-line-md"></div>
+        <div class="profile-skeleton-line"></div>
+        <div class="profile-skeleton-line profile-skeleton-line-sm"></div>
+      </div>
+      <div class="profile-report-skeleton-side">
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+        <div class="profile-skeleton-line profile-skeleton-pill"></div>
+      </div>
+    </article>
+  `;
+}
+
+function renderProfilePageSkeleton() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.classList.add("d-none");
+  }
+  renderProfileAvatarSkeleton();
+  renderProfileInfoSkeleton();
+  renderStatsSkeleton();
+  renderReportsSkeleton();
+}
+
 async function handleDeleteReport(reportId) {
   if (!reportId || Number.isNaN(reportId)) {
     return;
@@ -319,6 +421,7 @@ async function loadProfile() {
   if (!currentSession) {
     return;
   }
+  renderProfilePageSkeleton();
 
   try {
     const data = await apiFetch("/me");
@@ -330,6 +433,10 @@ async function loadProfile() {
     const editBtn = document.getElementById("editProfileBtn");
     if (editBtn) {
       editBtn.classList.remove("d-none");
+    }
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.classList.remove("d-none");
     }
     document.getElementById("profileName").value = currentUser.name || "";
 
@@ -353,6 +460,10 @@ async function loadProfile() {
     document.getElementById("profileReports").innerHTML =
       '<p class="text-danger mb-0">Tidak bisa memuat laporan profil.</p>';
     document.getElementById("profileStats").innerHTML = "";
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.classList.remove("d-none");
+    }
   }
 }
 
@@ -479,6 +590,16 @@ function init() {
       }
       window.location.href = "/login.html";
     });
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const shouldOpenLogoutConfirm = params.get("logout") === "1";
+  if (shouldOpenLogoutConfirm) {
+    window.history.replaceState({}, "", "/profile.html");
+    window.setTimeout(function () {
+      if (logoutConfirmModal) {
+        logoutConfirmModal.show();
+      }
+    }, 80);
   }
   const reportsRoot = document.getElementById("profileReports");
   if (reportsRoot) {

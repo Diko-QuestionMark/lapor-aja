@@ -285,11 +285,12 @@
           </div>
           <nav class="nav-side-links">
             <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
-            <a href="/profile.html" data-nav-notif-link="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
-            <a id="nav-side-auth-link" href="/login.html">
-              <i class="bi bi-box-arrow-in-right" id="nav-side-auth-icon"></i>
-              <span id="nav-side-auth-label">Login</span>
-            </a>
+            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Laporan Saya</span></a>
+            <a href="/index.html" data-nav-open-notif="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
+            <a href="/index.html" data-nav-create-report="1"><i class="bi bi-plus-square"></i><span>Buat Laporan</span></a>
+            <a href="/index.html" data-nav-open-filter="1"><i class="bi bi-funnel"></i><span>Filter Laporan</span></a>
+            <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
+            <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>
           </nav>
         </aside>
       `;
@@ -586,24 +587,30 @@
     }
     const session = readSession();
 
-    const sideAuthLink = getById("nav-side-auth-link", "navSideAuthLink");
-    const sideAuthLabel = getById("nav-side-auth-label", "navSideAuthLabel");
-    const sideAuthIcon = getById("nav-side-auth-icon", "navSideAuthIcon");
+    const sideProfileLink = getById("nav-side-profile-link", "navSideProfileLink");
+    const sideLoginLink = getById("nav-side-login-link", "navSideLoginLink");
+    const sideLogoutLink = getById("nav-side-logout-link", "navSideLogoutLink");
+    const sideNotifLink = getById("nav-side-panel", "navSidePanel")
+      ? document.querySelector("[data-nav-open-notif='1']")
+      : null;
+    const sideCreateLink = getById("nav-side-panel", "navSidePanel")
+      ? document.querySelector("[data-nav-create-report='1']")
+      : null;
+    const sideFilterLink = getById("nav-side-panel", "navSidePanel")
+      ? document.querySelector("[data-nav-open-filter='1']")
+      : null;
     if (!session || !session.email || !session.token) {
       document.body.classList.remove("nav-auth-logged-in");
       actionBtn.href = "/login.html";
       actionText.textContent = "Login";
       avatarWrap.classList.add("d-none");
       avatar.removeAttribute("src");
-      if (sideAuthLink) {
-        sideAuthLink.href = "/login.html";
-        if (sideAuthLabel) {
-          sideAuthLabel.textContent = "Login";
-        }
-        if (sideAuthIcon) {
-          sideAuthIcon.className = "bi bi-box-arrow-in-right";
-        }
-      }
+      if (sideProfileLink) sideProfileLink.classList.add("d-none");
+      if (sideLogoutLink) sideLogoutLink.classList.add("d-none");
+      if (sideLoginLink) sideLoginLink.classList.remove("d-none");
+      if (sideNotifLink) sideNotifLink.classList.add("d-none");
+      if (sideCreateLink) sideCreateLink.classList.add("d-none");
+      if (sideFilterLink) sideFilterLink.classList.add("d-none");
       return;
     }
 
@@ -615,15 +622,12 @@
     avatar.onerror = function () {
       avatar.src = "/img/defaultAvatar.jpg";
     };
-    if (sideAuthLink) {
-      sideAuthLink.href = "/profile.html";
-      if (sideAuthLabel) {
-        sideAuthLabel.textContent = "Profil";
-      }
-      if (sideAuthIcon) {
-        sideAuthIcon.className = "bi bi-person-circle";
-      }
-    }
+    if (sideProfileLink) sideProfileLink.classList.remove("d-none");
+    if (sideLogoutLink) sideLogoutLink.classList.remove("d-none");
+    if (sideLoginLink) sideLoginLink.classList.add("d-none");
+    if (sideNotifLink) sideNotifLink.classList.remove("d-none");
+    if (sideCreateLink) sideCreateLink.classList.remove("d-none");
+    if (sideFilterLink) sideFilterLink.classList.remove("d-none");
     refreshNotificationBadge();
   }
 
@@ -853,5 +857,83 @@
       const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
       instance.show();
     });
+  });
+
+  document.addEventListener("navbar:ready", function () {
+    const sidePanel = getById("nav-side-panel", "navSidePanel");
+    const sideLogoutLink = getById("nav-side-logout-link", "navSideLogoutLink");
+    const sideNotifLink = document.querySelector("[data-nav-open-notif='1']");
+    const sideCreateLink = document.querySelector("[data-nav-create-report='1']");
+    const sideFilterLink = document.querySelector("[data-nav-open-filter='1']");
+    const reportModalEl = getById("report-modal", "reportModal");
+    const filterModalEl = getById("filter-modal", "filterModal");
+    const notifModalEl = getById("nav-notif-modal", "navNotifModal");
+
+    function closeSidePanel() {
+      document.body.classList.remove("nav-side-open");
+      if (sidePanel) {
+        sidePanel.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    if (sideLogoutLink && sideLogoutLink.dataset.bound !== "1") {
+      sideLogoutLink.dataset.bound = "1";
+      sideLogoutLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        closeSidePanel();
+        const existingLogoutBtn = getById("logoutBtn");
+        if (existingLogoutBtn) {
+          existingLogoutBtn.click();
+          return;
+        }
+        window.location.href = "/profile.html?logout=1";
+      });
+    }
+
+    if (sideNotifLink && sideNotifLink.dataset.bound !== "1") {
+      sideNotifLink.dataset.bound = "1";
+      sideNotifLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        closeSidePanel();
+        if (window.bootstrap && window.bootstrap.Modal && notifModalEl) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(notifModalEl);
+          instance.show();
+          return;
+        }
+        window.location.href = "/index.html";
+      });
+    }
+
+    if (sideCreateLink && sideCreateLink.dataset.bound !== "1") {
+      sideCreateLink.dataset.bound = "1";
+      sideCreateLink.addEventListener("click", function (event) {
+        const session = readSession();
+        if (!session || !session.token || !session.email) {
+          return;
+        }
+        event.preventDefault();
+        closeSidePanel();
+        if (window.bootstrap && window.bootstrap.Modal && reportModalEl) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(reportModalEl);
+          instance.show();
+        } else {
+          window.location.href = "/index.html";
+        }
+      });
+    }
+
+    if (sideFilterLink && sideFilterLink.dataset.bound !== "1") {
+      sideFilterLink.dataset.bound = "1";
+      sideFilterLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        closeSidePanel();
+        if (window.bootstrap && window.bootstrap.Modal && filterModalEl) {
+          const instance = window.bootstrap.Modal.getOrCreateInstance(filterModalEl);
+          instance.show();
+          return;
+        }
+        window.location.href = "/index.html?filter=1";
+      });
+    }
   });
 })();

@@ -428,6 +428,13 @@ body.has-fixed-navbar {
   background: #f3f6fa;
 }
 
+.profile-avatar.is-skeleton {
+  background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
+  background-size: 400% 100%;
+  animation: skeleton-wave 1.2s ease-in-out infinite;
+  border-color: #e2e8f0;
+}
+
 .profile-head-row {
   flex-wrap: nowrap;
 }
@@ -465,6 +472,87 @@ body.has-fixed-navbar {
 .profile-report-card:hover,
 .profile-report-card:focus-visible {
   background: #e6ebf2;
+}
+
+.profile-skeleton-line {
+  height: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
+  background-size: 400% 100%;
+  animation: skeleton-wave 1.2s ease-in-out infinite;
+}
+
+.profile-skeleton-line:last-child {
+  margin-bottom: 0;
+}
+
+.profile-skeleton-line-name {
+  width: min(220px, 72%);
+  height: 18px;
+}
+
+.profile-skeleton-line-email {
+  width: min(280px, 84%);
+  height: 12px;
+}
+
+.profile-skeleton-line-sm {
+  width: 56%;
+  height: 10px;
+}
+
+.profile-skeleton-line-md {
+  width: 74%;
+  height: 14px;
+}
+
+.profile-skeleton-pill {
+  width: 88px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.profile-stat-skeleton-card {
+  border-color: #e5e7eb;
+}
+
+.profile-stat-skeleton-card .card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profile-report-skeleton {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.profile-report-skeleton-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
+  background-size: 400% 100%;
+  animation: skeleton-wave 1.2s ease-in-out infinite;
+}
+
+.profile-report-skeleton-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.profile-report-skeleton-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .photo-preview-grid {
@@ -852,7 +940,7 @@ body.has-fixed-navbar {
 
 .report-cover {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   background: #d6dbe2;
   display: block;
