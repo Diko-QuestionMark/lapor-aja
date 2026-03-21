@@ -195,6 +195,56 @@ function escapeHtml(text) {
   });
 }
 
+function formatTimeAgo(value) {
+  if (!value) {
+    return "";
+  }
+  let raw = value;
+  const now = Date.now();
+  if (typeof raw === "string") {
+    const hasTz = /[zZ]$/.test(raw) || /[+-]\d{2}:\d{2}$/.test(raw);
+    if (!hasTz) {
+      const localRaw = raw.replace(" ", "T");
+      const utcRaw = `${localRaw}Z`;
+      const localTs = new Date(localRaw).getTime();
+      const utcTs = new Date(utcRaw).getTime();
+      const localDiff = Math.abs(now - localTs);
+      const utcDiff = Math.abs(now - utcTs);
+      const bestTs = utcDiff < localDiff ? utcTs : localTs;
+      raw = new Date(bestTs).toISOString();
+    } else {
+      raw = raw.replace(" ", "T");
+    }
+  }
+  const ts = new Date(raw).getTime();
+  if (!ts) {
+    return "";
+  }
+  const diffMs = Date.now() - ts;
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+  if (diffSec < 60) {
+    return diffSec <= 5 ? "baru saja" : `${diffSec} detik yang lalu`;
+  }
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return `${diffMin} menit yang lalu`;
+  }
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) {
+    return `${diffHour} jam yang lalu`;
+  }
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) {
+    return `${diffDay} hari yang lalu`;
+  }
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) {
+    return `${diffMonth} bulan yang lalu`;
+  }
+  const diffYear = Math.floor(diffMonth / 12);
+  return `${diffYear} tahun yang lalu`;
+}
+
 function getUpvotedIds() {
   try {
     const raw = localStorage.getItem(UPVOTE_STORAGE_KEY);
@@ -317,7 +367,7 @@ function renderComments(comments, isAdmin) {
               <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                 <strong class="small">${escapeHtml(item.user_name || "Warga")}</strong>
                 <span class="small text-secondary">${
-                  item.created_at ? new Date(item.created_at).toLocaleString("id-ID") : "-"
+                  item.created_at ? formatTimeAgo(item.created_at) : "-"
                 }</span>
               </div>
               <p class="small mb-0">${commentBody}</p>
