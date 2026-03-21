@@ -503,10 +503,6 @@ function renderDetail(report) {
   container.innerHTML = `
     <div class="report-detail-layout">
       <section class="report-detail-block report-detail-header-block">
-        <a href="/index.html" class="report-detail-back-link">
-          <i class="bi bi-arrow-left-short" aria-hidden="true"></i>
-          Kembali ke Daftar Laporan
-        </a>
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
           <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
           <span class="badge text-bg-light border">Instansi: ${escapeHtml(agencyLabel)}</span>
@@ -595,11 +591,6 @@ function renderDetail(report) {
       </section>
 
       <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Histori Status</h3>
-        <div id="statusHistoryList"></div>
-      </section>
-
-      <section class="report-detail-block">
         <h3 class="report-detail-section-title">Komentar</h3>
         <form id="commentForm" class="mb-3">
           <div class="mb-2">
@@ -622,8 +613,6 @@ function renderDetail(report) {
       </section>
     </div>
   `;
-
-  loadStatusHistory(report.id);
 
   if (imageUrls.length > 1) {
     let activeIndex = 0;
