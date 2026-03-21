@@ -364,7 +364,7 @@ function renderComments(comments, isAdmin) {
               onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
             />
             <div class="flex-grow-1">
-              <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+              <div class="report-comment-meta-row">
                 <strong class="small">${escapeHtml(item.user_name || "Warga")}</strong>
                 <span class="small text-secondary">${
                   item.created_at ? formatTimeAgo(item.created_at) : "-"
@@ -526,21 +526,19 @@ function renderDetail(report) {
         </a>`
       : `
         <div class="report-detail-gallery">
-          <div class="rounded border p-2 bg-light">
-            <a
-              id="${galleryId}Link"
-              href="${escapeHtml(imageUrls[0])}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                id="${galleryId}Main"
-                src="${escapeHtml(imageUrls[0])}"
-                class="d-block w-100 detail-image rounded report-detail-main-image"
-                alt="Foto laporan 1"
-              />
-            </a>
-          </div>
+          <a
+            id="${galleryId}Link"
+            href="${escapeHtml(imageUrls[0])}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              id="${galleryId}Main"
+              src="${escapeHtml(imageUrls[0])}"
+              class="d-block w-100 detail-image rounded report-detail-main-image"
+              alt="Foto laporan 1"
+            />
+          </a>
           <div class="d-flex align-items-center justify-content-between mt-2 gap-2">
             <button id="${galleryId}Prev" class="btn btn-sm btn-outline-primary report-gallery-nav-btn" type="button">Prev</button>
             <div class="small text-secondary">
@@ -553,52 +551,23 @@ function renderDetail(report) {
   container.innerHTML = `
     <div class="report-detail-layout">
       <section class="report-detail-block report-detail-header-block">
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-          <span class="badge status-badge ${statusMeta.className}">Status: ${statusMeta.label}</span>
-          <span class="badge text-bg-light border">Instansi: ${escapeHtml(agencyLabel)}</span>
-        </div>
         <h2 class="report-detail-title mb-2">${escapeHtml(report.title || "Tanpa Judul")}</h2>
         <p class="report-detail-subtitle mb-0">Laporan #${report.id} - ${createdAtLabel}</p>
       </section>
 
       <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Foto Laporan</h3>
-        ${galleryBlock}
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Deskripsi</h3>
-        <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Informasi Laporan</h3>
-        <div class="report-detail-meta-grid">
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
-            <span class="report-detail-meta-value">${reporterBlock}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
-            <span class="report-detail-meta-value">${createdAtLabel}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
-            <span class="report-detail-meta-value">${locationBlock}</span>
-          </div>
+        <h3 class="report-detail-section-title">Aksi & Status</h3>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
+          <span class="badge text-bg-light border">Instansi: ${escapeHtml(agencyLabel)}</span>
         </div>
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Dukungan Warga</h3>
-        <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
-          <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
-          <span>${voted ? "Didukung" : "Dukung"}</span>
-          <span class="support-count">${Number(report.upvotes || 0)}</span>
-        </button>
-        <p id="detailVoteState" class="small text-secondary mt-2 mb-0">
-          ${voted ? "Kamu sudah mendukung laporan ini." : "Kamu belum mendukung laporan ini."}
-        </p>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+            <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+            <span>${voted ? "Didukung" : "Dukung"}</span>
+            <span class="support-count">${Number(report.upvotes || 0)}</span>
+          </button>
+        </div>
       </section>
 
       <section class="report-detail-block report-response-section">
@@ -638,6 +607,34 @@ function renderDetail(report) {
             `
             : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
         }
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Foto Laporan</h3>
+        ${galleryBlock}
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Deskripsi</h3>
+        <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Informasi Laporan</h3>
+        <div class="report-detail-meta-grid">
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterBlock}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
+            <span class="report-detail-meta-value">${createdAtLabel}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+            <span class="report-detail-meta-value">${locationBlock}</span>
+          </div>
+        </div>
       </section>
 
       <section class="report-detail-block">
@@ -703,7 +700,6 @@ function renderDetail(report) {
   document.getElementById("detailVoteBtn").addEventListener("click", async function () {
     const currentlyVoted = hasUpvoted(report.id);
     const btn = this;
-    const voteState = document.getElementById("detailVoteState");
     btn.disabled = true;
     btn.textContent = "Menyimpan...";
     try {
@@ -724,11 +720,6 @@ function renderDetail(report) {
         <span>${nextVoted ? "Didukung" : "Dukung"}</span>
         <span class="support-count">${nextUpvotes}</span>
       `;
-      if (voteState) {
-        voteState.textContent = nextVoted
-          ? "Kamu sudah mendukung laporan ini."
-          : "Kamu belum mendukung laporan ini.";
-      }
     } catch (_) {
       btn.innerHTML = "Gagal, coba lagi";
       setTimeout(function () {
@@ -738,11 +729,6 @@ function renderDetail(report) {
           <span>${currentlyVoted ? "Didukung" : "Dukung"}</span>
           <span class="support-count">${Number(report.upvotes || 0)}</span>
         `;
-        if (voteState) {
-          voteState.textContent = currentlyVoted
-            ? "Kamu sudah mendukung laporan ini."
-            : "Kamu belum mendukung laporan ini.";
-        }
       }, 800);
     } finally {
       btn.disabled = false;

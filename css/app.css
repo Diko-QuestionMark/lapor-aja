@@ -1333,7 +1333,7 @@ body.has-fixed-navbar {
   background: transparent;
   padding: 0;
   display: grid;
-  gap: 22px;
+  gap: 24px;
 }
 
 .report-detail-page .report-detail-block {
@@ -1384,19 +1384,19 @@ body.has-fixed-navbar {
 }
 
 .report-detail-page .report-detail-title {
-  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  font-size: clamp(1.12rem, 2vw, 1.5rem);
   line-height: 1.35;
   color: #0f172a;
 }
 
 .report-detail-page .report-detail-subtitle {
   color: #6b7785;
-  font-size: 0.84rem;
+  font-size: 0.85rem;
 }
 
 .report-detail-page .report-detail-section-title {
   margin: 0 0 8px;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #212529;
   text-transform: none;
@@ -1452,6 +1452,11 @@ body.has-fixed-navbar {
 
 .report-detail-page .report-detail-main-image {
   border-color: #e4e9ef !important;
+}
+
+.report-detail-page .report-detail-gallery a {
+  display: block;
+  text-decoration: none;
 }
 
 .report-detail-page .report-gallery-nav-btn {
@@ -1520,6 +1525,16 @@ body.has-fixed-navbar {
   background: transparent;
 }
 
+.report-detail-page .response-panel-meta {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.report-detail-page .response-panel-empty {
+  border: 0;
+  background: transparent;
+}
+
 .report-detail-page .evidence-thumb {
   border-color: #e2e8ef;
 }
@@ -1528,7 +1543,7 @@ body.has-fixed-navbar {
   border: 0;
   border-bottom: 0;
   border-radius: 0;
-  padding: 0;
+  padding: 2px 0;
   margin-bottom: 14px;
   background: transparent;
 }
@@ -1550,13 +1565,33 @@ body.has-fixed-navbar {
   margin-bottom: 0;
 }
 
+.report-detail-page .report-comment-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.report-detail-page .report-comment-meta-row strong {
+  color: #1f2937;
+}
+
+.report-detail-page .report-comment-meta-row .text-secondary {
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .report-detail-page .report-detail-layout {
     padding: 0;
+    gap: 20px;
   }
 
   .report-detail-page .report-detail-meta-grid {
     grid-template-columns: 1fr;
+  }
+
+  .report-detail-page .report-comment-meta-row {
+    align-items: flex-start;
   }
 }
 
