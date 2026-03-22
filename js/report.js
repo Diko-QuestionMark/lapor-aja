@@ -573,9 +573,43 @@ function renderDetail(report) {
       <section class="report-detail-block">
         <div class="report-photo-head">
           <h3 class="report-detail-section-title mb-0">Foto Laporan</h3>
-          <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
+          <div class="report-photo-actions">
+            <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
+            <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+              <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+              <span>${voted ? "Didukung" : "Dukung"}</span>
+              <span class="support-count">${Number(report.upvotes || 0)}</span>
+            </button>
+          </div>
         </div>
         ${galleryBlock}
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Informasi Laporan</h3>
+        <div class="report-detail-meta-grid">
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
+            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterBlock}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
+            <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+            <span class="report-detail-meta-value">${locationBlock}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Deskripsi</h3>
+        <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
       </section>
 
       <section class="report-detail-block report-response-section">
@@ -614,44 +648,6 @@ function renderDetail(report) {
             `
             : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
         }
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Informasi Laporan</h3>
-        <div class="report-detail-meta-grid">
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
-            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
-            <span class="report-detail-meta-value">${reporterBlock}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
-            <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
-            <span class="report-detail-meta-value">${locationBlock}</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Deskripsi</h3>
-        <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
-      </section>
-
-      <section class="report-detail-block report-detail-action-start">
-        <h3 class="report-detail-section-title">Dukungan Warga</h3>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
-            <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
-            <span>${voted ? "Didukung" : "Dukung"}</span>
-            <span class="support-count">${Number(report.upvotes || 0)}</span>
-          </button>
-        </div>
       </section>
 
       <section class="report-detail-block">

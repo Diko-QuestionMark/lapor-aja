@@ -111,6 +111,13 @@
   white-space: nowrap;
 }
 
+body.nav-auth-logged-in #auth-action-btn,
+body.nav-auth-logged-in #authActionBtn {
+  height: 36px;
+  padding: 0 10px 0 0;
+  border-radius: 10px;
+}
+
 body:not(.nav-auth-logged-in) #auth-action-btn,
 body:not(.nav-auth-logged-in) #authActionBtn {
   height: 36px;
@@ -1416,6 +1423,14 @@ body.has-fixed-navbar {
   margin-bottom: 8px;
 }
 
+.report-detail-page .report-photo-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .report-detail-page .report-detail-description {
   color: #334155;
   line-height: 1.62;
@@ -1638,6 +1653,16 @@ body.has-fixed-navbar {
 
   .report-detail-page .report-comment-meta-row {
     align-items: flex-start;
+  }
+
+  .report-detail-page .report-photo-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-detail-page .report-photo-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
 }
