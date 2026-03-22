@@ -169,6 +169,7 @@
       index: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
+        brandHref: "/index.html",
         subtitle: "Laporkan masalah kota dengan cepat",
         leftHtml: leftHamburger,
         rightHtml: userRightHtml,
@@ -176,6 +177,7 @@
       login: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
+        brandHref: "/index.html",
         subtitle: "Portal Masuk",
         leftHtml: "",
         rightHtml: "",
@@ -183,6 +185,7 @@
       profile: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
+        brandHref: "/index.html",
         subtitle: "Profil Akun",
         leftHtml: leftHamburger,
         rightHtml: userRightHtml,
@@ -190,6 +193,7 @@
       report: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
+        brandHref: "/index.html",
         subtitle: "Detail laporan warga",
         leftHtml: leftHamburger,
         rightHtml: userRightHtml,
@@ -197,28 +201,31 @@
       user: {
         navClass: "navbar-light bg-white",
         brandText: "LaporAja",
+        brandHref: "/index.html",
         subtitle: "Profil Pelapor",
         leftHtml: leftHamburger,
         rightHtml: userRightHtml,
       },
       admin: {
         navClass: "navbar-light bg-white",
-        brandText: "Admin LaporAja",
+        brandText: "Admin",
+        brandHref: "/admin.html",
         subtitle: "Kelola status laporan warga",
         leftHtml: leftHamburger,
-        rightHtml:
-          '<a href="/index.html" class="btn btn-sm nav-plain-btn" data-confirm-user-dashboard="1">Ke Halaman User</a>',
+        rightHtml: authRightHtml,
       },
       "admin-report": {
         navClass: "navbar-light bg-white",
-        brandText: "Admin LaporAja",
+        brandText: "Admin",
+        brandHref: "/admin.html",
         subtitle: "Detail penanganan laporan",
         leftHtml: leftHamburger,
         rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
       rekap: {
         navClass: "navbar-light bg-white",
-        brandText: "Admin LaporAja",
+        brandText: "Admin",
+        brandHref: "/admin.html",
         subtitle: "Rekap laporan warga",
         leftHtml: leftHamburger,
         rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
@@ -243,7 +250,7 @@
             <div class="d-flex align-items-center gap-2">
               __LEFT_SLOT__
               <h1 class="h4 mb-0">
-                <a href="/index.html" class="text-white text-decoration-none">__BRAND_TEXT__</a>
+                <a href="__BRAND_HREF__" class="text-white text-decoration-none">__BRAND_TEXT__</a>
               </h1>
             </div>
             __RIGHT_SLOT__
@@ -259,8 +266,12 @@
 
     const config = getNavbarConfig();
     const template = await loadNavbarTemplate();
+    const brandHref = String(config.brandHref || "/index.html");
+    const safeBrandHref = escapeHtml(brandHref);
+    const safeBrandText = escapeHtml(config.brandText || "LaporAja");
     const html = template
       .replace("__NAV_CLASS__", escapeHtml(config.navClass))
+      .replace("__BRAND_HREF__", safeBrandHref)
       .replace("__BRAND_TEXT__", escapeHtml(config.brandText))
       .replace("__SUBTITLE__", escapeHtml(config.subtitle))
       .replace("__LEFT_SLOT__", config.leftHtml || "")
@@ -276,10 +287,10 @@
               <button id="nav-side-close" type="button" class="btn btn-sm nav-plain-btn nav-side-close" aria-label="Tutup menu">
                 <i class="bi bi-list"></i>
               </button>
-              <a href="/index.html" class="nav-brand-link nav-side-brand-link">
+              <a href="${safeBrandHref}" class="nav-brand-link nav-side-brand-link">
                 <img src="/img/icon.png" alt="Logo" class="nav-brand-logo" width="36" height="36" />
                 <span class="nav-brand-text">
-                  <span class="nav-brand-title">LaporAja</span>
+                  <span class="nav-brand-title">${safeBrandText}</span>
                 </span>
               </a>
             </div>
