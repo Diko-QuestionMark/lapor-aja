@@ -33,6 +33,7 @@ function initDatabase() {
           email TEXT NOT NULL UNIQUE,
           password_hash TEXT NOT NULL,
           role TEXT NOT NULL DEFAULT 'user',
+          agency TEXT,
           profile_image_url TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -143,6 +144,7 @@ function initDatabase() {
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_name TEXT");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_email TEXT");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'");
+      await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agency TEXT");
       await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS user_avatar_url TEXT");
       await pool.query(
@@ -191,6 +193,11 @@ function initDatabase() {
         UPDATE users
         SET role = 'user'
         WHERE role IS NULL OR TRIM(role) = ''
+      `);
+      await pool.query(`
+        UPDATE users
+        SET agency = NULL
+        WHERE agency IS NOT NULL AND TRIM(agency) = ''
       `);
       await pool.query(`
         UPDATE reports

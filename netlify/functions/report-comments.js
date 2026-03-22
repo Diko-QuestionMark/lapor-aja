@@ -16,6 +16,17 @@ function json(statusCode, payload) {
   };
 }
 
+async function getUserContextById(userId) {
+  const result = await pool.query(
+    "SELECT id, name, email, role, agency FROM users WHERE id = $1 LIMIT 1",
+    [userId],
+  );
+  if (result.rowCount === 0) {
+    return null;
+  }
+  return result.rows[0];
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return json(200, { ok: true });
@@ -115,10 +126,26 @@ exports.handler = async function handler(event) {
       if (!authUser || !authUser.sub || !authUser.email) {
         return json(401, { error: "Login dibutuhkan untuk menghapus komentar" });
       }
-      if (String(authUser.role || "").toLowerCase() !== "admin") {
+      const authUserId = Number(authUser.sub);
+      if (!authUserId || Number.isNaN(authUserId)) {
+        return json(401, { error: "Login dibutuhkan untuk menghapus komentar" });
+      }
+
+      const currentUser = await getUserContextById(authUserId);
+      if (!currentUser) {
+        return json(401, { error: "User tidak ditemukan" });
+      }
+
+      const currentRole = String(currentUser.role || "user")
+        .trim()
+        .toLowerCase();
+      if (currentRole !== "admin") {
         return json(403, { error: "Hanya admin yang bisa menghapus komentar" });
       }
-      const adminAgency = String(authUser.agency || "").trim();
+      const adminAgency = String(currentUser.agency || "").trim();
+      if (!adminAgency) {
+        return json(403, { error: "Akun admin belum terhubung ke instansi" });
+      }
 
       const idFromQuery = event.queryStringParameters
         ? Number(event.queryStringParameters.id)
@@ -165,7 +192,7 @@ exports.handler = async function handler(event) {
           WHERE id = $3
           RETURNING id, report_id
         `,
-        [String(authUser.name || authUser.email || "Admin"), reason, commentId],
+        [String(currentUser.name || currentUser.email || "Admin"), reason, commentId],
       );
       if (result.rowCount === 0) {
         return json(404, { error: "Komentar tidak ditemukan" });

@@ -17,21 +17,42 @@ function json(statusCode, payload) {
   };
 }
 
-function getAdminContext(event) {
+async function getAdminContext(event) {
   const token = getBearerToken(event);
   const authUser = verifyToken(token);
   if (!authUser || !authUser.sub) {
     return null;
   }
-  const role = String(authUser.role || "").toLowerCase();
+
+  const userId = Number(authUser.sub);
+  if (!userId || Number.isNaN(userId)) {
+    return null;
+  }
+
+  const userResult = await pool.query(
+    "SELECT id, name, email, role, agency FROM users WHERE id = $1 LIMIT 1",
+    [userId],
+  );
+  if (userResult.rowCount === 0) {
+    return null;
+  }
+
+  const user = userResult.rows[0];
+  const role = String(user.role || "user").trim().toLowerCase();
   if (role !== "admin") {
     return null;
   }
-  const agency = String(authUser.agency || "").trim();
+  const agency = String(user.agency || "").trim();
   if (!agency) {
     return null;
   }
-  return { authUser, agency };
+
+  const displayName = String(user.name || user.email || ADMIN_DISPLAY_NAME).trim();
+  return {
+    userId,
+    agency,
+    displayName: displayName || ADMIN_DISPLAY_NAME,
+  };
 }
 
 exports.handler = async function handler(event) {
@@ -39,13 +60,13 @@ exports.handler = async function handler(event) {
     return json(200, { ok: true });
   }
 
-  const adminContext = getAdminContext(event);
-  if (!adminContext) {
-    return json(401, { error: "Admin key tidak valid" });
-  }
-
   try {
     await initDatabase();
+
+    const adminContext = await getAdminContext(event);
+    if (!adminContext) {
+      return json(401, { error: "Admin key tidak valid" });
+    }
 
     if (event.httpMethod === "GET") {
       const agencyFilter = adminContext.agency;
@@ -127,7 +148,7 @@ exports.handler = async function handler(event) {
 
       const result = await pool.query(
         "UPDATE reports SET status = $1, admin_note = $2, admin_evidence_url = $3, admin_updated_at = CURRENT_TIMESTAMP, admin_updated_by = $4 WHERE id = $5 RETURNING id, status, admin_note, admin_evidence_url, admin_updated_at, admin_updated_by",
-        [status, note || null, evidenceUrl || null, ADMIN_DISPLAY_NAME, id],
+        [status, note || null, evidenceUrl || null, adminContext.displayName, id],
       );
 
       if (result.rowCount === 0) {

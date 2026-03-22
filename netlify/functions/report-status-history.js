@@ -32,8 +32,30 @@ exports.handler = async function handler(event) {
 
     const token = getBearerToken(event);
     const authUser = verifyToken(token);
-    const isAdmin = Boolean(authUser && String(authUser.role || "").toLowerCase() === "admin");
-    const adminAgency = String((authUser && authUser.agency) || "").trim();
+
+    let currentUserId = 0;
+    let isAdmin = false;
+    let adminAgency = "";
+    if (authUser && authUser.sub) {
+      const parsedUserId = Number(authUser.sub);
+      if (parsedUserId && !Number.isNaN(parsedUserId)) {
+        currentUserId = parsedUserId;
+        const userResult = await pool.query(
+          "SELECT role, agency FROM users WHERE id = $1 LIMIT 1",
+          [currentUserId],
+        );
+        if (userResult.rowCount > 0) {
+          const role = String(userResult.rows[0].role || "user")
+            .trim()
+            .toLowerCase();
+          const agency = String(userResult.rows[0].agency || "").trim();
+          if (role === "admin" && agency) {
+            isAdmin = true;
+            adminAgency = agency;
+          }
+        }
+      }
+    }
 
     if (!isAdmin) {
       const reportResult = await pool.query(
@@ -44,7 +66,7 @@ exports.handler = async function handler(event) {
         return json(404, { error: "Laporan tidak ditemukan" });
       }
       const ownerId = Number(reportResult.rows[0].reporter_user_id || 0);
-      if (!authUser || Number(authUser.sub) !== ownerId) {
+      if (!currentUserId || currentUserId !== ownerId) {
         return json(403, { error: "Tidak punya akses ke histori laporan ini" });
       }
     } else if (adminAgency && adminAgency !== "all") {

@@ -72,15 +72,16 @@
   }
 
   function getPageKey() {
-    const path = (window.location.pathname || "/").toLowerCase();
-    if (path === "/" || path.endsWith("/index.html")) return "index";
-    if (path.endsWith("/login.html")) return "login";
-    if (path.endsWith("/profile.html")) return "profile";
-    if (path.endsWith("/report.html")) return "report";
-    if (path.endsWith("/admin-report.html")) return "admin-report";
-    if (path.endsWith("/user.html")) return "user";
-    if (path.endsWith("/admin.html")) return "admin";
-    if (path.endsWith("/rekap.html")) return "rekap";
+    const rawPath = (window.location.pathname || "/").toLowerCase();
+    const path = rawPath.replace(/\/+$/, "") || "/";
+    if (path === "/" || path === "/index" || path === "/index.html") return "index";
+    if (path === "/login" || path === "/login.html") return "login";
+    if (path === "/profile" || path === "/profile.html") return "profile";
+    if (path === "/report" || path === "/report.html") return "report";
+    if (path === "/admin-report" || path === "/admin-report.html") return "admin-report";
+    if (path === "/user" || path === "/user.html") return "user";
+    if (path === "/admin" || path === "/admin.html") return "admin";
+    if (path === "/rekap" || path === "/rekap.html") return "rekap";
     return "index";
   }
 

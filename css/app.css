@@ -438,6 +438,28 @@ body.has-fixed-navbar {
   padding: 0.4rem;
 }
 
+.site-navbar.navbar-dark .nav-brand-title {
+  color: #f8fafc;
+}
+
+.site-navbar.navbar-dark .nav-plain-btn {
+  color: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.35);
+}
+
+.site-navbar.navbar-dark .nav-plain-btn:hover,
+.site-navbar.navbar-dark .nav-plain-btn:focus,
+.site-navbar.navbar-dark .nav-plain-btn:active {
+  color: #ffffff;
+  background: rgba(148, 163, 184, 0.22);
+  border-color: rgba(226, 232, 240, 0.55);
+}
+
 .site-navbar .container {
   max-width: 100%;
   padding-left: 0;
@@ -685,7 +707,7 @@ body.has-fixed-navbar {
 }
 
 .detail-skeleton .skeleton-subtitle {
-  width: 210px;
+  width: min(210px, 80%);
   height: 12px;
   margin-bottom: 0;
 }
@@ -1511,7 +1533,14 @@ body.has-fixed-navbar {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+}
+
+.report-detail-page .report-title-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .report-detail-page .report-detail-subtitle {
@@ -1922,6 +1951,11 @@ body.has-fixed-navbar {
 @media (max-width: 768px) {
   body.nav-auth-logged-in .nav-auth-text {
     display: none;
+  }
+
+  body.nav-auth-logged-in #auth-action-btn,
+  body.nav-auth-logged-in #authActionBtn {
+    padding-right: 0;
   }
 }
 

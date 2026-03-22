@@ -1,6 +1,18 @@
 const { pool, initDatabase } = require("./_db");
 const { getBearerToken, verifyToken, signToken } = require("./_auth");
-const { getAdminAgencyByEmail } = require("./_admin-config");
+
+function normalizeUserRoleAndAgency(roleValue, agencyValue) {
+  const normalizedRole = String(roleValue || "user")
+    .trim()
+    .toLowerCase();
+  const safeRole = normalizedRole === "admin" ? "admin" : "user";
+  const safeAgency = String(agencyValue || "").trim();
+
+  if (safeRole === "admin" && safeAgency) {
+    return { role: "admin", agency: safeAgency };
+  }
+  return { role: "user", agency: "" };
+}
 
 function json(statusCode, payload) {
   return {
@@ -17,7 +29,7 @@ function json(statusCode, payload) {
 
 async function getUserById(userId) {
   const result = await pool.query(
-    "SELECT id, name, email, role, profile_image_url, created_at FROM users WHERE id = $1 LIMIT 1",
+    "SELECT id, name, email, role, agency, profile_image_url, created_at FROM users WHERE id = $1 LIMIT 1",
     [userId],
   );
   return result.rowCount ? result.rows[0] : null;
@@ -46,14 +58,9 @@ exports.handler = async function handler(event) {
       if (!user) {
         return json(404, { error: "User tidak ditemukan" });
       }
-      const adminAgency = getAdminAgencyByEmail(user.email);
-      if (adminAgency) {
-        user.role = "admin";
-        user.agency = adminAgency;
-      } else {
-        user.role = user.role || "user";
-        user.agency = "";
-      }
+      const normalized = normalizeUserRoleAndAgency(user.role, user.agency);
+      user.role = normalized.role;
+      user.agency = normalized.agency;
       return json(200, { status: "ok", user });
     }
 
@@ -92,7 +99,7 @@ exports.handler = async function handler(event) {
 
       values.push(userId);
       const updated = await pool.query(
-        `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING id, name, email, role, profile_image_url, created_at`,
+        `UPDATE users SET ${updates.join(", ")} WHERE id = $${idx} RETURNING id, name, email, role, agency, profile_image_url, created_at`,
         values,
       );
       if (updated.rowCount === 0) {
@@ -107,14 +114,9 @@ exports.handler = async function handler(event) {
       }
 
       const user = updated.rows[0];
-      const adminAgency = getAdminAgencyByEmail(user.email);
-      if (adminAgency) {
-        user.role = "admin";
-        user.agency = adminAgency;
-      } else {
-        user.role = user.role || "user";
-        user.agency = "";
-      }
+      const normalized = normalizeUserRoleAndAgency(user.role, user.agency);
+      user.role = normalized.role;
+      user.agency = normalized.agency;
       const nextToken = signToken({
         sub: user.id,
         name: user.name,

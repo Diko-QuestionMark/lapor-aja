@@ -314,10 +314,12 @@ function renderDetailSkeleton() {
     <div class="report-detail-layout detail-skeleton" aria-hidden="true">
       <section class="report-detail-block">
         <div class="report-title-row">
-          <div class="skeleton-line skeleton-title"></div>
+          <div class="report-title-main">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-subtitle"></div>
+          </div>
           <div class="skeleton-pill skeleton-vote"></div>
         </div>
-        <div class="skeleton-line skeleton-subtitle"></div>
       </section>
 
       <section class="report-detail-block">
@@ -669,14 +671,16 @@ function renderDetail(report) {
     <div class="report-detail-layout">
       <section class="report-detail-block report-detail-header-block">
         <div class="report-title-row">
-          <h2 class="report-detail-title mb-0">${escapeHtml(report.title || "Tanpa Judul")}</h2>
+          <div class="report-title-main">
+            <h2 class="report-detail-title mb-0">${escapeHtml(report.title || "Tanpa Judul")}</h2>
+            <p class="report-detail-subtitle mb-0">${createdAtLabel}</p>
+          </div>
           <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
             <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
             <span>${voted ? "Didukung" : "Dukung"}</span>
             <span class="support-count">${Number(report.upvotes || 0)}</span>
           </button>
         </div>
-        <p class="report-detail-subtitle mb-0">${createdAtLabel}</p>
       </section>
 
       <section class="report-detail-block">

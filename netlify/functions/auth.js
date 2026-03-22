@@ -1,6 +1,22 @@
 const { pool, initDatabase } = require("./_db");
 const { hashPassword, verifyPassword, signToken } = require("./_auth");
-const { getAdminAgencyByEmail, normalizeEmail } = require("./_admin-config");
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function normalizeUserRoleAndAgency(roleValue, agencyValue) {
+  const normalizedRole = String(roleValue || "user")
+    .trim()
+    .toLowerCase();
+  const safeRole = normalizedRole === "admin" ? "admin" : "user";
+  const safeAgency = String(agencyValue || "").trim();
+
+  if (safeRole === "admin" && safeAgency) {
+    return { role: "admin", agency: safeAgency };
+  }
+  return { role: "user", agency: "" };
+}
 
 function json(statusCode, payload) {
   return {
@@ -35,8 +51,7 @@ exports.handler = async function handler(event) {
       const name = String(body.name || "").trim();
       const email = normalizeEmail(body.email);
       const password = String(body.password || "");
-      const adminAgency = getAdminAgencyByEmail(email);
-      const nextRole = adminAgency ? "admin" : "user";
+      const nextRole = "user";
 
       if (name.length < 2) {
         return json(400, { error: "Nama minimal 2 karakter" });
@@ -52,8 +67,8 @@ exports.handler = async function handler(event) {
       let created;
       try {
         created = await pool.query(
-          "INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, $4) RETURNING id, name, email, role, profile_image_url, created_at",
-          [name, email, passwordHash, nextRole],
+          "INSERT INTO users(name, email, password_hash, role, agency) VALUES($1, $2, $3, $4, $5) RETURNING id, name, email, role, agency, profile_image_url, created_at",
+          [name, email, passwordHash, nextRole, null],
         );
       } catch (error) {
         if (error.code === "23505") {
@@ -63,8 +78,9 @@ exports.handler = async function handler(event) {
       }
 
       const user = created.rows[0];
-      user.role = nextRole;
-      user.agency = adminAgency || "";
+      const normalized = normalizeUserRoleAndAgency(user.role, user.agency);
+      user.role = normalized.role;
+      user.agency = normalized.agency;
       const token = signToken({
         sub: user.id,
         name: user.name,
@@ -84,7 +100,7 @@ exports.handler = async function handler(event) {
       }
 
       const result = await pool.query(
-        "SELECT id, name, email, role, profile_image_url, password_hash FROM users WHERE email = $1 LIMIT 1",
+        "SELECT id, name, email, role, agency, profile_image_url, password_hash FROM users WHERE email = $1 LIMIT 1",
         [email],
       );
 
@@ -97,14 +113,13 @@ exports.handler = async function handler(event) {
         return json(401, { error: "Email atau password salah" });
       }
 
-      const adminAgency = getAdminAgencyByEmail(row.email);
-      const role = adminAgency ? "admin" : row.role || "user";
+      const normalized = normalizeUserRoleAndAgency(row.role, row.agency);
       const user = {
         id: row.id,
         name: row.name,
         email: row.email,
-        role: role,
-        agency: adminAgency || "",
+        role: normalized.role,
+        agency: normalized.agency,
         profile_image_url: row.profile_image_url || "",
       };
       const token = signToken({
