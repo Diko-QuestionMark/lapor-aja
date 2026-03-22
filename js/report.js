@@ -567,7 +567,7 @@ function renderDetail(report) {
     <div class="report-detail-layout">
       <section class="report-detail-block report-detail-header-block">
         <h2 class="report-detail-title mb-2">${escapeHtml(report.title || "Tanpa Judul")}</h2>
-        <p class="report-detail-subtitle mb-0">Laporan #${report.id} - ${createdAtLabel}</p>
+        <p class="report-detail-subtitle mb-0">${createdAtLabel}</p>
       </section>
 
       <section class="report-detail-block">
@@ -583,28 +583,6 @@ function renderDetail(report) {
           </div>
         </div>
         ${galleryBlock}
-      </section>
-
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Informasi Laporan</h3>
-        <div class="report-detail-meta-grid">
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
-            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
-            <span class="report-detail-meta-value">${reporterBlock}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
-            <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
-            <span class="report-detail-meta-value">${locationBlock}</span>
-          </div>
-        </div>
       </section>
 
       <section class="report-detail-block">
@@ -648,6 +626,28 @@ function renderDetail(report) {
             `
             : '<div class="response-panel response-panel-empty"><p class="small text-secondary mb-0">Belum ada respons resmi dari instansi.</p></div>'
         }
+      </section>
+
+      <section class="report-detail-block">
+        <h3 class="report-detail-section-title">Informasi Laporan</h3>
+        <div class="report-detail-meta-grid">
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
+            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterBlock}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
+            <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+            <span class="report-detail-meta-value">${locationBlock}</span>
+          </div>
+        </div>
       </section>
 
       <section class="report-detail-block">
