@@ -566,21 +566,21 @@ function renderDetail(report) {
   container.innerHTML = `
     <div class="report-detail-layout">
       <section class="report-detail-block report-detail-header-block">
-        <h2 class="report-detail-title mb-2">${escapeHtml(report.title || "Tanpa Judul")}</h2>
+        <div class="report-title-row">
+          <h2 class="report-detail-title mb-0">${escapeHtml(report.title || "Tanpa Judul")}</h2>
+          <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+            <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+            <span>${voted ? "Didukung" : "Dukung"}</span>
+            <span class="support-count">${Number(report.upvotes || 0)}</span>
+          </button>
+        </div>
         <p class="report-detail-subtitle mb-0">${createdAtLabel}</p>
       </section>
 
       <section class="report-detail-block">
         <div class="report-photo-head">
           <h3 class="report-detail-section-title mb-0">Foto Laporan</h3>
-          <div class="report-photo-actions">
-            <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
-            <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
-              <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
-              <span>${voted ? "Didukung" : "Dukung"}</span>
-              <span class="support-count">${Number(report.upvotes || 0)}</span>
-            </button>
-          </div>
+          <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
         </div>
         ${galleryBlock}
       </section>
@@ -633,7 +633,11 @@ function renderDetail(report) {
         <div class="report-detail-meta-grid">
           <div class="report-detail-meta-item">
             <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
-            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
+            <a
+              class="report-detail-meta-value meta-action-link"
+              href="/index.html?agency=${encodeURIComponent(agencyLabel)}"
+              aria-label="Lihat laporan instansi ${escapeHtml(agencyLabel)}"
+            >${escapeHtml(agencyLabel)}</a>
           </div>
           <div class="report-detail-meta-item">
             <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>

@@ -17,6 +17,8 @@ const UPVOTE_STORAGE_KEY = "laporaja_upvoted_ids";
 const NOTIFICATION_SEEN_PREFIX = "laporaja_report_notification_seen_v1";
 const NOTIFICATION_COUNT_KEY = "laporaja_notification_unread_v1";
 const REPORT_BATCH_SIZE = 15;
+const SEARCH_RENDER_DEBOUNCE_MS = 220;
+const SEARCH_SKELETON_DELAY_MS = 70;
 const VISIT_SMART_SEED = Math.floor(Math.random() * 1000000000);
 const DEFAULT_REPORT_FILTER = Object.freeze({
   sort: "smart",
@@ -111,9 +113,34 @@ let visibleReportCount = REPORT_BATCH_SIZE;
 let loadMoreObserver = null;
 let currentRenderSignature = "";
 let renderedReportCount = 0;
+let searchRenderTimer = null;
+let searchSkeletonTimer = null;
+let hasLoadedReports = false;
 
 function resetVisibleReportCount() {
   visibleReportCount = REPORT_BATCH_SIZE;
+}
+
+function clearSearchRenderTimers() {
+  if (searchRenderTimer) {
+    clearTimeout(searchRenderTimer);
+    searchRenderTimer = null;
+  }
+  if (searchSkeletonTimer) {
+    clearTimeout(searchSkeletonTimer);
+    searchSkeletonTimer = null;
+  }
+}
+
+function scheduleSearchRender() {
+  clearSearchRenderTimers();
+  searchSkeletonTimer = setTimeout(function () {
+    renderLoadingSkeleton();
+  }, SEARCH_SKELETON_DELAY_MS);
+  searchRenderTimer = setTimeout(function () {
+    clearSearchRenderTimers();
+    resetAndRenderReports();
+  }, SEARCH_RENDER_DEBOUNCE_MS);
 }
 
 function clearLoadMoreObserver() {
@@ -158,6 +185,7 @@ function setupLoadMoreObserver(totalCount) {
 }
 
 function resetAndRenderReports() {
+  clearSearchRenderTimers();
   resetVisibleReportCount();
   currentRenderSignature = "";
   renderedReportCount = 0;
@@ -919,6 +947,7 @@ async function uploadToCloudinary(file) {
 }
 
 async function loadReports() {
+  hasLoadedReports = false;
   renderLoadingSkeleton();
 
   try {
@@ -928,6 +957,7 @@ async function loadReports() {
     }
 
     reports = await response.json();
+    hasLoadedReports = true;
     resetAndRenderReports();
   } catch (error) {
     getById("report-list", "reportList").innerHTML =
@@ -1366,6 +1396,10 @@ function renderReports() {
   if (!list) {
     return;
   }
+  if (!hasLoadedReports) {
+    renderLoadingSkeleton();
+    return;
+  }
   clearLoadMoreObserver();
 
   const countBadge = document.getElementById("reportCount");
@@ -1545,7 +1579,7 @@ function initUi() {
       return;
     }
     searchInput.dataset.bound = "1";
-    searchInput.addEventListener("input", resetAndRenderReports);
+    searchInput.addEventListener("input", scheduleSearchRender);
   }
   bindSearchInput();
   document.addEventListener("navbar:ready", bindSearchInput);
@@ -1662,8 +1696,20 @@ document.addEventListener("navbar:ready", function () {
   }
   const params = new URLSearchParams(window.location.search || "");
   const q = String(params.get("q") || "").trim();
+  const agencyParam = String(params.get("agency") || "").trim();
+  let shouldRender = false;
   if (q) {
     searchInput.value = q;
+    shouldRender = true;
+  }
+  if (agencyParam && AGENCY_OPTIONS.has(agencyParam)) {
+    const agencyFilterEl = getById("agency-filter-user", "agencyFilterUser");
+    if (agencyFilterEl) {
+      agencyFilterEl.value = agencyParam;
+      shouldRender = true;
+    }
+  }
+  if (shouldRender) {
     resetAndRenderReports();
   }
   updateFilterToggleIcon();
