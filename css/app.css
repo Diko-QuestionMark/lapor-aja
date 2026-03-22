@@ -214,6 +214,12 @@ body:not(.nav-auth-logged-in) #authActionBtn:focus-visible {
   padding-left: 0;
 }
 
+.nav-side-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 2px 0;
+}
+
 .nav-side-links a {
   display: inline-flex;
   align-items: center;
@@ -1437,6 +1443,40 @@ body.has-fixed-navbar {
   color: #1f2937;
 }
 
+.report-detail-page .report-detail-meta-item-link {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.report-detail-page .report-detail-meta-item-link:hover .report-detail-meta-label,
+.report-detail-page .report-detail-meta-item-link:focus-visible .report-detail-meta-label {
+  color: #0b5ed7;
+  text-decoration: none;
+}
+
+.report-detail-page .report-detail-meta-item-link:hover .report-detail-meta-value,
+.report-detail-page .report-detail-meta-item-link:focus-visible .report-detail-meta-value {
+  color: #0b5ed7;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.report-detail-page .report-detail-meta-item-link:hover,
+.report-detail-page .report-detail-meta-item-link:focus-visible {
+  background: #f1f5f9;
+  text-decoration: none;
+}
+
+.report-detail-page .report-detail-meta-label .meta-icon-muted {
+  color: #94a3b8;
+}
+
 .report-detail-page .report-detail-image-placeholder {
   min-height: 320px;
   border-color: #e4e9ef !important;
@@ -1455,6 +1495,23 @@ body.has-fixed-navbar {
 .report-detail-page .report-detail-gallery a {
   display: block;
   text-decoration: none;
+}
+
+.report-detail-page .report-image-link {
+  display: block;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.report-detail-page .report-image-link .report-detail-main-image {
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.report-detail-page .report-image-link:hover .report-detail-main-image,
+.report-detail-page .report-image-link:focus-visible .report-detail-main-image {
+  filter: brightness(0.96);
+  opacity: 0.98;
 }
 
 .report-detail-page .report-gallery-nav-btn {
@@ -1602,13 +1659,9 @@ body.has-fixed-navbar {
   }
 
   .report-detail-page .report-photo-head {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .report-detail-page .report-photo-actions {
-    width: 100%;
-    justify-content: flex-start;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
   .report-detail-page .report-title-row {

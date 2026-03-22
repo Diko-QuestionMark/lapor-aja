@@ -508,22 +508,56 @@ function renderDetail(report) {
   const reporterEmail = escapeHtml(report.reporter_email || "-");
   const reporterUserId = Number(report.reporter_user_id || 0);
   const hasLocation = report.lat !== null && report.lat !== undefined;
-  const reporterBlock =
+  const reporterText = `${reporterName} (${reporterEmail})`;
+  const reporterMetaItem =
     reporterUserId > 0
-      ? `${reporterName} (<a href="/user.html?id=${reporterUserId}" class="meta-action-link">${reporterEmail}</a>)`
-      : `${reporterName} (${reporterEmail})`;
-  const locationBlock = hasLocation
-    ? `<a
-        href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="meta-action-link"
-      >${escapeHtml(formatLocation(report))}</a>`
-    : escapeHtml(formatLocation(report));
+      ? `
+          <a
+            class="report-detail-meta-item-link"
+            href="/user.html?id=${reporterUserId}"
+            aria-label="Lihat profil pelapor ${reporterName}"
+          >
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterText}</span>
+          </a>
+        `
+      : `
+          <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+          <span class="report-detail-meta-value">${reporterText}</span>
+        `;
+  const agencyLabel = String(report.agency || "Umum");
+  const safeAgencyLabel = escapeHtml(agencyLabel);
+  const locationText = escapeHtml(formatLocation(report));
+  const agencyMetaItem = `
+    <a
+      class="report-detail-meta-item-link"
+      href="/index.html?agency=${encodeURIComponent(agencyLabel)}"
+      aria-label="Lihat laporan instansi ${safeAgencyLabel}"
+    >
+      <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
+      <span class="report-detail-meta-value">${safeAgencyLabel}</span>
+    </a>
+  `;
+  const locationMetaItem = hasLocation
+    ? `
+        <a
+          class="report-detail-meta-item-link"
+          href="https://www.google.com/maps?q=${Number(report.lat)},${Number(report.lng)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Buka lokasi laporan ${locationText}"
+        >
+          <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+          <span class="report-detail-meta-value">${locationText}</span>
+        </a>
+      `
+    : `
+        <span class="report-detail-meta-label"><i class="bi bi-geo-alt meta-icon-muted"></i>Lokasi</span>
+        <span class="report-detail-meta-value">${locationText}</span>
+      `;
   const adminNote = String(report.admin_note || "").trim();
   const adminEvidence = String(report.admin_evidence_url || "").trim();
   const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
-  const agencyLabel = String(report.agency || "Umum");
   const createdAtLabel = report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-";
   const createdAtMetaLabel = report.created_at ? formatTimeAgo(report.created_at) : "-";
   const container = document.getElementById("detailContainer");
@@ -532,7 +566,7 @@ function renderDetail(report) {
     imageUrls.length === 0
       ? '<div class="detail-image report-detail-image-placeholder rounded border d-flex align-items-center justify-content-center text-secondary bg-light">Foto tidak tersedia</div>'
       : imageUrls.length === 1
-      ? `<a href="${escapeHtml(imageUrls[0] || "")}" target="_blank" rel="noopener noreferrer">
+      ? `<a href="${escapeHtml(imageUrls[0] || "")}" target="_blank" rel="noopener noreferrer" class="report-image-link">
           <img
             src="${escapeHtml(imageUrls[0] || "")}"
             alt="Foto laporan"
@@ -546,6 +580,7 @@ function renderDetail(report) {
             href="${escapeHtml(imageUrls[0])}"
             target="_blank"
             rel="noopener noreferrer"
+            class="report-image-link"
           >
             <img
               id="${galleryId}Main"
@@ -632,24 +667,17 @@ function renderDetail(report) {
         <h3 class="report-detail-section-title">Informasi Laporan</h3>
         <div class="report-detail-meta-grid">
           <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
-            <a
-              class="report-detail-meta-value meta-action-link"
-              href="/index.html?agency=${encodeURIComponent(agencyLabel)}"
-              aria-label="Lihat laporan instansi ${escapeHtml(agencyLabel)}"
-            >${escapeHtml(agencyLabel)}</a>
+            ${agencyMetaItem}
           </div>
           <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
-            <span class="report-detail-meta-value">${reporterBlock}</span>
+            ${reporterMetaItem}
+          </div>
+          <div class="report-detail-meta-item">
+            ${locationMetaItem}
           </div>
           <div class="report-detail-meta-item">
             <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
             <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
-            <span class="report-detail-meta-value">${locationBlock}</span>
           </div>
         </div>
       </section>

@@ -1603,13 +1603,6 @@ function initUi() {
       const agencyFilterEl = getById("agency-filter-user", "agencyFilterUser");
       if (agencyFilterEl && agencyValue) {
         agencyFilterEl.value = agencyValue;
-        if (window.bootstrap && window.bootstrap.Modal) {
-          const filterModal = getById("filter-modal", "filterModal");
-          if (filterModal) {
-            const instance = window.bootstrap.Modal.getOrCreateInstance(filterModal);
-            instance.show();
-          }
-        }
         resetAndRenderReports();
       }
       return;

@@ -285,10 +285,12 @@
           </div>
           <nav class="nav-side-links">
             <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
-            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Laporan Saya</span></a>
+            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Profil</span></a>
+            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
             <a href="/index.html" data-nav-open-notif="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
             <a href="/index.html" data-nav-create-report="1"><i class="bi bi-plus-square"></i><span>Buat Laporan</span></a>
             <a href="/index.html" data-nav-open-filter="1"><i class="bi bi-funnel"></i><span>Filter Laporan</span></a>
+            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
             <a href="/index.html" data-nav-open-help="1"><i class="bi bi-question-circle"></i><span>Bantuan</span></a>
             <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
             <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>

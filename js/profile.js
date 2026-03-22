@@ -284,6 +284,48 @@ function getReportPreviewUrl(report) {
   return String(report.image_url || "").trim();
 }
 
+function formatRelativeTime(dateValue) {
+  if (!dateValue) {
+    return "-";
+  }
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  const nowMs = Date.now();
+  const diffMs = nowMs - date.getTime();
+  const isPast = diffMs >= 0;
+  const diffSec = Math.floor(Math.abs(diffMs) / 1000);
+
+  const units = [
+    { limit: 60, seconds: 1, label: "detik" },
+    { limit: 60 * 60, seconds: 60, label: "menit" },
+    { limit: 60 * 60 * 24, seconds: 60 * 60, label: "jam" },
+    { limit: 60 * 60 * 24 * 30, seconds: 60 * 60 * 24, label: "hari" },
+    { limit: 60 * 60 * 24 * 365, seconds: 60 * 60 * 24 * 30, label: "bulan" },
+  ];
+
+  let value = Math.floor(diffSec / (60 * 60 * 24 * 365));
+  let label = "tahun";
+
+  for (let i = 0; i < units.length; i += 1) {
+    const unit = units[i];
+    if (diffSec < unit.limit) {
+      value = Math.floor(diffSec / unit.seconds);
+      label = unit.label;
+      break;
+    }
+  }
+
+  const safeValue = Math.max(1, value);
+  if (isPast) {
+    return `${safeValue} ${label} yang lalu`;
+  }
+  return `dalam ${safeValue} ${label}`;
+}
+
 function renderMyReports(myReports) {
   const root = document.getElementById("profileReports");
   if (myReports.length === 0) {
@@ -310,7 +352,7 @@ function renderMyReports(myReports) {
               <div class="w-100">
                 <div class="fw-semibold">${escapeHtml(report.title || "Tanpa Judul")}</div>
                 <div class="small mb-1 text-truncate-2">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
-                <div class="small text-secondary">${report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-"}</div>
+                <div class="small text-secondary">${formatRelativeTime(report.created_at)}</div>
               </div>
             </div>
             <span class="badge status-badge ${status.className}">${status.label}</span>
