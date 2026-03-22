@@ -24,7 +24,7 @@ function resolveAuthUrl(path) {
 
 function getPostLoginPath(user) {
   const role = String((user && user.role) || "").toLowerCase();
-  return role === "admin" ? "/admin.html" : "/index.html";
+  return role === "admin" ? "/admin/" : "/index.html";
 }
 
 function readSession() {
@@ -122,7 +122,7 @@ async function handleRegister(event) {
     const data = await requestAuth("/auth/register", { name, email, password });
     setSession(data.token, data.user);
     const nextPath = getPostLoginPath(data.user);
-    const isAdmin = nextPath === "/admin.html";
+    const isAdmin = nextPath === "/admin/";
     showAuthAlert(
       isAdmin
         ? "Registrasi berhasil. Mengarahkan ke dashboard admin..."
@@ -148,7 +148,7 @@ async function handleLogin(event) {
     const data = await requestAuth("/auth/login", { email, password });
     setSession(data.token, data.user);
     const nextPath = getPostLoginPath(data.user);
-    const isAdmin = nextPath === "/admin.html";
+    const isAdmin = nextPath === "/admin/";
     showAuthAlert(
       isAdmin
         ? "Login berhasil. Mengarahkan ke dashboard admin..."
@@ -180,7 +180,7 @@ function initAuthPage() {
   const session = readSession();
   if (session && session.token && session.email) {
     const role = String(session.role || "").toLowerCase();
-    window.location.href = role === "admin" ? "/admin.html" : "/index.html";
+    window.location.href = role === "admin" ? "/admin/" : "/index.html";
     return;
   }
   loginForm.addEventListener("submit", handleLogin);

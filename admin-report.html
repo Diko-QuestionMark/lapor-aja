@@ -3,75 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Detail Penanganan Admin - LaporAja</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="preload" href="/img/icon.png" as="image" />
-    <link rel="stylesheet" href="css/app.css" />
+    <title>Redirecting...</title>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=/admin/report.html" />
+    </noscript>
   </head>
-  <body class="bg-light">
-    <div id="navbar-mount"></div>
-
-    <main class="container py-4 content-narrow">
-      <section class="card shadow-sm mb-3">
-        <div class="card-body">
-          <h2 class="h5 mb-3">Detail Laporan</h2>
-          <div id="adminReportDetail">Memuat detail laporan...</div>
-        </div>
-      </section>
-
-      <section class="card shadow-sm">
-        <div class="card-body">
-          <h3 id="adminHandleTitle" class="h6 mb-3">Tindak Lanjut Instansi</h3>
-          <div id="handleLoading" class="d-flex align-items-center gap-2 text-secondary small mb-2">
-            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            Memuat data tindak lanjut...
-          </div>
-          <form id="adminHandleForm" class="row g-3">
-            <div class="col-md-4">
-              <label for="statusInput" class="form-label">Status</label>
-              <select id="statusInput" class="form-select">
-                <option value="Menunggu">Menunggu</option>
-                <option value="Diproses">Diproses</option>
-                <option value="Selesai">Selesai</option>
-              </select>
-            </div>
-            <div class="col-12">
-              <label for="evidenceFileInput" class="form-label">Upload Bukti Foto (opsional)</label>
-              <input id="evidenceFileInput" type="file" accept="image/*" class="form-control" />
-            </div>
-            <div class="col-12">
-              <label for="noteInput" class="form-label">Catatan Respons Instansi</label>
-              <textarea id="noteInput" rows="4" class="form-control" placeholder="Contoh: tim perbaikan turun hari ini pukul 10.00 WIB."></textarea>
-            </div>
-            <div class="col-12">
-              <button id="saveHandleBtn" type="submit" class="btn btn-dark">Simpan Respons</button>
-            </div>
-          </form>
-          <div id="handleNotice" class="small mt-2"></div>
-        </div>
-      </section>
-
-      <section class="card shadow-sm mt-3">
-        <div class="card-body">
-          <h3 class="h6 mb-3">Komentar</h3>
-          <div id="adminCommentList" class="text-secondary">Memuat komentar...</div>
-        </div>
-      </section>
-    </main>
-
-    <script src="js/navbar-component.js"></script>
-    <script src="js/nav-scroll.js"></script>
-    <script src="js/admin-report.js"></script>
+  <body>
+    <script>
+      window.location.replace(`/admin/report.html${window.location.search || ""}${window.location.hash || ""}`);
+    </script>
   </body>
 </html>

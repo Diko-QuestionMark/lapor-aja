@@ -3,104 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LaporAja Admin</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="preload" href="/img/icon.png" as="image" />
-    <link rel="stylesheet" href="css/app.css" />
+    <title>Redirecting...</title>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=/admin/" />
+    </noscript>
   </head>
-  <body class="bg-light">
-    <div id="navbar-mount"></div>
-
-    <main class="container py-4 content-narrow">
-      <section class="d-flex justify-content-between align-items-center mb-3">
-        <h2 id="adminSectionTitle" class="h5 mb-0">Laporan Warga • Semua Waktu</h2>
-        <a id="adminRekapBtn" href="/rekap.html" class="btn btn-sm btn-dark">
-          Rekap
-        </a>
-      </section>
-
-      <section class="card shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <h3 class="h6 card-title mb-0">Daftar Laporan</h3>
-            <div class="d-flex align-items-center gap-2 flex-nowrap search-filter-wrap">
-              <input
-                id="adminSearchInput"
-                type="search"
-                class="form-control form-control-sm search-input search-inline-input"
-                placeholder="Cari laporan..."
-                autocomplete="off"
-              />
-              <button
-                class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-2"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#adminFilterPanel"
-                aria-expanded="false"
-                aria-controls="adminFilterPanel"
-              >
-                <i class="bi bi-funnel"></i>
-                <span>Filter</span>
-              </button>
-            </div>
-          </div>
-          <div class="collapse mb-3" id="adminFilterPanel">
-            <div class="border rounded p-2">
-              <div class="row g-2">
-                <div class="col-12 col-md-6">
-                  <label for="adminSortFilter" class="form-label form-label-sm mb-1 small text-secondary">Urutkan</label>
-                  <select id="adminSortFilter" class="form-select form-select-sm">
-                    <option value="newest">Terbaru</option>
-                    <option value="oldest">Terlama</option>
-                    <option value="upvotes">Dukungan Terbanyak</option>
-                    <option value="status_waiting">Menunggu Dulu</option>
-                    <option value="status_done">Selesai Dulu</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label for="adminTimeFilter" class="form-label form-label-sm mb-1 small text-secondary">Rentang Waktu</label>
-                  <select id="adminTimeFilter" class="form-select form-select-sm">
-                    <option value="all">Semua Waktu</option>
-                    <option value="today">Hari Ini</option>
-                    <option value="week">Minggu Ini</option>
-                    <option value="month">Bulan Ini</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label for="agencyFilter" class="form-label form-label-sm mb-1 small text-secondary">Instansi</label>
-                  <select id="agencyFilter" class="form-select form-select-sm flex-grow-1"></select>
-                </div>
-                <div class="col-12 col-md-6 d-flex align-items-end justify-content-md-end">
-                  <button
-                    id="adminResetFilterBtn"
-                    type="button"
-                    class="btn btn-sm btn-outline-dark"
-                  >
-                    Tanpa Filter
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="adminList" class="mt-3"></div>
-        </div>
-      </section>
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/navbar-component.js"></script>
-    <script src="js/nav-scroll.js"></script>
-    <script src="js/admin.js"></script>
+  <body>
+    <script>
+      window.location.replace(`/admin/${window.location.search || ""}${window.location.hash || ""}`);
+    </script>
   </body>
 </html>

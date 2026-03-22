@@ -78,9 +78,16 @@
     if (path === "/login" || path === "/login.html") return "login";
     if (path === "/profile" || path === "/profile.html") return "profile";
     if (path === "/report" || path === "/report.html") return "report";
-    if (path === "/admin-report" || path === "/admin-report.html") return "admin-report";
+    if (
+      path === "/admin-report" ||
+      path === "/admin-report.html" ||
+      path === "/admin/report" ||
+      path === "/admin/report.html"
+    ) {
+      return "admin-report";
+    }
     if (path === "/user" || path === "/user.html") return "user";
-    if (path === "/admin" || path === "/admin.html") return "admin";
+    if (path === "/admin" || path === "/admin.html" || path === "/admin/index.html") return "admin";
     if (path === "/rekap" || path === "/rekap.html") return "rekap";
     return "index";
   }
@@ -155,6 +162,44 @@
         ${authRightHtml}
       </div>
     `;
+    const adminRightHtml = `
+      <div class="d-flex align-items-center gap-2 nav-right-wrap">
+        <button
+          id="nav-search-toggle"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-search-toggle"
+          aria-label="Cari laporan admin"
+        >
+          <i class="bi bi-search"></i>
+        </button>
+        <button
+          id="nav-search-back"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-search-back"
+          aria-label="Tutup pencarian"
+        >
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <div class="nav-search-wrap">
+          <input
+            id="search-input"
+            type="search"
+            class="form-control form-control-sm nav-search-input"
+            placeholder="Cari laporan admin..."
+            autocomplete="off"
+          />
+        </div>
+        <button
+          id="nav-filter-toggle"
+          type="button"
+          class="btn btn-sm nav-plain-btn nav-filter-toggle"
+          aria-label="Filter laporan admin"
+        >
+          <i class="bi bi-funnel"></i>
+        </button>
+        ${authRightHtml}
+      </div>
+    `;
     const leftHamburger = `
       <button
         id="nav-menu-toggle"
@@ -209,26 +254,26 @@
       admin: {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin.html",
+        brandHref: "/admin/",
         subtitle: "Kelola status laporan warga",
         leftHtml: leftHamburger,
-        rightHtml: authRightHtml,
+        rightHtml: adminRightHtml,
       },
       "admin-report": {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin.html",
+        brandHref: "/admin/",
         subtitle: "Detail penanganan laporan",
         leftHtml: leftHamburger,
-        rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml: '<a href="/admin/" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
       rekap: {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin.html",
+        brandHref: "/admin/",
         subtitle: "Rekap laporan warga",
         leftHtml: leftHamburger,
-        rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml: '<a href="/admin/" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
     };
     return byPage[key] || byPage.index;
@@ -279,6 +324,28 @@
 
     mount.innerHTML = html;
     if (!getById("nav-side-panel", "navSidePanel")) {
+      const isAdminInterface = brandHref === "/admin/" || brandHref === "/admin";
+      const sideMenuLinks = isAdminInterface
+        ? `
+            <a href="/admin/"><i class="bi bi-speedometer2"></i><span>Dashboard Admin</span></a>
+            <a href="/rekap.html"><i class="bi bi-clipboard-data"></i><span>Rekap</span></a>
+            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
+            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Profil</span></a>
+            <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
+            <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>
+          `
+        : `
+            <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
+            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Profil</span></a>
+            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
+            <a href="/index.html" data-nav-open-notif="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
+            <a href="/index.html" data-nav-create-report="1"><i class="bi bi-plus-square"></i><span>Buat Laporan</span></a>
+            <a href="/index.html" data-nav-open-filter="1"><i class="bi bi-funnel"></i><span>Filter Laporan</span></a>
+            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
+            <a href="/index.html" data-nav-open-help="1"><i class="bi bi-question-circle"></i><span>Bantuan</span></a>
+            <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
+            <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>
+          `;
       const sideHtml = `
         <div id="nav-side-overlay" class="nav-side-overlay"></div>
         <aside id="nav-side-panel" class="nav-side-panel" aria-hidden="true">
@@ -296,16 +363,7 @@
             </div>
           </div>
           <nav class="nav-side-links">
-            <a href="/index.html"><i class="bi bi-house-door"></i><span>Beranda</span></a>
-            <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Profil</span></a>
-            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
-            <a href="/index.html" data-nav-open-notif="1"><i class="bi bi-bell"></i><span>Notifikasi</span></a>
-            <a href="/index.html" data-nav-create-report="1"><i class="bi bi-plus-square"></i><span>Buat Laporan</span></a>
-            <a href="/index.html" data-nav-open-filter="1"><i class="bi bi-funnel"></i><span>Filter Laporan</span></a>
-            <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
-            <a href="/index.html" data-nav-open-help="1"><i class="bi bi-question-circle"></i><span>Bantuan</span></a>
-            <a id="nav-side-login-link" href="/login.html"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>
-            <a id="nav-side-logout-link" href="#" class="d-none"><i class="bi bi-box-arrow-right"></i><span>Keluar Akun</span></a>
+            ${sideMenuLinks}
           </nav>
         </aside>
       `;
@@ -727,7 +785,7 @@
       }
       if (event.key === "Enter") {
         const value = String(searchInput.value || "").trim();
-        if (pageKey !== "index") {
+        if (pageKey !== "index" && pageKey !== "admin") {
           const target = value ? `/index.html?q=${encodeURIComponent(value)}` : "/index.html";
           window.location.href = target;
         }
@@ -810,6 +868,16 @@
     }
     const pageKey = getPageKey();
     filterBtn.addEventListener("click", function (event) {
+      if (pageKey === "admin") {
+        if (window.bootstrap && window.bootstrap.Modal) {
+          const adminModalEl = getById("admin-filter-modal", "adminFilterModal");
+          if (adminModalEl) {
+            const adminModal = window.bootstrap.Modal.getOrCreateInstance(adminModalEl);
+            adminModal.show();
+          }
+        }
+        return;
+      }
       if (pageKey !== "index") {
         event.preventDefault();
         const target = "/index.html?filter=1";

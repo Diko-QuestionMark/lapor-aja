@@ -1676,42 +1676,57 @@ function initUi() {
   }
 }
 
-initUi();
-document.addEventListener("navbar:ready", renderAuthNav);
-renderAuthNav();
-resetForm();
-loadReports();
+function redirectAdminAwayFromUserInterface() {
+  const session = readSession();
+  if (!session || !session.token || !session.email) {
+    return false;
+  }
+  const role = String(session.role || "").toLowerCase();
+  if (role !== "admin") {
+    return false;
+  }
+  window.location.href = "/admin/";
+  return true;
+}
 
-document.addEventListener("navbar:ready", function () {
-  const searchInput = getById("search-input", "searchInput");
-  if (!searchInput) {
-    return;
-  }
-  const params = new URLSearchParams(window.location.search || "");
-  const q = String(params.get("q") || "").trim();
-  const agencyParam = String(params.get("agency") || "").trim();
-  let shouldRender = false;
-  if (q) {
-    searchInput.value = q;
-    shouldRender = true;
-  }
-  if (agencyParam && AGENCY_OPTIONS.has(agencyParam)) {
-    const agencyFilterEl = getById("agency-filter-user", "agencyFilterUser");
-    if (agencyFilterEl) {
-      agencyFilterEl.value = agencyParam;
+if (!redirectAdminAwayFromUserInterface()) {
+  initUi();
+  document.addEventListener("navbar:ready", renderAuthNav);
+  renderAuthNav();
+  resetForm();
+  loadReports();
+
+  document.addEventListener("navbar:ready", function () {
+    const searchInput = getById("search-input", "searchInput");
+    if (!searchInput) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search || "");
+    const q = String(params.get("q") || "").trim();
+    const agencyParam = String(params.get("agency") || "").trim();
+    let shouldRender = false;
+    if (q) {
+      searchInput.value = q;
       shouldRender = true;
     }
-  }
-  if (shouldRender) {
-    resetAndRenderReports();
-  }
-  updateFilterToggleIcon();
-  const openFilter = params.get("filter") === "1";
-  if (openFilter && window.bootstrap && window.bootstrap.Modal) {
-    const modalEl = getById("filter-modal", "filterModal");
-    if (modalEl) {
-      const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-      instance.show();
+    if (agencyParam && AGENCY_OPTIONS.has(agencyParam)) {
+      const agencyFilterEl = getById("agency-filter-user", "agencyFilterUser");
+      if (agencyFilterEl) {
+        agencyFilterEl.value = agencyParam;
+        shouldRender = true;
+      }
     }
-  }
-});
+    if (shouldRender) {
+      resetAndRenderReports();
+    }
+    updateFilterToggleIcon();
+    const openFilter = params.get("filter") === "1";
+    if (openFilter && window.bootstrap && window.bootstrap.Modal) {
+      const modalEl = getById("filter-modal", "filterModal");
+      if (modalEl) {
+        const instance = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+        instance.show();
+      }
+    }
+  });
+}

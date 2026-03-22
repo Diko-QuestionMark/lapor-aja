@@ -16,7 +16,7 @@ function getAgencyFilter() {
 }
 
 function getSearchQuery() {
-  const el = document.getElementById("adminSearchInput");
+  const el = document.getElementById("search-input") || document.getElementById("adminSearchInput");
   return el ? String(el.value || "").trim().toLowerCase() : "";
 }
 
@@ -309,7 +309,7 @@ function renderAdminReports() {
         agencyFilter === "agency_general"
           ? `${sessionAgency} + Umum`
           : sessionAgency;
-      topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} • ${timeLabel}`;
+      topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} - ${timeLabel}`;
     }
     list.innerHTML = '<p class="text-secondary mb-0">Belum ada laporan.</p>';
     return;
@@ -327,7 +327,7 @@ function renderAdminReports() {
       agencyFilter === "agency_general"
         ? `${sessionAgency} + Umum`
         : sessionAgency;
-    topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} • ${timeLabel}`;
+    topTitle.textContent = `Laporan ke Instansi: ${agencyTitle} - ${timeLabel}`;
   }
 
   list.innerHTML = "";
@@ -395,7 +395,7 @@ function renderAdminReports() {
       if (interactiveTarget) {
         return;
       }
-      window.location.href = `/admin-report.html?id=${Number(report.id)}`;
+      window.location.href = `/admin/report.html?id=${Number(report.id)}`;
     });
     row.addEventListener("keydown", function (event) {
       const key = event.key;
@@ -407,21 +407,29 @@ function renderAdminReports() {
         return;
       }
       event.preventDefault();
-      window.location.href = `/admin-report.html?id=${Number(report.id)}`;
+      window.location.href = `/admin/report.html?id=${Number(report.id)}`;
     });
     list.appendChild(row);
   });
 }
 
 function wireEvents() {
+  function bindSearchInput() {
+    const searchInputEl =
+      document.getElementById("search-input") || document.getElementById("adminSearchInput");
+    if (!searchInputEl || searchInputEl.dataset.adminSearchBound === "1") {
+      return;
+    }
+    searchInputEl.dataset.adminSearchBound = "1";
+    searchInputEl.addEventListener("input", renderAdminReports);
+  }
+
   const agencyFilterEl = document.getElementById("agencyFilter");
   if (agencyFilterEl) {
     agencyFilterEl.addEventListener("change", renderAdminReports);
   }
-  const searchInputEl = document.getElementById("adminSearchInput");
-  if (searchInputEl) {
-    searchInputEl.addEventListener("input", renderAdminReports);
-  }
+  bindSearchInput();
+  document.addEventListener("navbar:ready", bindSearchInput);
   const sortFilterEl = document.getElementById("adminSortFilter");
   if (sortFilterEl) {
     sortFilterEl.addEventListener("change", renderAdminReports);
@@ -434,7 +442,8 @@ function wireEvents() {
   if (resetBtn) {
     resetBtn.addEventListener("click", function () {
       const agencyFilter = document.getElementById("agencyFilter");
-      const searchInput = document.getElementById("adminSearchInput");
+      const searchInput =
+        document.getElementById("search-input") || document.getElementById("adminSearchInput");
       const sortFilter = document.getElementById("adminSortFilter");
       const timeFilter = document.getElementById("adminTimeFilter");
       if (agencyFilter) {
@@ -449,12 +458,10 @@ function wireEvents() {
       if (timeFilter) {
         timeFilter.value = "all";
       }
-      const filterPanel = document.getElementById("adminFilterPanel");
-      if (filterPanel && window.bootstrap && window.bootstrap.Collapse) {
-        const collapse = window.bootstrap.Collapse.getOrCreateInstance(filterPanel, {
-          toggle: false,
-        });
-        collapse.hide();
+      const filterModal = document.getElementById("admin-filter-modal");
+      if (filterModal && window.bootstrap && window.bootstrap.Modal) {
+        const modal = window.bootstrap.Modal.getOrCreateInstance(filterModal);
+        modal.hide();
       }
       renderAdminReports();
     });

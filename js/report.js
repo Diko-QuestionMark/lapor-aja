@@ -908,6 +908,13 @@ async function init() {
     return;
   }
 
+  const session = readSession();
+  const role = String((session && session.role) || "").toLowerCase();
+  if (session && session.token && role === "admin") {
+    window.location.href = `/admin/report.html?id=${id}`;
+    return;
+  }
+
   renderDetailSkeleton();
 
   try {
