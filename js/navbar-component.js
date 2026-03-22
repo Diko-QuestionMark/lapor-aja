@@ -276,7 +276,7 @@
                 <i class="bi bi-list"></i>
               </button>
               <a href="/index.html" class="nav-brand-link nav-side-brand-link">
-                <img src="/img/icon.png" alt="Logo" class="nav-brand-logo" />
+                <img src="/img/icon.png" alt="Logo" class="nav-brand-logo" width="36" height="36" />
                 <span class="nav-brand-text">
                   <span class="nav-brand-title">LaporAja</span>
                 </span>
