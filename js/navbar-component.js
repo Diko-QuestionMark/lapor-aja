@@ -202,25 +202,25 @@
         rightHtml: userRightHtml,
       },
       admin: {
-        navClass: "navbar-dark bg-dark",
+        navClass: "navbar-light bg-white",
         brandText: "Admin LaporAja",
         subtitle: "Kelola status laporan warga",
-        leftHtml: "",
+        leftHtml: leftHamburger,
         rightHtml:
           '<a href="/index.html" class="btn btn-sm nav-plain-btn" data-confirm-user-dashboard="1">Ke Halaman User</a>',
       },
       "admin-report": {
-        navClass: "navbar-dark bg-dark",
+        navClass: "navbar-light bg-white",
         brandText: "Admin LaporAja",
         subtitle: "Detail penanganan laporan",
-        leftHtml: "",
+        leftHtml: leftHamburger,
         rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
       rekap: {
-        navClass: "navbar-dark bg-dark",
+        navClass: "navbar-light bg-white",
         brandText: "Admin LaporAja",
         subtitle: "Rekap laporan warga",
-        leftHtml: "",
+        leftHtml: leftHamburger,
         rightHtml: '<a href="/admin.html" class="btn btn-sm nav-plain-btn">Kembali</a>',
       },
     };

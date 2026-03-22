@@ -438,28 +438,6 @@ body.has-fixed-navbar {
   padding: 0.4rem;
 }
 
-.site-navbar.navbar-dark .nav-brand-title {
-  color: #f8fafc;
-}
-
-.site-navbar.navbar-dark .nav-plain-btn {
-  color: #f8fafc;
-  display: inline-flex;
-  align-items: center;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(226, 232, 240, 0.35);
-}
-
-.site-navbar.navbar-dark .nav-plain-btn:hover,
-.site-navbar.navbar-dark .nav-plain-btn:focus,
-.site-navbar.navbar-dark .nav-plain-btn:active {
-  color: #ffffff;
-  background: rgba(148, 163, 184, 0.22);
-  border-color: rgba(226, 232, 240, 0.55);
-}
-
 .site-navbar .container {
   max-width: 100%;
   padding-left: 0;
