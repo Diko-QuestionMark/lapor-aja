@@ -309,9 +309,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
+                <p class="small mb-2">
+                  LaporAja adalah platform untuk melaporkan masalah kota dan memantau progres penanganan oleh instansi terkait.
+                </p>
                 <p class="mb-2">Panduan cepat:</p>
                 <ul class="small mb-0 ps-3">
                   <li>Gunakan tombol <strong>Buat</strong> untuk kirim laporan baru.</li>
+                  <li>Setelah dikirim, laporan diverifikasi lalu diproses instansi terkait.</li>
                   <li>Pakai <strong>Filter</strong> untuk menyaring laporan sesuai kebutuhan.</li>
                   <li>Buka <strong>Notifikasi</strong> untuk melihat update status laporanmu.</li>
                 </ul>

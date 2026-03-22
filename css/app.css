@@ -647,57 +647,199 @@ body.has-fixed-navbar {
   animation: skeleton-wave 1.2s ease-in-out infinite;
 }
 
-.detail-skeleton .skeleton-bar,
+.detail-skeleton .skeleton-line,
 .detail-skeleton .skeleton-pill,
 .detail-skeleton .skeleton-image,
-.detail-skeleton .skeleton-block {
+.detail-skeleton .skeleton-btn,
+.detail-skeleton .skeleton-panel,
+.detail-skeleton .skeleton-comment-input,
+.detail-skeleton .skeleton-comment-avatar {
   background: linear-gradient(90deg, #eceef1 25%, #f7f8fa 37%, #eceef1 63%);
   background-size: 400% 100%;
   animation: skeleton-wave 1.2s ease-in-out infinite;
 }
 
-.detail-skeleton .skeleton-bar {
+.detail-skeleton .skeleton-line {
   height: 14px;
   border-radius: 8px;
   margin-bottom: 10px;
 }
 
-.detail-skeleton .skeleton-bar.small {
-  height: 12px;
+.detail-skeleton .skeleton-line-short {
+  width: 62%;
 }
 
 .detail-skeleton .skeleton-pill {
   height: 28px;
   border-radius: 999px;
-  margin: 6px 0 14px;
+}
+
+.detail-skeleton .skeleton-title {
+  width: min(68%, 520px);
+  height: 24px;
+}
+
+.detail-skeleton .skeleton-vote {
+  width: 132px;
+  flex: 0 0 auto;
+}
+
+.detail-skeleton .skeleton-subtitle {
+  width: 210px;
+  height: 12px;
+  margin-bottom: 0;
+}
+
+.detail-skeleton .skeleton-section-title {
+  width: 180px;
+  height: 16px;
+}
+
+.detail-skeleton .skeleton-status {
+  width: 96px;
+  height: 24px;
 }
 
 .detail-skeleton .skeleton-image {
-  height: 280px;
+  height: clamp(240px, 42vw, 500px);
   border-radius: 12px;
-  margin: 8px 0 16px;
+  margin: 8px 0 10px;
 }
 
-.detail-skeleton .skeleton-meta-row {
+.detail-skeleton .skeleton-gallery-row {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin: 6px 0 12px;
 }
 
-.detail-skeleton .skeleton-button-row {
-  margin: 6px 0 2px;
+.detail-skeleton .skeleton-btn {
+  width: 72px;
+  height: 32px;
+  border-radius: 8px;
+  flex: 0 0 auto;
 }
 
-.detail-skeleton .skeleton-divider {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 18px 0;
+.detail-skeleton .skeleton-gallery-index {
+  width: 110px;
+  height: 12px;
+  margin-bottom: 0;
 }
 
-.detail-skeleton .skeleton-block {
-  height: 110px;
-  border-radius: 12px;
+.detail-skeleton .skeleton-panel {
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.detail-skeleton .skeleton-meta-time {
+  width: 48%;
+  height: 12px;
+  margin-bottom: 0;
+}
+
+.detail-skeleton .skeleton-feedback-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.detail-skeleton .skeleton-feedback-pill {
+  width: 58px;
+  height: 30px;
+}
+
+.detail-skeleton .skeleton-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.detail-skeleton .skeleton-meta-item {
+  min-width: 0;
+}
+
+.detail-skeleton .skeleton-meta-label {
+  width: 96px;
+  height: 11px;
+  margin-bottom: 6px;
+}
+
+.detail-skeleton .skeleton-meta-value {
+  width: 76%;
+  height: 14px;
+  margin-bottom: 0;
+}
+
+.detail-skeleton .skeleton-comment-input {
+  height: 92px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.detail-skeleton .skeleton-comment-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.detail-skeleton .skeleton-comment-help {
+  width: 190px;
+  height: 12px;
+  margin-bottom: 0;
+}
+
+.detail-skeleton .skeleton-comment-btn {
+  width: 130px;
+}
+
+.detail-skeleton .skeleton-comment-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.detail-skeleton .skeleton-comment-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-skeleton .skeleton-comment-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.detail-skeleton .skeleton-comment-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.detail-skeleton .skeleton-comment-head {
+  width: 52%;
+}
+
+@media (max-width: 768px) {
+  .detail-skeleton .skeleton-title {
+    width: 100%;
+    height: 22px;
+  }
+
+  .detail-skeleton .skeleton-vote {
+    width: 112px;
+  }
+
+  .detail-skeleton .skeleton-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-skeleton .skeleton-comment-form-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .notif-list {

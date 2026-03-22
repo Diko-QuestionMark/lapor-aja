@@ -311,25 +311,92 @@ function renderDetailSkeleton() {
   }
 
   container.innerHTML = `
-    <div class="detail-skeleton">
-      <div class="skeleton-bar" style="width: 55%"></div>
-      <div class="skeleton-bar small" style="width: 35%"></div>
-      <div class="skeleton-bar small" style="width: 28%"></div>
-      <div class="skeleton-pill" style="width: 38%"></div>
-      <div class="skeleton-image"></div>
-      <div class="skeleton-bar" style="width: 90%"></div>
-      <div class="skeleton-bar" style="width: 82%"></div>
-      <div class="skeleton-bar" style="width: 65%"></div>
-      <div class="skeleton-meta-row">
-        <div class="skeleton-bar small" style="width: 40%"></div>
-        <div class="skeleton-bar small" style="width: 30%"></div>
-      </div>
-      <div class="skeleton-button-row">
-        <div class="skeleton-pill" style="width: 140px"></div>
-      </div>
-      <div class="skeleton-divider"></div>
-      <div class="skeleton-bar" style="width: 40%"></div>
-      <div class="skeleton-block"></div>
+    <div class="report-detail-layout detail-skeleton" aria-hidden="true">
+      <section class="report-detail-block">
+        <div class="report-title-row">
+          <div class="skeleton-line skeleton-title"></div>
+          <div class="skeleton-pill skeleton-vote"></div>
+        </div>
+        <div class="skeleton-line skeleton-subtitle"></div>
+      </section>
+
+      <section class="report-detail-block">
+        <div class="report-photo-head">
+          <div class="skeleton-line skeleton-section-title"></div>
+          <div class="skeleton-pill skeleton-status"></div>
+        </div>
+        <div class="skeleton-image"></div>
+        <div class="skeleton-gallery-row">
+          <div class="skeleton-btn"></div>
+          <div class="skeleton-line skeleton-gallery-index"></div>
+          <div class="skeleton-btn"></div>
+        </div>
+      </section>
+
+      <section class="report-detail-block">
+        <div class="skeleton-line skeleton-section-title"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-line-short"></div>
+      </section>
+
+      <section class="report-detail-block">
+        <div class="skeleton-line skeleton-section-title"></div>
+        <div class="skeleton-panel">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line skeleton-line-short"></div>
+          <div class="skeleton-line skeleton-meta-time"></div>
+        </div>
+        <div class="skeleton-feedback-row">
+          <div class="skeleton-pill skeleton-feedback-pill"></div>
+          <div class="skeleton-pill skeleton-feedback-pill"></div>
+        </div>
+      </section>
+
+      <section class="report-detail-block">
+        <div class="skeleton-line skeleton-section-title"></div>
+        <div class="skeleton-meta-grid">
+          <div class="skeleton-meta-item">
+            <div class="skeleton-line skeleton-meta-label"></div>
+            <div class="skeleton-line skeleton-meta-value"></div>
+          </div>
+          <div class="skeleton-meta-item">
+            <div class="skeleton-line skeleton-meta-label"></div>
+            <div class="skeleton-line skeleton-meta-value"></div>
+          </div>
+          <div class="skeleton-meta-item">
+            <div class="skeleton-line skeleton-meta-label"></div>
+            <div class="skeleton-line skeleton-meta-value"></div>
+          </div>
+          <div class="skeleton-meta-item">
+            <div class="skeleton-line skeleton-meta-label"></div>
+            <div class="skeleton-line skeleton-meta-value"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-detail-block">
+        <div class="skeleton-line skeleton-section-title"></div>
+        <div class="skeleton-comment-input"></div>
+        <div class="skeleton-comment-form-row">
+          <div class="skeleton-line skeleton-comment-help"></div>
+          <div class="skeleton-pill skeleton-comment-btn"></div>
+        </div>
+        <div class="skeleton-comment-item">
+          <div class="skeleton-comment-avatar"></div>
+          <div class="skeleton-comment-main">
+            <div class="skeleton-line skeleton-comment-head"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <div class="skeleton-comment-item">
+          <div class="skeleton-comment-avatar"></div>
+          <div class="skeleton-comment-main">
+            <div class="skeleton-line skeleton-comment-head"></div>
+            <div class="skeleton-line skeleton-line-short"></div>
+          </div>
+        </div>
+      </section>
     </div>
   `;
 }
