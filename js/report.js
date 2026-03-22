@@ -31,14 +31,28 @@ async function loadResponseFeedback(reportId) {
 
     root.innerHTML = `
       <div class="d-flex align-items-center flex-wrap gap-2">
-        <button id="feedbackHelpfulBtn" type="button" class="btn btn-sm ${myVote === true ? "btn-primary" : "btn-outline-primary"}">
-          ${myVote === true ? "Membantu (dipilih)" : "Membantu"} (${helpfulCount})
+        <button
+          id="feedbackHelpfulBtn"
+          type="button"
+          class="btn btn-sm feedback-icon-btn ${myVote === true ? "is-active" : ""}"
+          aria-label="Membantu (${helpfulCount})"
+          title="Membantu"
+        >
+          <i class="bi ${myVote === true ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}" aria-hidden="true"></i>
+          <span class="ms-1">${helpfulCount}</span>
         </button>
-        <button id="feedbackUnhelpfulBtn" type="button" class="btn btn-sm ${myVote === false ? "btn-danger" : "btn-outline-danger"}">
-          ${myVote === false ? "Tidak membantu (dipilih)" : "Tidak membantu"} (${unhelpfulCount})
+        <button
+          id="feedbackUnhelpfulBtn"
+          type="button"
+          class="btn btn-sm feedback-icon-btn ${myVote === false ? "is-active" : ""}"
+          aria-label="Tidak membantu (${unhelpfulCount})"
+          title="Tidak membantu"
+        >
+          <i class="bi ${myVote === false ? "bi-hand-thumbs-down-fill" : "bi-hand-thumbs-down"}" aria-hidden="true"></i>
+          <span class="ms-1">${unhelpfulCount}</span>
         </button>
       </div>
-      <p id="feedbackHelpText" class="small text-secondary mb-0 mt-2">Penilaian ini untuk kualitas respons instansi.</p>
+      <p id="feedbackHelpText" class="small text-secondary mb-0 mt-2"></p>
     `;
 
     const helpfulBtn = document.getElementById("feedbackHelpfulBtn");
@@ -511,6 +525,7 @@ function renderDetail(report) {
   const hasAdminResponse = Boolean(adminNote || adminEvidence || report.admin_updated_at);
   const agencyLabel = String(report.agency || "Umum");
   const createdAtLabel = report.created_at ? new Date(report.created_at).toLocaleString("id-ID") : "-";
+  const createdAtMetaLabel = report.created_at ? formatTimeAgo(report.created_at) : "-";
   const container = document.getElementById("detailContainer");
   const galleryId = `reportGallery${Number(report.id)}`;
   const galleryBlock =
@@ -556,18 +571,11 @@ function renderDetail(report) {
       </section>
 
       <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Aksi & Status</h3>
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <div class="report-photo-head">
+          <h3 class="report-detail-section-title mb-0">Foto Laporan</h3>
           <span class="badge status-badge ${statusMeta.className}">${statusMeta.label}</span>
-          <span class="badge text-bg-light border">Instansi: ${escapeHtml(agencyLabel)}</span>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-          <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
-            <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
-            <span>${voted ? "Didukung" : "Dukung"}</span>
-            <span class="support-count">${Number(report.upvotes || 0)}</span>
-          </button>
-        </div>
+        ${galleryBlock}
       </section>
 
       <section class="report-detail-block report-response-section">
@@ -581,14 +589,13 @@ function renderDetail(report) {
                   adminEvidence
                     ? `
                       <div class="evidence-preview">
-                        <img
-                          src="${escapeHtml(adminEvidence)}"
-                          alt="Bukti tindak lanjut instansi"
-                          class="evidence-thumb"
-                          loading="lazy"
-                        />
-                        <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer" class="small">
-                          Lihat ukuran penuh
+                        <a href="${escapeHtml(adminEvidence)}" target="_blank" rel="noopener noreferrer">
+                          <img
+                            src="${escapeHtml(adminEvidence)}"
+                            alt="Bukti tindak lanjut instansi"
+                            class="evidence-thumb"
+                            loading="lazy"
+                          />
                         </a>
                       </div>
                     `
@@ -610,8 +617,25 @@ function renderDetail(report) {
       </section>
 
       <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Foto Laporan</h3>
-        ${galleryBlock}
+        <h3 class="report-detail-section-title">Informasi Laporan</h3>
+        <div class="report-detail-meta-grid">
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-building"></i>Instansi</span>
+            <span class="report-detail-meta-value">${escapeHtml(agencyLabel)}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
+            <span class="report-detail-meta-value">${reporterBlock}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
+            <span class="report-detail-meta-value">${createdAtMetaLabel}</span>
+          </div>
+          <div class="report-detail-meta-item">
+            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
+            <span class="report-detail-meta-value">${locationBlock}</span>
+          </div>
+        </div>
       </section>
 
       <section class="report-detail-block">
@@ -619,21 +643,14 @@ function renderDetail(report) {
         <p class="report-detail-description mb-0">${escapeHtml(report.desc || "Tidak ada deskripsi")}</p>
       </section>
 
-      <section class="report-detail-block">
-        <h3 class="report-detail-section-title">Informasi Laporan</h3>
-        <div class="report-detail-meta-grid">
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-person"></i>Pelapor</span>
-            <span class="report-detail-meta-value">${reporterBlock}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-clock"></i>Waktu</span>
-            <span class="report-detail-meta-value">${createdAtLabel}</span>
-          </div>
-          <div class="report-detail-meta-item">
-            <span class="report-detail-meta-label"><i class="bi bi-geo-alt"></i>Lokasi</span>
-            <span class="report-detail-meta-value">${locationBlock}</span>
-          </div>
+      <section class="report-detail-block report-detail-action-start">
+        <h3 class="report-detail-section-title">Dukungan Warga</h3>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button id="detailVoteBtn" class="btn btn-sm support-btn ${voted ? "is-active" : ""}">
+            <i class="bi ${voted ? "bi-hand-thumbs-up-fill" : "bi-hand-thumbs-up"}"></i>
+            <span>${voted ? "Didukung" : "Dukung"}</span>
+            <span class="support-count">${Number(report.upvotes || 0)}</span>
+          </button>
         </div>
       </section>
 
