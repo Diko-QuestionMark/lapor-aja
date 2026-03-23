@@ -348,6 +348,51 @@ body.nav-side-open .nav-side-panel {
 }
 
 @media (max-width: 640px) {
+  .site-navbar {
+    padding: 0.3rem 0.25rem;
+  }
+
+  .nav-brand-link {
+    gap: 6px;
+    --nav-item-height: 30px;
+  }
+
+  .nav-brand-title {
+    font-size: 1.15rem;
+  }
+
+  .nav-right-wrap {
+    --nav-control-gap: 6px;
+  }
+
+  .nav-menu-toggle,
+  .nav-search-toggle,
+  .nav-search-back,
+  .nav-notif-toggle,
+  .nav-filter-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  body:not(.nav-auth-logged-in) #auth-action-btn,
+  body:not(.nav-auth-logged-in) #authActionBtn,
+  body.nav-auth-logged-in #auth-action-btn,
+  body.nav-auth-logged-in #authActionBtn,
+  .nav-create-btn {
+    height: 32px;
+  }
+
+  body:not(.nav-auth-logged-in) #auth-action-btn,
+  body:not(.nav-auth-logged-in) #authActionBtn {
+    padding: 0 9px;
+  }
+
+  body.nav-auth-logged-in #auth-action-btn,
+  body.nav-auth-logged-in #authActionBtn {
+    padding: 0 7px 0 0;
+  }
+
   .nav-search-toggle {
     display: inline-flex;
     align-items: center;
@@ -377,6 +422,29 @@ body.nav-side-open .nav-side-panel {
 
   body.nav-search-active .nav-search-toggle {
     display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-brand-title {
+    font-size: 1.02rem;
+  }
+
+  .nav-right-wrap {
+    --nav-control-gap: 4px;
+  }
+
+  .nav-menu-toggle,
+  .nav-search-toggle,
+  .nav-search-back,
+  .nav-notif-toggle,
+  .nav-filter-toggle,
+  body:not(.nav-auth-logged-in) #auth-action-btn,
+  body:not(.nav-auth-logged-in) #authActionBtn,
+  body.nav-auth-logged-in #auth-action-btn,
+  body.nav-auth-logged-in #authActionBtn,
+  .nav-create-btn {
+    height: 30px;
   }
 }
 
