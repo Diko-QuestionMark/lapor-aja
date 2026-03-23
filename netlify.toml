@@ -3,6 +3,16 @@
   functions = "netlify/functions"
 
 [[redirects]]
+  from = "/admin"
+  to = "/admin/index.html"
+  status = 301
+
+[[redirects]]
+  from = "/admin/"
+  to = "/admin/index.html"
+  status = 301
+
+[[redirects]]
   from = "/reports"
   to = "/.netlify/functions/reports"
   status = 200

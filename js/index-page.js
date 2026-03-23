@@ -1685,7 +1685,7 @@ function redirectAdminAwayFromUserInterface() {
   if (role !== "admin") {
     return false;
   }
-  window.location.href = "/admin/";
+  window.location.href = "/admin/index.html";
   return true;
 }
 

@@ -242,7 +242,7 @@
       profile: {
         navClass: "navbar-light bg-white",
         brandText: isAdminSession ? "Admin" : "LaporAja",
-        brandHref: isAdminSession ? "/admin/" : "/index.html",
+        brandHref: isAdminSession ? "/admin/index.html" : "/index.html",
         subtitle: isAdminSession ? "Profil Admin" : "Profil Akun",
         leftHtml: leftHamburger,
         rightHtml: isAdminSession ? authRightHtml : userRightHtml,
@@ -266,7 +266,7 @@
       admin: {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin/",
+        brandHref: "/admin/index.html",
         subtitle: "Kelola status laporan warga",
         leftHtml: leftHamburger,
         rightHtml: adminRightHtml,
@@ -274,7 +274,7 @@
       "admin-feedback": {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin/",
+        brandHref: "/admin/index.html",
         subtitle: "Feedback respons warga",
         leftHtml: leftHamburger,
         rightHtml: "",
@@ -282,7 +282,7 @@
       "admin-report": {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin/",
+        brandHref: "/admin/index.html",
         subtitle: "Detail penanganan laporan",
         leftHtml: leftHamburger,
         rightHtml: "",
@@ -290,7 +290,7 @@
       rekap: {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
-        brandHref: "/admin/",
+        brandHref: "/admin/index.html",
         subtitle: "Rekap laporan warga",
         leftHtml: leftHamburger,
         rightHtml: "",
@@ -344,10 +344,11 @@
 
     mount.innerHTML = html;
     if (!getById("nav-side-panel", "navSidePanel")) {
-      const isAdminInterface = brandHref === "/admin/" || brandHref === "/admin";
+      const isAdminInterface =
+        brandHref === "/admin/" || brandHref === "/admin" || brandHref === "/admin/index.html";
       const sideMenuLinks = isAdminInterface
         ? `
-            <a href="/admin/"><i class="bi bi-list-task"></i><span>Laporan</span></a>
+            <a href="/admin/index.html"><i class="bi bi-list-task"></i><span>Laporan</span></a>
             <a href="/admin/feedback.html"><i class="bi bi-chat-left-dots"></i><span>Feedback</span></a>
             <a href="/rekap.html"><i class="bi bi-clipboard-data"></i><span>Rekap</span></a>
             <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
