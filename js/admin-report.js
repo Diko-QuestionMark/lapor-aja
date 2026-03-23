@@ -10,6 +10,12 @@ const CLOUDINARY_CLOUD_NAME = "dpipyaboq";
 const CLOUDINARY_UPLOAD_PRESET = "laporaja_unsigned";
 const MAX_EVIDENCE_SIZE_MB = 5;
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
+const FEEDBACK_REASON_MAP = Object.freeze({
+  unclear_response: "Respons tidak jelas",
+  no_real_solution: "Solusi belum nyata",
+  weak_evidence: "Bukti kurang valid",
+  mismatch_issue: "Tidak sesuai masalah",
+});
 
 let activeReport = null;
 
@@ -56,6 +62,56 @@ function escapeHtml(text) {
       }[char] || char
     );
   });
+}
+
+function renderAdminReportDetailSkeleton() {
+  const root = document.getElementById("adminReportDetail");
+  if (!root) {
+    return;
+  }
+  root.innerHTML = `
+    <article class="admin-skeleton-card" aria-hidden="true">
+      <div class="admin-skeleton-line admin-skeleton-line-title"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+      <div class="admin-skeleton-thumb admin-skeleton-thumb-wide mb-2"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-desc"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-desc-short"></div>
+      <div class="admin-skeleton-panel"></div>
+    </article>
+  `;
+}
+
+function renderAdminCommentsSkeleton() {
+  const list = document.getElementById("adminCommentList");
+  if (!list) {
+    return;
+  }
+  list.innerHTML = `
+    <article class="admin-skeleton-feedback-card" aria-hidden="true">
+      <div class="admin-skeleton-line admin-skeleton-line-title"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+    </article>
+    <article class="admin-skeleton-feedback-card" aria-hidden="true">
+      <div class="admin-skeleton-line admin-skeleton-line-title"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+    </article>
+  `;
+}
+
+function renderAdminResponseFeedbackSkeleton() {
+  const root = document.getElementById("adminResponseFeedback");
+  if (!root) {
+    return;
+  }
+  root.innerHTML = `
+    <div class="admin-skeleton-metrics" aria-hidden="true">
+      <div class="admin-skeleton-pill"></div>
+      <div class="admin-skeleton-pill"></div>
+      <div class="admin-skeleton-pill"></div>
+      <div class="admin-skeleton-pill"></div>
+    </div>
+    <div class="admin-skeleton-line admin-skeleton-line-meta mt-2"></div>
+  `;
 }
 
 function renderAdminComments(comments) {
@@ -113,7 +169,12 @@ async function loadStatusHistory(reportId) {
   if (!root) {
     return;
   }
-  root.innerHTML = '<p class="small text-secondary mb-0">Memuat histori...</p>';
+  root.innerHTML = `
+    <article class="admin-skeleton-feedback-card" aria-hidden="true">
+      <div class="admin-skeleton-line admin-skeleton-line-status"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+    </article>
+  `;
   try {
     const session = readSession();
     const headers = session && session.token ? { Authorization: `Bearer ${session.token}` } : {};
@@ -160,7 +221,7 @@ async function loadAdminComments(reportId) {
   if (!list) {
     return;
   }
-  list.innerHTML = '<p class="text-secondary small mb-0">Memuat komentar...</p>';
+  renderAdminCommentsSkeleton();
 
   try {
     const response = await fetch(`${API_BASE}/report-comments?report_id=${reportId}`);
@@ -171,6 +232,60 @@ async function loadAdminComments(reportId) {
     renderAdminComments(comments);
   } catch (_) {
     list.innerHTML = '<p class="text-danger small mb-0">Komentar gagal dimuat.</p>';
+  }
+}
+
+async function loadAdminResponseFeedback(reportId) {
+  const root = document.getElementById("adminResponseFeedback");
+  if (!root) {
+    return;
+  }
+  renderAdminResponseFeedbackSkeleton();
+
+  try {
+    const response = await fetch(`${API_BASE}/report-feedback?report_id=${reportId}`, {
+      headers: authHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Gagal memuat feedback.");
+    }
+    const data = await response.json();
+    const helpful = Number(data.helpful_count || 0);
+    const unhelpful = Number(data.unhelpful_count || 0);
+    const total = Number(data.total_count || 0);
+    const approvalRate = total > 0 ? ((helpful / total) * 100).toFixed(1) : "0.0";
+    const reasons = Array.isArray(data.top_reasons) ? data.top_reasons : [];
+    const reasonsText = reasons
+      .map(function (item) {
+        const label = String(item.label || "").trim() || getFeedbackReasonLabel(item.code);
+        return `${label} (${Number(item.count || 0)})`;
+      })
+      .join(", ");
+
+    root.innerHTML = `
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        <span class="badge text-bg-light border">Membantu ${helpful}</span>
+        <span class="badge text-bg-light border">Tidak membantu ${unhelpful}</span>
+        <span class="badge text-bg-light border">Approval ${approvalRate}%</span>
+        ${
+          data.needs_revision
+            ? '<span class="badge text-bg-warning">Perlu Revisi Respons</span>'
+            : ""
+        }
+      </div>
+      ${
+        reasonsText
+          ? `<p class="small text-secondary mb-1">Alasan terbanyak: ${escapeHtml(reasonsText)}</p>`
+          : '<p class="small text-secondary mb-1">Belum ada alasan detail dari warga.</p>'
+      }
+      ${
+        data.needs_revision
+          ? '<p class="small text-warning mb-0"><i class="bi bi-exclamation-circle"></i> Prioritaskan perbaikan respons agar lebih jelas dan solutif.</p>'
+          : ""
+      }
+    `;
+  } catch (_) {
+    root.innerHTML = '<p class="text-danger small mb-0">Feedback tidak bisa dimuat.</p>';
   }
 }
 
@@ -466,6 +581,9 @@ async function loadReport() {
     return;
   }
 
+  renderAdminReportDetailSkeleton();
+  renderAdminCommentsSkeleton();
+  renderAdminResponseFeedbackSkeleton();
   setHandleLoading(true);
   const response = await fetch(API_BASE + "/admin/reports", {
     headers: authHeaders(),
@@ -489,6 +607,7 @@ async function loadReport() {
   renderDetail(report);
   fillForm(report);
   loadAdminComments(report.id);
+  loadAdminResponseFeedback(report.id);
   setHandleLoading(false);
 }
 
@@ -611,6 +730,11 @@ function init() {
       '<p class="text-danger mb-0">Tidak bisa memuat laporan.</p>';
     setHandleLoading(false);
   });
+}
+
+function getFeedbackReasonLabel(code) {
+  const normalized = String(code || "").trim().toLowerCase();
+  return FEEDBACK_REASON_MAP[normalized] || "Alasan lain";
 }
 
 init();

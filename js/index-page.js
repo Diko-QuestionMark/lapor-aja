@@ -1253,10 +1253,10 @@ function updateSectionTitle() {
   const timeLabel = timeLabels[timeMode] || "Semua Waktu";
 
   if (agencyMode === "all") {
-    titleEl.textContent = `Laporan Warga • ${timeLabel}`;
+    titleEl.textContent = `Laporan Warga - ${timeLabel}`;
     return;
   }
-  titleEl.textContent = `Laporan ke Instansi: ${agencyMode} • ${timeLabel}`;
+  titleEl.textContent = `Laporan ke Instansi: ${agencyMode} - ${timeLabel}`;
 }
 
 function isOwnReport(report) {

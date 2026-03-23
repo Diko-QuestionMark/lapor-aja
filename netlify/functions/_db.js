@@ -84,6 +84,9 @@ function initDatabase() {
           report_id INTEGER NOT NULL,
           user_id INTEGER NOT NULL,
           helpful BOOLEAN NOT NULL,
+          reason_code TEXT,
+          note TEXT,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(report_id, user_id)
         )
@@ -138,6 +141,15 @@ function initDatabase() {
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_updated_at TIMESTAMP");
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_updated_by TEXT");
       await pool.query(
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS feedback_needs_revision BOOLEAN NOT NULL DEFAULT FALSE",
+      );
+      await pool.query(
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS feedback_last_unhelpful_at TIMESTAMP",
+      );
+      await pool.query(
+        "ALTER TABLE reports ADD COLUMN IF NOT EXISTS admin_feedback_resolved_at TIMESTAMP",
+      );
+      await pool.query(
         "ALTER TABLE reports ADD COLUMN IF NOT EXISTS upvotes INTEGER NOT NULL DEFAULT 0",
       );
       await pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS reporter_user_id INTEGER");
@@ -153,6 +165,15 @@ function initDatabase() {
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS deleted_by TEXT");
       await pool.query("ALTER TABLE report_comments ADD COLUMN IF NOT EXISTS delete_reason TEXT");
+      await pool.query(
+        "ALTER TABLE report_response_feedback ADD COLUMN IF NOT EXISTS reason_code TEXT",
+      );
+      await pool.query(
+        "ALTER TABLE report_response_feedback ADD COLUMN IF NOT EXISTS note TEXT",
+      );
+      await pool.query(
+        "ALTER TABLE report_response_feedback ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+      );
       await pool.query("ALTER TABLE report_media ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0");
       await pool.query(
         "ALTER TABLE report_status_history ADD COLUMN IF NOT EXISTS admin_note TEXT",
@@ -171,6 +192,12 @@ function initDatabase() {
       );
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_report_feedback_user_id ON report_response_feedback(user_id)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_report_feedback_reason_code ON report_response_feedback(reason_code)",
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS idx_reports_feedback_needs_revision ON reports(feedback_needs_revision)",
       );
       await pool.query(
         "CREATE INDEX IF NOT EXISTS idx_notification_receipts_user_id ON notification_read_receipts(user_id)",

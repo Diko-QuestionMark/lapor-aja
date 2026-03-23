@@ -52,7 +52,7 @@ function renderHeader(user, reportCount) {
     avatar.src = DEFAULT_AVATAR_URL;
   };
   name.textContent = user.name || "Warga";
-  meta.textContent = `Total laporan: ${reportCount} • Bergabung: ${
+  meta.textContent = `Total laporan: ${reportCount} - Bergabung: ${
     user.created_at ? new Date(user.created_at).toLocaleString("id-ID") : "-"
   }`;
 }

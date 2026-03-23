@@ -9,6 +9,7 @@ const ADMIN_READ_KEY = "laporaja_admin_read_reports_v1";
 
 let adminReports = [];
 let sessionAgency = "";
+let adminFeedbackInbox = { items: [], metrics: null };
 
 function getAgencyFilter() {
   const el = document.getElementById("agencyFilter");
@@ -22,7 +23,7 @@ function getSearchQuery() {
 
 function getSortMode() {
   const el = document.getElementById("adminSortFilter");
-  return el ? String(el.value || "newest") : "newest";
+  return el ? String(el.value || "priority") : "priority";
 }
 
 function getTimeMode() {
@@ -30,9 +31,22 @@ function getTimeMode() {
   return el ? String(el.value || "all") : "all";
 }
 
+function getStatusMode() {
+  const el = document.getElementById("adminStatusFilter");
+  return el ? String(el.value || "all") : "all";
+}
+
+function normalizeStatus(value) {
+  return String(value || "Menunggu").trim().toLowerCase();
+}
+
+function isUnfinishedStatus(value) {
+  return normalizeStatus(value) !== "selesai";
+}
+
 function getStatusMeta(status) {
   const label = String(status || "Menunggu").trim();
-  const normalized = label.toLowerCase();
+  const normalized = normalizeStatus(label);
   if (normalized === "diproses") {
     return { label: "Diproses", className: "status-diproses" };
   }
@@ -57,7 +71,7 @@ function hasReadReport(reportId) {
 }
 
 function getResponseToneClass(status) {
-  const normalized = String(status || "menunggu").trim().toLowerCase();
+  const normalized = normalizeStatus(status || "menunggu");
   if (normalized === "selesai") {
     return "admin-response-selesai";
   }
@@ -187,9 +201,38 @@ function showError(message) {
   document.getElementById("adminList").innerHTML = `<p class="text-danger mb-0">${message}</p>`;
 }
 
+function renderAdminListSkeleton(count) {
+  const total = Number(count || 3);
+  const list = document.getElementById("adminList");
+  if (!list) {
+    return;
+  }
+  let html = "";
+  for (let index = 0; index < total; index += 1) {
+    html += `
+      <article class="admin-skeleton-card" aria-hidden="true">
+        <div class="admin-skeleton-grid">
+          <div class="admin-skeleton-thumb"></div>
+          <div class="admin-skeleton-main">
+            <div class="admin-skeleton-head">
+              <div class="admin-skeleton-line admin-skeleton-line-id"></div>
+              <div class="admin-skeleton-line admin-skeleton-line-status"></div>
+            </div>
+            <div class="admin-skeleton-line admin-skeleton-line-title"></div>
+            <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+            <div class="admin-skeleton-line admin-skeleton-line-desc"></div>
+            <div class="admin-skeleton-line admin-skeleton-line-desc-short"></div>
+            <div class="admin-skeleton-panel"></div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+  list.innerHTML = html;
+}
+
 function renderLoading() {
-  document.getElementById("adminList").innerHTML =
-    '<p class="text-secondary mb-0">Memuat data admin...</p>';
+  renderAdminListSkeleton(3);
 }
 
 async function loadAdminReports() {
@@ -214,6 +257,130 @@ async function loadAdminReports() {
   }
 }
 
+function renderAdminFeedbackInbox() {
+  const summaryRoot = document.getElementById("adminFeedbackSummary");
+  const listRoot = document.getElementById("adminFeedbackList");
+  if (!summaryRoot || !listRoot) {
+    return;
+  }
+
+  const metrics = adminFeedbackInbox.metrics || {};
+  const items = Array.isArray(adminFeedbackInbox.items) ? adminFeedbackInbox.items : [];
+  const topReasonsMonth = Array.isArray(metrics.top_reasons_this_month)
+    ? metrics.top_reasons_this_month
+    : [];
+  const topReasonsText = topReasonsMonth
+    .map(function (item) {
+      return `${String(item.label || "Alasan lain")} (${Number(item.count || 0)})`;
+    })
+    .join(", ");
+
+  summaryRoot.innerHTML = `
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge text-bg-light border">Approval: ${Number(metrics.approval_rate || 0).toFixed(1)}%</span>
+      <span class="badge text-bg-light border">Perlu Revisi: ${Number(metrics.needs_revision_count || 0)}</span>
+      <span class="badge text-bg-light border">Feedback: ${Number(metrics.total_count || 0)}</span>
+      <span class="badge text-bg-light border">Rata-rata perbaikan: ${Number(metrics.avg_revision_hours || 0).toFixed(1)} jam</span>
+    </div>
+    ${
+      topReasonsText
+        ? `<p class="small text-secondary mb-0 mt-2">Alasan terbanyak bulan ini: ${escapeHtml(topReasonsText)}</p>`
+        : ""
+    }
+  `;
+
+  if (items.length === 0) {
+    listRoot.innerHTML = '<p class="text-secondary mb-0">Belum ada feedback warga untuk dianalisis.</p>';
+    return;
+  }
+
+  listRoot.innerHTML = items
+    .map(function (item) {
+      const reportId = Number(item.id || 0);
+      const statusMeta = getStatusMeta(item.status);
+      const topReasons = Array.isArray(item.top_reasons) ? item.top_reasons : [];
+      const topReasonText = topReasons
+        .map(function (reason) {
+          return `${String(reason.label || "Alasan lain")} (${Number(reason.count || 0)})`;
+        })
+        .join(", ");
+      const needsRevision = Boolean(item.feedback_needs_revision);
+      return `
+        <article class="admin-feedback-item border rounded p-2 mb-2 ${
+          needsRevision ? "admin-feedback-item-urgent" : ""
+        }">
+          <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+            <div>
+              <div class="fw-semibold">${escapeHtml(item.title || "Laporan Warga")} (#${reportId})</div>
+              <div class="small text-secondary">
+                ${escapeHtml(String(item.agency || "Umum"))} - ${statusMeta.label}
+              </div>
+            </div>
+            <span class="badge ${needsRevision ? "text-bg-warning" : "text-bg-light border"}">
+              ${needsRevision ? "Perlu Revisi" : "Terpantau"}
+            </span>
+          </div>
+          <div class="small text-secondary mt-2">
+            Helpful ${Number(item.helpful_count || 0)} | Tidak membantu ${Number(item.unhelpful_count || 0)} | Approval ${Number(item.approval_rate || 0).toFixed(1)}%
+          </div>
+          ${
+            topReasonText
+              ? `<div class="small text-secondary mt-1">Alasan utama: ${escapeHtml(topReasonText)}</div>`
+              : ""
+          }
+          <div class="mt-2 d-flex justify-content-end">
+            <a href="/admin/report.html?id=${reportId}" class="btn btn-sm btn-outline-dark">Perbarui Respons</a>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+async function loadAdminFeedbackInbox() {
+  const summaryRoot = document.getElementById("adminFeedbackSummary");
+  const listRoot = document.getElementById("adminFeedbackList");
+  if (!summaryRoot || !listRoot) {
+    return;
+  }
+  summaryRoot.innerHTML = `
+    <div class="admin-skeleton-metrics" aria-hidden="true">
+      <div class="admin-skeleton-pill"></div>
+      <div class="admin-skeleton-pill"></div>
+      <div class="admin-skeleton-pill"></div>
+    </div>
+  `;
+  listRoot.innerHTML = `
+    <article class="admin-skeleton-feedback-card" aria-hidden="true">
+      <div class="admin-skeleton-line admin-skeleton-line-title"></div>
+      <div class="admin-skeleton-line admin-skeleton-line-meta"></div>
+    </article>
+  `;
+  try {
+    const response = await fetch(`${API_BASE}/report-feedback?admin_inbox=1&limit=20`, {
+      headers: authHeaders(),
+    });
+    if (response.status === 401) {
+      summaryRoot.innerHTML = '<span class="text-danger">Akses admin tidak valid.</span>';
+      listRoot.innerHTML = '<span class="text-danger">Tidak bisa memuat feedback.</span>';
+      return;
+    }
+    if (!response.ok) {
+      throw new Error("Gagal memuat feedback.");
+    }
+    const data = await response.json();
+    adminFeedbackInbox = {
+      items: Array.isArray(data.items) ? data.items : [],
+      metrics: data.metrics || {},
+    };
+    renderAdminFeedbackInbox();
+  } catch (error) {
+    console.error(error);
+    summaryRoot.innerHTML = '<span class="text-danger">Ringkasan feedback gagal dimuat.</span>';
+    listRoot.innerHTML = '<span class="text-danger">Daftar feedback gagal dimuat.</span>';
+  }
+}
+
 function renderAdminReports() {
   const list = document.getElementById("adminList");
   const topTitle = document.getElementById("adminSectionTitle");
@@ -221,6 +388,7 @@ function renderAdminReports() {
   const searchQuery = getSearchQuery();
   const sortMode = getSortMode();
   const timeMode = getTimeMode();
+  const statusMode = getStatusMode();
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -230,11 +398,25 @@ function renderAdminReports() {
 
   const filteredReports = adminReports.filter(function (report) {
     const reportAgency = String(report.agency || "Umum");
+    const normalizedStatus = normalizeStatus(report.status);
     const agencyMatch =
       agencyFilter === "agency_general"
         ? reportAgency === sessionAgency || reportAgency === "Umum"
         : reportAgency === sessionAgency;
     if (!agencyMatch) {
+      return false;
+    }
+
+    if (statusMode === "open" && normalizedStatus === "selesai") {
+      return false;
+    }
+    if (statusMode === "waiting" && normalizedStatus !== "menunggu") {
+      return false;
+    }
+    if (statusMode === "in_progress" && normalizedStatus !== "diproses") {
+      return false;
+    }
+    if (statusMode === "done" && normalizedStatus !== "selesai") {
       return false;
     }
 
@@ -271,12 +453,46 @@ function renderAdminReports() {
 
   const visibleReports = filteredReports.slice();
   visibleReports.sort(function (a, b) {
-    const aStatus = String(a.status || "Menunggu").toLowerCase();
-    const bStatus = String(b.status || "Menunggu").toLowerCase();
+    const aStatus = normalizeStatus(a.status);
+    const bStatus = normalizeStatus(b.status);
+    const aNeedsRevision = Boolean(a.feedback_needs_revision);
+    const bNeedsRevision = Boolean(b.feedback_needs_revision);
     const aUpvotes = Number(a.upvotes || 0);
     const bUpvotes = Number(b.upvotes || 0);
     const aDate = new Date(a.created_at || 0).getTime();
     const bDate = new Date(b.created_at || 0).getTime();
+    if (sortMode === "priority") {
+      if (aNeedsRevision !== bNeedsRevision) {
+        return aNeedsRevision ? -1 : 1;
+      }
+      const aUnfinished = isUnfinishedStatus(aStatus);
+      const bUnfinished = isUnfinishedStatus(bStatus);
+      if (aUnfinished !== bUnfinished) {
+        return aUnfinished ? -1 : 1;
+      }
+
+      if (aUnfinished && bUnfinished) {
+        const aToday = aDate >= startOfDay;
+        const bToday = bDate >= startOfDay;
+        if (aToday !== bToday) {
+          return bToday ? 1 : -1;
+        }
+        if (bUpvotes !== aUpvotes) {
+          return bUpvotes - aUpvotes;
+        }
+        const aWaiting = aStatus === "menunggu" ? 0 : 1;
+        const bWaiting = bStatus === "menunggu" ? 0 : 1;
+        if (aWaiting !== bWaiting) {
+          return aWaiting - bWaiting;
+        }
+        return bDate - aDate;
+      }
+
+      if (bDate !== aDate) {
+        return bDate - aDate;
+      }
+      return bUpvotes - aUpvotes;
+    }
     if (sortMode === "oldest") {
       return aDate - bDate;
     }
@@ -378,6 +594,11 @@ function renderAdminReports() {
             <span class="admin-card-meta"><i class="bi bi-person"></i>${escapeHtml(reporterName)} (${escapeHtml(reporterEmail)})</span>
             <span class="admin-card-meta"><i class="bi bi-clock"></i>${createdAtLabel}</span>
             <span class="admin-card-meta"><i class="bi bi-hand-thumbs-up"></i>${Number(report.upvotes || 0)} dukungan</span>
+            ${
+              report.feedback_needs_revision
+                ? '<span class="admin-card-meta text-warning"><i class="bi bi-exclamation-circle"></i>Perlu revisi respons</span>'
+                : ""
+            }
           </div>
           <p class="admin-card-desc mb-2">
             <i class="bi bi-card-text"></i>
@@ -438,6 +659,10 @@ function wireEvents() {
   if (timeFilterEl) {
     timeFilterEl.addEventListener("change", renderAdminReports);
   }
+  const statusFilterEl = document.getElementById("adminStatusFilter");
+  if (statusFilterEl) {
+    statusFilterEl.addEventListener("change", renderAdminReports);
+  }
   const resetBtn = document.getElementById("adminResetFilterBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", function () {
@@ -446,6 +671,7 @@ function wireEvents() {
         document.getElementById("search-input") || document.getElementById("adminSearchInput");
       const sortFilter = document.getElementById("adminSortFilter");
       const timeFilter = document.getElementById("adminTimeFilter");
+      const statusFilter = document.getElementById("adminStatusFilter");
       if (agencyFilter) {
         agencyFilter.value = "agency";
       }
@@ -453,10 +679,13 @@ function wireEvents() {
         searchInput.value = "";
       }
       if (sortFilter) {
-        sortFilter.value = "newest";
+        sortFilter.value = "priority";
       }
       if (timeFilter) {
         timeFilter.value = "all";
+      }
+      if (statusFilter) {
+        statusFilter.value = "all";
       }
       const filterModal = document.getElementById("admin-filter-modal");
       if (filterModal && window.bootstrap && window.bootstrap.Modal) {

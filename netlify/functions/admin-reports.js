@@ -87,10 +87,25 @@ exports.handler = async function handler(event) {
             r.admin_updated_at,
             r.admin_updated_by,
             r.upvotes,
+            r.feedback_needs_revision,
+            r.feedback_last_unhelpful_at,
+            r.admin_feedback_resolved_at,
             r.created_at,
             r.reporter_user_id,
             r.reporter_name,
             r.reporter_email,
+            COALESCE(feedback_count.helpful_count, 0)::INT AS feedback_helpful_count,
+            COALESCE(feedback_count.unhelpful_count, 0)::INT AS feedback_unhelpful_count,
+            COALESCE(feedback_count.total_count, 0)::INT AS feedback_total_count,
+            COALESCE(
+              ROUND(
+                (COALESCE(feedback_count.helpful_count, 0)::NUMERIC * 100.0) /
+                NULLIF(COALESCE(feedback_count.total_count, 0), 0),
+                1
+              ),
+              0
+            ) AS feedback_approval_rate,
+            COALESCE(feedback_reason.top_reasons, '[]'::JSON) AS feedback_top_reasons,
             COALESCE(
               rm.image_urls,
               CASE
@@ -99,6 +114,41 @@ exports.handler = async function handler(event) {
               END
             ) AS image_urls
           FROM reports r
+          LEFT JOIN LATERAL (
+            SELECT
+              COUNT(*) FILTER (WHERE helpful) AS helpful_count,
+              COUNT(*) FILTER (WHERE NOT helpful) AS unhelpful_count,
+              COUNT(*) AS total_count
+            FROM report_response_feedback rf
+            WHERE rf.report_id = r.id
+          ) feedback_count ON TRUE
+          LEFT JOIN LATERAL (
+            SELECT
+              JSON_AGG(
+                JSON_BUILD_OBJECT(
+                  'code', ranked.reason_code,
+                  'label', CASE ranked.reason_code
+                    WHEN 'unclear_response' THEN 'Respons tidak jelas'
+                    WHEN 'no_real_solution' THEN 'Solusi belum nyata'
+                    WHEN 'weak_evidence' THEN 'Bukti kurang valid'
+                    WHEN 'mismatch_issue' THEN 'Tidak sesuai masalah'
+                    ELSE 'Alasan lain'
+                  END,
+                  'count', ranked.reason_count
+                )
+                ORDER BY ranked.reason_count DESC, ranked.reason_code ASC
+              ) AS top_reasons
+            FROM (
+              SELECT reason_code, COUNT(*)::INT AS reason_count
+              FROM report_response_feedback
+              WHERE report_id = r.id
+                AND NOT helpful
+                AND reason_code IS NOT NULL
+              GROUP BY reason_code
+              ORDER BY reason_count DESC, reason_code ASC
+              LIMIT 3
+            ) ranked
+          ) feedback_reason ON TRUE
           LEFT JOIN LATERAL (
             SELECT ARRAY_AGG(url ORDER BY sort_order ASC, id ASC) AS image_urls
             FROM report_media
@@ -147,7 +197,30 @@ exports.handler = async function handler(event) {
       }
 
       const result = await pool.query(
-        "UPDATE reports SET status = $1, admin_note = $2, admin_evidence_url = $3, admin_updated_at = CURRENT_TIMESTAMP, admin_updated_by = $4 WHERE id = $5 RETURNING id, status, admin_note, admin_evidence_url, admin_updated_at, admin_updated_by",
+        `
+          UPDATE reports
+          SET
+            status = $1,
+            admin_note = $2,
+            admin_evidence_url = $3,
+            admin_updated_at = CURRENT_TIMESTAMP,
+            admin_updated_by = $4,
+            feedback_needs_revision = FALSE,
+            admin_feedback_resolved_at = CASE
+              WHEN feedback_needs_revision THEN CURRENT_TIMESTAMP
+              ELSE admin_feedback_resolved_at
+            END
+          WHERE id = $5
+          RETURNING
+            id,
+            status,
+            admin_note,
+            admin_evidence_url,
+            admin_updated_at,
+            admin_updated_by,
+            feedback_needs_revision,
+            admin_feedback_resolved_at
+        `,
         [status, note || null, evidenceUrl || null, adminContext.displayName, id],
       );
 

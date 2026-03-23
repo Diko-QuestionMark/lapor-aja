@@ -89,11 +89,25 @@ function ensureLoggedIn() {
   return session;
 }
 
+function getUserRole(user, session) {
+  const role = String((user && user.role) || (session && session.role) || "user")
+    .trim()
+    .toLowerCase();
+  return role === "admin" ? "admin" : "user";
+}
+
 function renderProfileInfo(user) {
+  const role = getUserRole(user, currentSession);
+  const agency = String(user && user.agency ? user.agency : "").trim();
+  const agencyLine =
+    role === "admin" && agency
+      ? `<div class="small text-secondary">Instansi: ${escapeHtml(agency)}</div>`
+      : "";
   const el = document.getElementById("profileInfo");
   el.innerHTML = `
     <div class="fw-semibold text-dark">${escapeHtml(user.name || "-")}</div>
     <div class="small">${escapeHtml(user.email || "-")}</div>
+    ${agencyLine}
   `;
 }
 
@@ -139,13 +153,17 @@ function syncPreviewAvatar(url) {
   };
 }
 
-function renderAdminAccess(session, user) {
-  const adminBtn = document.getElementById("adminDashboardBtn");
-  if (!adminBtn) {
-    return;
+function setReportsSectionCopy(user) {
+  const role = getUserRole(user, currentSession);
+  const titleEl = document.getElementById("profileReportsTitle");
+  const subtitleEl = document.getElementById("profileReportsSubtitle");
+  if (titleEl) {
+    titleEl.textContent =
+      role === "admin" ? "Laporan Instansi Saya" : "Laporan Saya";
   }
-  const role = String((user && user.role) || (session && session.role) || "").toLowerCase();
-  adminBtn.classList.toggle("d-none", role !== "admin");
+  if (subtitleEl) {
+    subtitleEl.textContent = "";
+  }
 }
 
 function setSaveLoading(isLoading) {
@@ -220,25 +238,7 @@ async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
-function renderStats(myReports) {
-  const total = myReports.length;
-  const waiting = myReports.filter(function (r) {
-    return String(r.status || "").toLowerCase() === "menunggu";
-  }).length;
-  const done = myReports.filter(function (r) {
-    return String(r.status || "").toLowerCase() === "selesai";
-  }).length;
-  const support = myReports.reduce(function (sum, r) {
-    return sum + Number(r.upvotes || 0);
-  }, 0);
-
-  const stats = [
-    { label: "Total Laporan", value: total },
-    { label: "Menunggu", value: waiting },
-    { label: "Selesai", value: done },
-    { label: "Total Dukungan", value: support },
-  ];
-
+function renderStats(stats) {
   const root = document.getElementById("profileStats");
   root.innerHTML = stats
     .map(function (item) {
@@ -254,6 +254,46 @@ function renderStats(myReports) {
       `;
     })
     .join("");
+}
+
+function renderUserStats(myReports) {
+  const total = myReports.length;
+  const waiting = myReports.filter(function (r) {
+    return String(r.status || "").toLowerCase() === "menunggu";
+  }).length;
+  const done = myReports.filter(function (r) {
+    return String(r.status || "").toLowerCase() === "selesai";
+  }).length;
+  const support = myReports.reduce(function (sum, r) {
+    return sum + Number(r.upvotes || 0);
+  }, 0);
+
+  renderStats([
+    { label: "Total Laporan", value: total },
+    { label: "Menunggu", value: waiting },
+    { label: "Selesai", value: done },
+    { label: "Total Dukungan", value: support },
+  ]);
+}
+
+function renderAdminStats(adminReports) {
+  const total = adminReports.length;
+  const waiting = adminReports.filter(function (r) {
+    return String(r.status || "").toLowerCase() === "menunggu";
+  }).length;
+  const inProgress = adminReports.filter(function (r) {
+    return String(r.status || "").toLowerCase() === "diproses";
+  }).length;
+  const done = adminReports.filter(function (r) {
+    return String(r.status || "").toLowerCase() === "selesai";
+  }).length;
+
+  renderStats([
+    { label: "Total Laporan", value: total },
+    { label: "Menunggu", value: waiting },
+    { label: "Diproses", value: inProgress },
+    { label: "Selesai", value: done },
+  ]);
 }
 
 function renderStatsSkeleton() {
@@ -326,7 +366,7 @@ function formatRelativeTime(dateValue) {
   return `dalam ${safeValue} ${label}`;
 }
 
-function renderMyReports(myReports) {
+function renderUserReports(myReports) {
   const root = document.getElementById("profileReports");
   if (myReports.length === 0) {
     root.innerHTML =
@@ -366,6 +406,52 @@ function renderMyReports(myReports) {
             >
               Hapus
             </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderAdminReports(adminReports) {
+  const root = document.getElementById("profileReports");
+  const agency = String((currentUser && currentUser.agency) || "").trim();
+  if (!Array.isArray(adminReports) || adminReports.length === 0) {
+    root.innerHTML = `<p class="text-secondary mb-0">Belum ada laporan untuk ${
+      escapeHtml(agency || "instansi kamu")
+    }.</p>`;
+    return;
+  }
+
+  root.innerHTML = adminReports
+    .map(function (report) {
+      const status = getStatusMeta(report.status);
+      const previewUrl = getReportPreviewUrl(report);
+      const reportId = Number(report.id);
+      const reporterName = String(report.reporter_name || "Anonim");
+      const reporterEmail = String(report.reporter_email || "-");
+      return `
+        <article class="profile-admin-report-card mb-2" data-admin-report-id="${reportId}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div class="d-flex align-items-start gap-2 flex-grow-1">
+              <img
+                src="${escapeHtml(previewUrl || DEFAULT_AVATAR_URL)}"
+                class="profile-report-thumb"
+                alt="Preview laporan"
+                onerror="this.src='${escapeHtml(DEFAULT_AVATAR_URL)}'"
+              />
+              <div class="w-100">
+                <div class="fw-semibold">${escapeHtml(report.title || "Tanpa Judul")}</div>
+                <div class="small mb-1 text-truncate-2">${escapeHtml(report.desc || "Tanpa deskripsi")}</div>
+                <div class="profile-admin-meta">${escapeHtml(reporterName)} (${escapeHtml(reporterEmail)})</div>
+                <div class="small text-secondary">${formatRelativeTime(report.created_at)}</div>
+              </div>
+            </div>
+            <span class="badge status-badge ${status.className}">${status.label}</span>
+          </div>
+          <div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+            <div class="small text-secondary">Dukungan: ${Number(report.upvotes || 0)}</div>
+            <a href="/admin/report.html?id=${reportId}" class="btn btn-sm btn-outline-dark">Buka Detail</a>
           </div>
         </article>
       `;
@@ -423,6 +509,14 @@ function renderProfilePageSkeleton() {
   if (logoutBtn) {
     logoutBtn.classList.add("d-none");
   }
+  const reportTitle = document.getElementById("profileReportsTitle");
+  if (reportTitle) {
+    reportTitle.textContent = "Laporan Saya";
+  }
+  const reportSubtitle = document.getElementById("profileReportsSubtitle");
+  if (reportSubtitle) {
+    reportSubtitle.textContent = "";
+  }
   renderProfileAvatarSkeleton();
   renderProfileInfoSkeleton();
   renderStatsSkeleton();
@@ -442,7 +536,7 @@ async function handleDeleteReport(reportId) {
     await apiFetch(`/reports?id=${reportId}`, { method: "DELETE" });
     showAlert("Laporan berhasil dihapus.", "success");
     if (currentUser) {
-      await loadReportsForUser(currentUser);
+      await loadProfileContentByRole(currentUser);
     }
   } catch (error) {
     showAlert(error.message || "Gagal menghapus laporan.", "danger");
@@ -454,8 +548,24 @@ async function loadReportsForUser(user) {
   const myReports = data.filter(function (item) {
     return Number(item.reporter_user_id || 0) === Number(user.id);
   });
-  renderStats(myReports);
-  renderMyReports(myReports);
+  renderUserStats(myReports);
+  renderUserReports(myReports);
+}
+
+async function loadReportsForAdmin() {
+  const adminReports = await apiFetch("/admin/reports");
+  renderAdminStats(adminReports);
+  renderAdminReports(adminReports);
+}
+
+async function loadProfileContentByRole(user) {
+  const role = getUserRole(user, currentSession);
+  setReportsSectionCopy(user);
+  if (role === "admin") {
+    await loadReportsForAdmin();
+    return;
+  }
+  await loadReportsForUser(user);
 }
 
 async function loadProfile() {
@@ -471,7 +581,6 @@ async function loadProfile() {
     renderAvatar(currentUser);
     syncPreviewAvatar(currentUser.profile_image_url || DEFAULT_AVATAR_URL);
     renderProfileInfo(currentUser);
-    renderAdminAccess(currentSession, currentUser);
     const editBtn = document.getElementById("editProfileBtn");
     if (editBtn) {
       editBtn.classList.remove("d-none");
@@ -494,7 +603,7 @@ async function loadProfile() {
     writeSession(nextSession);
     currentSession = nextSession;
 
-    await loadReportsForUser(currentUser);
+    await loadProfileContentByRole(currentUser);
   } catch (error) {
     showAlert(error.message || "Gagal memuat profil.", "danger");
     document.getElementById("profileInfo").innerHTML =
@@ -562,10 +671,9 @@ async function handleSaveProfile(event) {
     renderAvatar(currentUser);
     syncPreviewAvatar(currentUser.profile_image_url || DEFAULT_AVATAR_URL);
     renderProfileInfo(currentUser);
-    renderAdminAccess(currentSession, currentUser);
     document.getElementById("profilePhoto").value = "";
     showAlert("Profil berhasil diperbarui.", "success");
-    await loadReportsForUser(currentUser);
+    await loadProfileContentByRole(currentUser);
     if (editProfileModal) {
       editProfileModal.hide();
     }
@@ -650,6 +758,17 @@ function init() {
       if (deleteBtn) {
         const reportId = Number(deleteBtn.getAttribute("data-delete-report"));
         handleDeleteReport(reportId);
+        return;
+      }
+      const adminCard = event.target.closest("[data-admin-report-id]");
+      if (adminCard) {
+        const reportId = Number(adminCard.getAttribute("data-admin-report-id"));
+        if (!reportId || Number.isNaN(reportId)) {
+          return;
+        }
+        if (!event.target.closest("a, button")) {
+          window.location.href = `/admin/report.html?id=${reportId}`;
+        }
         return;
       }
       const card = event.target.closest("[data-report-id]");

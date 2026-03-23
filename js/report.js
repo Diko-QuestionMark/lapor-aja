@@ -7,6 +7,21 @@ const UPVOTE_STORAGE_KEY = "laporaja_upvoted_ids";
 const SESSION_KEY = "laporaja_session_v1";
 const DEFAULT_AVATAR_URL = "/img/defaultAvatar.jpg";
 const COMMENT_MAX_LENGTH = 300;
+const FEEDBACK_NOTE_MAX_LENGTH = 240;
+const FEEDBACK_REASON_OPTIONS = Object.freeze([
+  { code: "unclear_response", label: "Respons tidak jelas" },
+  { code: "no_real_solution", label: "Solusi belum nyata" },
+  { code: "weak_evidence", label: "Bukti kurang valid" },
+  { code: "mismatch_issue", label: "Tidak sesuai masalah" },
+]);
+
+function getFeedbackReasonLabel(code) {
+  const normalized = String(code || "").trim().toLowerCase();
+  const found = FEEDBACK_REASON_OPTIONS.find(function (item) {
+    return item.code === normalized;
+  });
+  return found ? found.label : "Alasan lain";
+}
 
 async function loadResponseFeedback(reportId) {
   const root = document.getElementById("responseFeedbackWrap");
@@ -26,8 +41,23 @@ async function loadResponseFeedback(reportId) {
     }
     const data = await response.json();
     const myVote = data.my_vote;
+    const myReason = String(data.my_reason || "").trim();
+    const myNote = String(data.my_note || "").trim();
     const helpfulCount = Number(data.helpful_count || 0);
     const unhelpfulCount = Number(data.unhelpful_count || 0);
+    const needsRevision = Boolean(data.needs_revision);
+    const topReasons = Array.isArray(data.top_reasons) ? data.top_reasons : [];
+    const topReasonsText = topReasons
+      .map(function (item) {
+        const label = String(item.label || "").trim() || getFeedbackReasonLabel(item.code);
+        const count = Number(item.count || 0);
+        return `${label} (${count})`;
+      })
+      .join(", ");
+    const myFeedbackText =
+      myVote === false
+        ? `Feedback kamu: ${getFeedbackReasonLabel(myReason)}${myNote ? ` - ${myNote}` : ""}`
+        : "";
 
     root.innerHTML = `
       <div class="d-flex align-items-center flex-wrap gap-2">
@@ -52,14 +82,59 @@ async function loadResponseFeedback(reportId) {
           <span class="ms-1">${unhelpfulCount}</span>
         </button>
       </div>
+      <div id="feedbackDislikeComposer" class="border rounded p-2 mt-2 d-none">
+        <label for="feedbackReasonSelect" class="small text-secondary mb-1">Kenapa tidak membantu?</label>
+        <select id="feedbackReasonSelect" class="form-select form-select-sm mb-2">
+          <option value="">Pilih alasan</option>
+          ${FEEDBACK_REASON_OPTIONS.map(function (item) {
+            return `<option value="${item.code}" ${
+              item.code === myReason ? "selected" : ""
+            }>${item.label}</option>`;
+          }).join("")}
+        </select>
+        <textarea
+          id="feedbackReasonNote"
+          class="form-control form-control-sm"
+          rows="2"
+          maxlength="${FEEDBACK_NOTE_MAX_LENGTH}"
+          placeholder="Catatan tambahan (opsional)"
+        >${escapeHtml(myNote)}</textarea>
+        <div class="d-flex justify-content-end gap-2 mt-2">
+          <button id="feedbackCancelBtn" type="button" class="btn btn-sm btn-outline-secondary">Batal</button>
+          <button id="feedbackSaveUnhelpfulBtn" type="button" class="btn btn-sm btn-dark">Kirim Feedback</button>
+        </div>
+      </div>
+      ${
+        needsRevision
+          ? '<p class="small text-warning mb-0 mt-2"><i class="bi bi-exclamation-circle"></i> Respons sedang ditinjau ulang oleh instansi.</p>'
+          : ""
+      }
+      ${
+        topReasonsText
+          ? `<p class="small text-secondary mb-0 mt-2">Masukan paling sering: ${escapeHtml(topReasonsText)}</p>`
+          : ""
+      }
+      ${myFeedbackText ? `<p class="small text-secondary mb-0 mt-2">${escapeHtml(myFeedbackText)}</p>` : ""}
       <p id="feedbackHelpText" class="small text-secondary mb-0 mt-2"></p>
     `;
 
     const helpfulBtn = document.getElementById("feedbackHelpfulBtn");
     const unhelpfulBtn = document.getElementById("feedbackUnhelpfulBtn");
+    const composer = document.getElementById("feedbackDislikeComposer");
+    const reasonSelect = document.getElementById("feedbackReasonSelect");
+    const reasonNote = document.getElementById("feedbackReasonNote");
+    const cancelBtn = document.getElementById("feedbackCancelBtn");
+    const saveUnhelpfulBtn = document.getElementById("feedbackSaveUnhelpfulBtn");
     const helpText = document.getElementById("feedbackHelpText");
 
-    async function sendFeedback(helpful) {
+    function setComposerVisible(isVisible) {
+      if (!composer) {
+        return;
+      }
+      composer.classList.toggle("d-none", !isVisible);
+    }
+
+    async function sendFeedback(feedbackPayload) {
       const currentSession = readSession();
       if (!currentSession || !currentSession.token) {
         window.location.href = "/login.html";
@@ -76,9 +151,14 @@ async function loadResponseFeedback(reportId) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${currentSession.token}`,
           },
-          body: JSON.stringify({ report_id: reportId, helpful }),
+          body: JSON.stringify({
+            report_id: reportId,
+            helpful: Boolean(feedbackPayload.helpful),
+            dislike_reason: feedbackPayload.dislike_reason || null,
+            dislike_note: feedbackPayload.dislike_note || "",
+          }),
         });
-        const payload = await save.json().catch(function () {
+        const responseBody = await save.json().catch(function () {
           return {};
         });
         if (save.status === 401) {
@@ -86,24 +166,68 @@ async function loadResponseFeedback(reportId) {
           return;
         }
         if (!save.ok) {
-          throw new Error(payload.error || "Gagal menyimpan penilaian.");
+          throw new Error(responseBody.error || "Gagal menyimpan penilaian.");
         }
         helpText.textContent = "Penilaian tersimpan.";
+        setComposerVisible(false);
         await loadResponseFeedback(reportId);
       } catch (error) {
         helpText.textContent = error.message || "Gagal menyimpan penilaian.";
       } finally {
         helpfulBtn.disabled = false;
         unhelpfulBtn.disabled = false;
+        if (saveUnhelpfulBtn) {
+          saveUnhelpfulBtn.disabled = false;
+        }
+        if (cancelBtn) {
+          cancelBtn.disabled = false;
+        }
       }
     }
 
     helpfulBtn.addEventListener("click", function () {
-      sendFeedback(true);
+      sendFeedback({ helpful: true });
     });
     unhelpfulBtn.addEventListener("click", function () {
-      sendFeedback(false);
+      setComposerVisible(true);
+      if (reasonSelect) {
+        reasonSelect.focus();
+      }
     });
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        setComposerVisible(false);
+        helpText.textContent = "";
+      });
+    }
+    if (saveUnhelpfulBtn) {
+      saveUnhelpfulBtn.addEventListener("click", function () {
+        const selectedReason = String((reasonSelect && reasonSelect.value) || "").trim();
+        const note = String((reasonNote && reasonNote.value) || "").trim();
+        if (!selectedReason) {
+          helpText.textContent = "Pilih alasan terlebih dulu.";
+          return;
+        }
+        if (note.length > FEEDBACK_NOTE_MAX_LENGTH) {
+          helpText.textContent = `Catatan maksimal ${FEEDBACK_NOTE_MAX_LENGTH} karakter.`;
+          return;
+        }
+        if (saveUnhelpfulBtn) {
+          saveUnhelpfulBtn.disabled = true;
+        }
+        if (cancelBtn) {
+          cancelBtn.disabled = true;
+        }
+        sendFeedback({
+          helpful: false,
+          dislike_reason: selectedReason,
+          dislike_note: note,
+        });
+      });
+    }
+    if (myVote === false && myReason) {
+      setComposerVisible(false);
+    }
   } catch (_) {
     root.innerHTML = '<p class="small text-danger mb-0">Penilaian respons tidak bisa dimuat.</p>';
   }

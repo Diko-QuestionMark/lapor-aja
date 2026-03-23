@@ -45,6 +45,35 @@ function buildNotificationCteSql() {
       FROM reports r
       WHERE r.reporter_user_id = $1
         AND r.admin_updated_at IS NOT NULL
+        AND (
+          r.admin_feedback_resolved_at IS NULL
+          OR r.admin_updated_at IS DISTINCT FROM r.admin_feedback_resolved_at
+        )
+
+      UNION ALL
+
+      SELECT
+        CONCAT(
+          'feedback_resolution:',
+          r.id::TEXT,
+          ':',
+          COALESCE(EXTRACT(EPOCH FROM r.admin_feedback_resolved_at)::BIGINT::TEXT, '0')
+        ) AS id,
+        'feedback_resolution' AS type,
+        r.id AS report_id,
+        COALESCE(NULLIF(TRIM(r.title), ''), 'Laporan Warga') AS title,
+        CASE
+          WHEN COALESCE(NULLIF(TRIM(r.admin_note), ''), '') <> '' THEN CONCAT(
+            'Respons instansi diperbarui: ',
+            LEFT(TRIM(r.admin_note), 160)
+          )
+          ELSE 'Respons instansi diperbarui berdasarkan masukan warga.'
+        END AS message,
+        r.admin_feedback_resolved_at AS created_at,
+        CONCAT('/report.html?id=', r.id::TEXT) AS link
+      FROM reports r
+      WHERE r.reporter_user_id = $1
+        AND r.admin_feedback_resolved_at IS NOT NULL
 
       UNION ALL
 
@@ -147,7 +176,7 @@ exports.handler = async function handler(event) {
       if (!notificationId) {
         return json(400, { error: "id notifikasi wajib diisi" });
       }
-      if (!/^(government_update|comment):/.test(notificationId)) {
+      if (!/^(government_update|feedback_resolution|comment):/.test(notificationId)) {
         return json(400, { error: "Format id notifikasi tidak valid" });
       }
 

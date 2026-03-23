@@ -32,7 +32,6 @@
               <div id="profileInfo" class="text-secondary mb-3">Memuat profil...</div>
               <div class="d-flex flex-wrap gap-2">
                 <button id="editProfileBtn" type="button" class="btn btn-primary btn-sm d-none">Edit Profil</button>
-                <a id="adminDashboardBtn" href="/admin/" class="btn btn-dark btn-sm d-none">Dashboard Admin</a>
                 <button id="logoutBtn" type="button" class="btn btn-outline-danger btn-sm">Keluar Akun</button>
               </div>
             </div>
@@ -44,7 +43,8 @@
 
       <section class="card shadow-sm">
         <div class="card-body">
-          <h3 class="h6 mb-3">Laporan Saya</h3>
+          <h3 id="profileReportsTitle" class="h6 mb-1">Laporan Saya</h3>
+          <p id="profileReportsSubtitle" class="small text-secondary mb-3"></p>
           <div id="profileReports" class="text-secondary">Memuat laporan...</div>
         </div>
       </section>

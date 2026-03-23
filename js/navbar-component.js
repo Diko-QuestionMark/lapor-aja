@@ -6,6 +6,7 @@
   const NOTIFICATION_TYPE_FILTER = Object.freeze({
     all: "all",
     government: "government_update",
+    feedback: "feedback_resolution",
     comment: "comment",
   });
   let notifItems = [];
@@ -79,6 +80,14 @@
     if (path === "/profile" || path === "/profile.html") return "profile";
     if (path === "/report" || path === "/report.html") return "report";
     if (
+      path === "/admin-feedback" ||
+      path === "/admin-feedback.html" ||
+      path === "/admin/feedback" ||
+      path === "/admin/feedback.html"
+    ) {
+      return "admin-feedback";
+    }
+    if (
       path === "/admin-report" ||
       path === "/admin-report.html" ||
       path === "/admin/report" ||
@@ -94,6 +103,9 @@
 
   function getNavbarConfig() {
     const key = getPageKey();
+    const session = readSession();
+    const sessionRole = String((session && session.role) || "").toLowerCase();
+    const isAdminSession = sessionRole === "admin";
     const authRightHtml = `
       <a
         id="auth-action-btn"
@@ -229,11 +241,11 @@
       },
       profile: {
         navClass: "navbar-light bg-white",
-        brandText: "LaporAja",
-        brandHref: "/index.html",
-        subtitle: "Profil Akun",
+        brandText: isAdminSession ? "Admin" : "LaporAja",
+        brandHref: isAdminSession ? "/admin/" : "/index.html",
+        subtitle: isAdminSession ? "Profil Admin" : "Profil Akun",
         leftHtml: leftHamburger,
-        rightHtml: userRightHtml,
+        rightHtml: isAdminSession ? authRightHtml : userRightHtml,
       },
       report: {
         navClass: "navbar-light bg-white",
@@ -259,13 +271,21 @@
         leftHtml: leftHamburger,
         rightHtml: adminRightHtml,
       },
+      "admin-feedback": {
+        navClass: "navbar-light bg-white",
+        brandText: "Admin",
+        brandHref: "/admin/",
+        subtitle: "Feedback respons warga",
+        leftHtml: leftHamburger,
+        rightHtml: "",
+      },
       "admin-report": {
         navClass: "navbar-light bg-white",
         brandText: "Admin",
         brandHref: "/admin/",
         subtitle: "Detail penanganan laporan",
         leftHtml: leftHamburger,
-        rightHtml: '<a href="/admin/" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml: "",
       },
       rekap: {
         navClass: "navbar-light bg-white",
@@ -273,7 +293,7 @@
         brandHref: "/admin/",
         subtitle: "Rekap laporan warga",
         leftHtml: leftHamburger,
-        rightHtml: '<a href="/admin/" class="btn btn-sm nav-plain-btn">Kembali</a>',
+        rightHtml: "",
       },
     };
     return byPage[key] || byPage.index;
@@ -327,7 +347,8 @@
       const isAdminInterface = brandHref === "/admin/" || brandHref === "/admin";
       const sideMenuLinks = isAdminInterface
         ? `
-            <a href="/admin/"><i class="bi bi-speedometer2"></i><span>Dashboard Admin</span></a>
+            <a href="/admin/"><i class="bi bi-list-task"></i><span>Laporan</span></a>
+            <a href="/admin/feedback.html"><i class="bi bi-chat-left-dots"></i><span>Feedback</span></a>
             <a href="/rekap.html"><i class="bi bi-clipboard-data"></i><span>Rekap</span></a>
             <div class="nav-side-divider" role="separator" aria-hidden="true"></div>
             <a id="nav-side-profile-link" href="/profile.html" class="d-none"><i class="bi bi-person-circle"></i><span>Profil</span></a>
@@ -429,6 +450,16 @@
                         class="form-check-input"
                         type="radio"
                         name="notifFilter"
+                        id="notif-filter-feedback"
+                        value="feedback_resolution"
+                      />
+                      <label class="form-check-label" for="notif-filter-feedback">Respons Diperbarui</label>
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        name="notifFilter"
                         id="notif-filter-all"
                         value="all"
                         checked
@@ -512,6 +543,9 @@
     if (normalized === NOTIFICATION_TYPE_FILTER.government) {
       return "Update Pemerintah";
     }
+    if (normalized === NOTIFICATION_TYPE_FILTER.feedback) {
+      return "Respons Diperbarui";
+    }
     if (normalized === NOTIFICATION_TYPE_FILTER.comment) {
       return "Komentar";
     }
@@ -568,7 +602,10 @@
         const createdAtLabel = formatTimeAgo(item.created_at);
         const unreadClass = item.is_read ? "" : " is-unread";
         const titleClampClass =
-          String(item.type || "") === NOTIFICATION_TYPE_FILTER.government ? " text-truncate-2" : "";
+          String(item.type || "") === NOTIFICATION_TYPE_FILTER.government ||
+          String(item.type || "") === NOTIFICATION_TYPE_FILTER.feedback
+            ? " text-truncate-2"
+            : "";
         return `
           <button
             type="button"
