@@ -354,11 +354,16 @@ body.nav-side-open .nav-side-panel {
 
   .nav-brand-link {
     gap: 6px;
-    --nav-item-height: 30px;
+    --nav-item-height: 32px;
   }
 
   .nav-brand-title {
-    font-size: 1.15rem;
+    font-size: 1.12rem;
+  }
+
+  .nav-avatar {
+    width: 32px;
+    height: 32px;
   }
 
   .nav-right-wrap {
@@ -393,6 +398,9 @@ body.nav-side-open .nav-side-panel {
     padding: 0 7px 0 0;
   }
 
+}
+
+@media (max-width: 768px) {
   .nav-search-toggle {
     display: inline-flex;
     align-items: center;
@@ -426,8 +434,17 @@ body.nav-side-open .nav-side-panel {
 }
 
 @media (max-width: 420px) {
+  .nav-brand-link {
+    --nav-item-height: 30px;
+  }
+
   .nav-brand-title {
     font-size: 1.02rem;
+  }
+
+  .nav-avatar {
+    width: 30px;
+    height: 30px;
   }
 
   .nav-right-wrap {
