@@ -4,9 +4,6 @@
   "version": "1.0.0",
   "description": "LaporAja frontend + Netlify Functions",
   "type": "commonjs",
-  "scripts": {
-    "check:naming": "node scripts/check-naming.mjs"
-  },
   "dependencies": {
     "pg": "^8.20.0"
   }
